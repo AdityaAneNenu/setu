@@ -158,17 +158,33 @@ body {
 }
 
 .nav-logo {
-  width: 40px;
-  height: 40px;
-  background: var(--gradient-purple);
-  border-radius: 10px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 1rem;
-  box-shadow: var(--glow-purple);
+}
+
+.nav-logo img {
+  height: 100%;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+.nav-logo .logo-dark {
+  display: block;
+}
+
+.nav-logo .logo-light {
+  display: none;
+}
+
+body.light-mode .nav-logo .logo-dark {
+  display: none;
+}
+
+body.light-mode .nav-logo .logo-light {
+  display: block;
 }
 
 .nav-brand-text h1 {
@@ -176,12 +192,14 @@ body {
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
+  display: none; /* Hidden since logo includes text */
 }
 
 .nav-brand-text p {
   font-size: 0.7rem;
   color: var(--text-muted);
   font-weight: 400;
+  display: none; /* Hidden since logo includes text */
 }
 
 .nav-menu {

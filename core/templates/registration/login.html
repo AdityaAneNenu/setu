@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -52,50 +53,27 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      align-items: center;
     }
     
     .logo-section {
       display: flex;
       align-items: center;
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-    
-    .emblem {
-      width: 60px;
-      height: 60px;
-      background: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
       justify-content: center;
-      font-size: 30px;
-      font-weight: bold;
-      color: #1e3a8a;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      margin-bottom: 40px;
     }
     
-    .logo-text {
-      flex: 1;
-    }
-    
-    .logo-text h1 {
-      font-size: 26px;
-      font-weight: 700;
-      margin-bottom: 5px;
-      letter-spacing: -0.5px;
-    }
-    
-    .logo-text .subtitle {
-      font-size: 13px;
-      opacity: 0.95;
-      font-weight: 500;
+    .logo-section img {
+      max-width: 500px;
+      width: 90%;
+      height: auto;
     }
     
     .info-content h3 {
       font-size: 22px;
       margin-bottom: 20px;
       font-weight: 600;
+      display: none;
     }
     
     .info-content p {
@@ -412,11 +390,7 @@
 <div class="container">
   <div class="info-panel">
     <div class="logo-section">
-      <div class="emblem">S</div>
-      <div class="logo-text">
-        <h1>SETU</h1>
-        <p class="subtitle">Smart Evaluation and Tracking Utility</p>
-      </div>
+      <img src="{% static 'images/dark-mode.png' %}" alt="SETU Logo">
     </div>
     
     <div class="info-content">

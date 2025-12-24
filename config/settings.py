@@ -34,7 +34,7 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = ['*']  # Allow all hosts for development - change in production
+ALLOWED_HOSTS = ["*"]  # Allow all hosts for development - change in production
 
 
 # Application definition
@@ -81,16 +81,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 # Redirect users based on role (see core.views.post_login_redirect)
-LOGIN_REDIRECT_URL = '/post-login/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = "/post-login/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # Email configuration (defaults to Gmail SMTP; override via .env)
 EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.smtp.EmailBackend"
+    "EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
 )
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
@@ -165,9 +164,9 @@ CORS_ALLOW_ALL_ORIGINS = True  # Only for development - disable in production
 
 # REST Framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }

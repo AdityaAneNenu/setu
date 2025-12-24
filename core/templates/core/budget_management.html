@@ -287,8 +287,11 @@
 <!-- Top Navigation -->
 <nav class="top-nav">
   <div class="nav-container">
-    <a href="{% url 'home' %}" class="nav-brand">
-      <div class="nav-logo">PM</div>
+    <a href="{% url 'dashboard' %}" class="nav-brand">
+      <div class="nav-logo">
+        <img src="{% static 'images/dark-mode.png' %}" alt="SETU Logo" class="logo-dark">
+        <img src="{% static 'images/light-mode.png' %}" alt="SETU Logo" class="logo-light">
+      </div>
       <div class="nav-brand-text">
         <h1>SETU</h1>
         <p>Smart Evaluation & Tracking Utility</p>
