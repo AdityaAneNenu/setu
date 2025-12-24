@@ -1,0 +1,1012 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - PM AJAY</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+    }
+    
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      padding: 24px 0;
+      box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+      position: fixed;
+      height: 100vh;
+      left: 0;
+      top: 0;
+    }
+    
+    .sidebar-header {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 24px;
+    }
+    
+    .sidebar-header h3 {
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    
+    .nav-item {
+      padding: 12px 24px;
+      color: #94a3b8;
+      text-decoration: none;
+      display: block;
+      transition: all 0.2s ease;
+      font-size: 15px;
+      border-left: 3px solid transparent;
+    }
+    
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      border-left-color: #3b82f6;
+    }
+    
+    .nav-item.active {
+      background: rgba(59, 130, 246, 0.1);
+      color: white;
+      border-left-color: #3b82f6;
+    }
+    
+    .main-content {
+      margin-left: 260px;
+      flex: 1;
+      padding: 40px;
+    }
+    
+    .page-header {
+      margin-bottom: 32px;
+    }
+    
+    .page-header h1 {
+      color: #1e293b;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    
+    .page-header p {
+      color: #64748b;
+      font-size: 16px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-label {
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      color: #1e293b;
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      background: #1e293b;
+    }
+    
+    .stat-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: white;
+      stroke-width: 2;
+      fill: none;
+    }
+    
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .chart-card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chart-header {
+      margin-bottom: 20px;
+    }
+    
+    .chart-title {
+      color: #1e293b;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .bar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .bar-label {
+      min-width: 100px;
+      color: #475569;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .bar-container {
+      flex: 1;
+      height: 32px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    /* Infrastructure Gap Type Colors - Comprehensive and Distinct */
+    .bar-fill.water { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+    .bar-fill.road { background: linear-gradient(90deg, #64748b 0%, #475569 100%); }
+    .bar-fill.sanitation { background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%); }
+    .bar-fill.electricity { background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); }
+    .bar-fill.education { background: linear-gradient(90deg, #ec4899 0%, #db2777 100%); }
+    .bar-fill.health { background: linear-gradient(90deg, #10b981 0%, #059669 100%); }
+    
+    /* Additional Gap Types */
+    .bar-fill.agriculture { background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%); }
+    .bar-fill.connectivity { background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%); }
+    .bar-fill.healthcare { background: linear-gradient(90deg, #84cc16 0%, #65a30d 100%); }
+    .bar-fill.infrastructure { background: linear-gradient(90deg, #71717a 0%, #52525b 100%); }
+    .bar-fill.livelihood_skill { background: linear-gradient(90deg, #a855f7 0%, #9333ea 100%); }
+    .bar-fill.load_transport { background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); }
+    .bar-fill.welfare { background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); }
+    
+    /* Default fallback for any new gap types */
+    .bar-fill:not([class*="water"]):not([class*="road"]):not([class*="sanitation"]):not([class*="electricity"]):not([class*="education"]):not([class*="health"]):not([class*="agriculture"]):not([class*="connectivity"]):not([class*="healthcare"]):not([class*="infrastructure"]):not([class*="livelihood_skill"]):not([class*="load_transport"]):not([class*="welfare"]) {
+        background: linear-gradient(90deg, #6b7280 0%, #4b5563 100%);
+    }
+    
+    .bar-item {
+      position: relative;
+      cursor: pointer;
+    }
+    
+    .bar-item:hover .bar-fill {
+      filter: brightness(1.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: #1e293b;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #1e293b;
+    }
+    
+    .bar-item:hover .tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    
+    .tooltip-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    
+    .tooltip-text {
+      opacity: 0.9;
+      line-height: 1.4;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-content {
+      background: white;
+      margin: 2% auto;
+      padding: 0;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 90vh;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.4s ease;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      padding: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin: 0;
+    }
+    
+    .modal-header .subtitle {
+      font-size: 0.95rem;
+      opacity: 0.95;
+      margin-top: 0.5rem;
+    }
+    
+    .close-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      line-height: 1;
+    }
+    
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+    
+    .modal-body {
+      padding: 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .problem-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .problem-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+      transform: translateX(8px);
+    }
+    
+    .problem-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .problem-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+    }
+    
+    .problem-badges {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    
+    .problem-description {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      border-left: 4px solid #3b82f6;
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #374151;
+    }
+    
+    .problem-recommendations {
+      background: #fef3c7;
+      border: 2px solid #fbbf24;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .problem-recommendations h4 {
+      color: #92400e;
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .problem-recommendations p {
+      color: #78350f;
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+    
+    .problem-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    
+    .detail-box {
+      background: white;
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 2px solid #e5e7eb;
+    }
+    
+    .detail-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+    
+    .detail-value {
+      font-size: 1.25rem;
+      color: #1f2937;
+      font-weight: 700;
+    }
+    
+    .village-link {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    
+    .village-link:hover {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    
+    .gaps-table {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .table-header {
+      padding: 24px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .table-title {
+      color: #1e293b;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    thead {
+      background: #f8fafc;
+    }
+    
+    th {
+      padding: 16px 24px;
+      text-align: left;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    td {
+      padding: 16px 24px;
+      color: #475569;
+      font-size: 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+    
+    tbody tr {
+      transition: background 0.2s ease;
+    }
+    
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .badge.open {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .badge.in_progress {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    
+    .badge.resolved {
+      background: #d1fae5;
+      color: #059669;
+    }
+    
+    .severity-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .severity-badge.low {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    
+    .severity-badge.medium {
+      background: #fed7aa;
+      color: #c2410c;
+    }
+    
+    .severity-badge.high {
+      background: #fecaca;
+      color: #b91c1c;
+    }
+    
+    .status-form {
+      display: inline-block;
+    }
+    
+    .status-select {
+      padding: 6px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background: white;
+      transition: all 0.2s ease;
+    }
+    
+    .status-select:hover {
+      border-color: #3b82f6;
+    }
+    
+    .status-select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 70px;
+      }
+      
+      .sidebar-header h3,
+      .nav-item {
+        font-size: 0;
+      }
+      
+      .main-content {
+        margin-left: 70px;
+        padding: 24px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      table {
+        font-size: 12px;
+      }
+      
+      th, td {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <div class="nav-logo">PM</div>
+      <div class="nav-brand-text">
+        <h1>PM-AJAY</h1>
+        <p>Adarsh Gram</p>
+      </div>
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    
+    <ul class="nav-menu" id="navMenu">
+      <li class="nav-item"><a href="{% url 'dashboard' %}" class="active">📊 Dashboard</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}">📤 Upload</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}">⚙️ Manage Gaps</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">📈 Analytics</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">🏘️ Villages</a></li>
+    </ul>
+    
+    <div class="nav-user">
+      <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+      <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="container">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Overview of PM-AJAY gaps and progress</p>
+    </div>
+
+<div class="stats-grid">Dashboard</a>
+  <a href="{% url 'villages_list' %}" class="nav-item">Villages</a>
+  <a href="{% url 'logout' %}" class="nav-item">Logout</a>
+</div>
+
+<div class="main-content">
+  <div class="page-header">
+    <h1>Infrastructure Gaps Dashboard</h1>
+    <p>Monitor and manage infrastructure issues across villages</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      </div>
+      <div class="stat-label">Total Gaps</div>
+      <div class="stat-value">{{ gaps|length }}</div>
+    </div>
+    
+    <div class="stat-card open">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="stat-label">Open Issues</div>
+      <div class="stat-value">{{ open_count }}</div>
+    </div>
+    
+    <div class="stat-card progress">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </div>
+      <div class="stat-label">In Progress</div>
+      <div class="stat-value">{{ in_progress_count }}</div>
+    </div>
+    
+    <div class="stat-card resolved">
+      <div class="stat-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="stat-label">Resolved</div>
+      <div class="stat-value">{{ resolved_count }}</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">Gaps by Type</h3>
+        <!-- Debug info -->
+        <small style="color: #666;">Total items: {% for item in gaps_by_type %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}</small>
+      </div>
+      <div class="bar-chart">
+        {% for item in gaps_by_type %}
+        <div class="bar-item">
+          <div class="bar-label">{{ item.type_name|title }}</div>
+          <div class="bar-container">
+            <div class="bar-fill {{ item.type_name|lower }}" style="width: {{ item.percentage }}%; min-width: 20px;">{{ item.count }}</div>
+          </div>
+          <div class="tooltip">
+            <div class="tooltip-title">{{ item.type_name|title }} Infrastructure</div>
+            <div class="tooltip-text">{{ item.count }} gap{{ item.count|pluralize }} identified ({{ item.percentage }}% of total)</div>
+          </div>
+        </div>
+        {% empty %}
+        <p style="color: red;">No gap data available</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">Severity Distribution</h3>
+        <!-- Debug info -->
+        <small style="color: #666;">Total items: {% for item in severity_distribution %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}</small>
+      </div>
+      <div class="bar-chart">
+        {% for item in severity_distribution %}
+        <div class="bar-item">
+          <div class="bar-label">{{ item.severity_name|title }}</div>
+          <div class="bar-container">
+            <div class="bar-fill" style="width: {{ item.percentage }}%; min-width: 20px; background: linear-gradient(90deg, {% if item.severity_name == 'high' %}#ef4444 0%, #dc2626 100%{% elif item.severity_name == 'medium' %}#f59e0b 0%, #d97706 100%{% else %}#3b82f6 0%, #2563eb 100%{% endif %});">{{ item.count }}</div>
+          </div>
+          <div class="tooltip">
+            <div class="tooltip-title">{{ item.severity_name|title }} Severity</div>
+            <div class="tooltip-text">{{ item.count }} gap{{ item.count|pluralize }} require{% if item.count == 1 %}s{% endif %} {{ item.severity_name }} priority attention</div>
+          </div>
+        </div>
+        {% empty %}
+        <p style="color: red;">No severity data available</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="gaps-table">
+    <div class="table-header">
+      <h3 class="table-title">All Infrastructure Gaps</h3>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Village</th>
+          <th>Gap Type</th>
+          <th>Description</th>
+          <th>Severity</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for gap in gaps %}
+        <tr>
+          <td>
+            <a href="javascript:void(0);" 
+               class="village-link" 
+               onclick="showVillageDetails('{{ gap.village.id }}', '{{ gap.village.name|escapejs }}')">
+              {{ gap.village.name }}
+            </a>
+          </td>
+          <td><strong>{{ gap.gap_type|title }}</strong></td>
+          <td>{{ gap.description|truncatewords:15 }}</td>
+          <td><span class="severity-badge {{ gap.severity }}">{{ gap.severity }}</span></td>
+          <td><span class="badge {{ gap.status }}">{{ gap.get_status_display }}</span></td>
+          <td>
+            <form method="post" action="{% url 'update_gap_status' gap.id %}" class="status-form">
+              {% csrf_token %}
+              <select name="status" class="status-select" onchange="this.form.submit()">
+                <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
+                <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
+                <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
+              </select>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Village Details Modal -->
+<div id="villageModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalVillageName"></h2>
+        <div class="subtitle" id="modalVillageStats"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalContent">
+      <!-- Dynamic content will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+// Village data for modal
+const villageProjects = {
+  {% for village in all_villages %}
+  '{{ village.id }}': [
+    {% for gap in village.gap_set.all %}
+    {
+      gap_type: '{{ gap.gap_type|escapejs }}',
+      description: '{{ gap.description|escapejs }}',
+      severity: '{{ gap.severity|escapejs }}',
+      status: '{{ gap.status|escapejs }}',
+      status_display: '{{ gap.get_status_display|escapejs }}',
+      recommendations: '{{ gap.recommendations|escapejs }}',
+      start_date: '{{ gap.start_date|date:"d M Y"|default:"Not set" }}',
+      expected_completion: '{{ gap.expected_completion|date:"d M Y"|default:"Not set" }}',
+      actual_completion: '{{ gap.actual_completion|date:"d M Y"|default:"Not completed" }}',
+      budget_allocated: '{{ gap.budget_allocated|floatformat:0|default:"Not allocated" }}',
+      budget_spent: '{{ gap.budget_spent|floatformat:0|default:"0" }}',
+      budget_remaining: '{{ gap.budget_remaining|floatformat:0|default:"0" }}',
+      created_at: '{{ gap.created_at|date:"d M Y" }}',
+      is_overdue: {{ gap.is_overdue|yesno:"true,false" }}
+    },
+    {% endfor %}
+  ],
+  {% endfor %}
+};
+
+function showVillageDetails(villageId, villageName) {
+  const modal = document.getElementById('villageModal');
+  const modalContent = document.getElementById('modalContent');
+  const modalTitle = document.getElementById('modalVillageName');
+  const modalStats = document.getElementById('modalVillageStats');
+  
+  const projects = villageProjects[villageId] || [];
+  
+  modalTitle.textContent = '🏘️ ' + villageName;
+  modalStats.textContent = `${projects.length} total project${projects.length !== 1 ? 's' : ''} • Detailed Problem Analysis`;
+  
+  if (projects.length === 0) {
+    modalContent.innerHTML = `
+      <div style="text-align: center; padding: 4rem 2rem; color: #6b7280;">
+        <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;">📭</div>
+        <h3>No Projects Found</h3>
+        <p>This village currently has no recorded development gaps.</p>
+      </div>
+    `;
+  } else {
+    let html = '';
+    
+    projects.forEach((project, index) => {
+      const statusClass = project.status === 'resolved' ? 'resolved' : 
+                         project.status === 'in_progress' ? 'in_progress' : 'open';
+      const severityClass = project.severity;
+      
+      html += `
+        <div class="problem-card">
+          <div class="problem-header">
+            <h3 class="problem-title">
+              ⚠️ ${project.gap_type.charAt(0).toUpperCase() + project.gap_type.slice(1)} Development Gap
+            </h3>
+            <div class="problem-badges">
+              <span class="severity-badge ${severityClass}">${project.severity.toUpperCase()}</span>
+              <span class="badge ${statusClass}">${project.status_display}</span>
+            </div>
+          </div>
+          
+          <div class="problem-description">
+            <strong style="color: #3b82f6; display: block; margin-bottom: 0.5rem;">📋 Problem Description:</strong>
+            ${project.description}
+          </div>
+          
+          ${project.recommendations !== 'None' && project.recommendations !== '' ? `
+            <div class="problem-recommendations">
+              <h4>💡 Expert Recommendations</h4>
+              <p>${project.recommendations}</p>
+            </div>
+          ` : ''}
+          
+          <div class="problem-details">
+            <div class="detail-box">
+              <div class="detail-label">📅 Start Date</div>
+              <div class="detail-value">${project.start_date}</div>
+            </div>
+            
+            <div class="detail-box">
+              <div class="detail-label">⏰ Expected Completion</div>
+              <div class="detail-value" ${project.is_overdue ? 'style="color: #dc2626;"' : ''}>
+                ${project.expected_completion}
+                ${project.is_overdue ? ' ⚠️' : ''}
+              </div>
+            </div>
+            
+            ${project.status === 'resolved' ? `
+              <div class="detail-box">
+                <div class="detail-label">✅ Completed On</div>
+                <div class="detail-value" style="color: #10b981;">${project.actual_completion}</div>
+              </div>
+            ` : ''}
+            
+            <div class="detail-box">
+              <div class="detail-label">💰 Budget Allocated</div>
+              <div class="detail-value" style="color: #3b82f6;">
+                ${project.budget_allocated !== 'Not allocated' ? '₹' + project.budget_allocated : project.budget_allocated}
+              </div>
+            </div>
+            
+            <div class="detail-box">
+              <div class="detail-label">💸 Budget Spent</div>
+              <div class="detail-value" style="color: #f59e0b;">₹${project.budget_spent}</div>
+            </div>
+            
+            <div class="detail-box">
+              <div class="detail-label">💵 Budget Remaining</div>
+              <div class="detail-value" style="color: #10b981;">₹${project.budget_remaining}</div>
+            </div>
+            
+            <div class="detail-box">
+              <div class="detail-label">📆 Reported On</div>
+              <div class="detail-value">${project.created_at}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    modalContent.innerHTML = html;
+  }
+  
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  const modal = document.getElementById('villageModal');
+  modal.style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('villageModal');
+  if (event.target == modal) {
+    closeModal();
+  }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeModal();
+  }
+});
+</script>
+
+</body>
+</html>

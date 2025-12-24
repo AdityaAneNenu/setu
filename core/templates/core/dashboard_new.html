@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - PM AJAY</title>
+  <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <div class="nav-logo">PM</div>
+      <div class="nav-brand-text">
+        <h1>PM-AJAY</h1>
+        <p>Adarsh Gram</p>
+      </div>
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    
+    <ul class="nav-menu" id="navMenu">
+      <li class="nav-item"><a href="{% url 'dashboard' %}" class="active">📊 Dashboard</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}">📤 Upload</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}">⚙️ Manage Gaps</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">📈 Analytics</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">🏘️ Villages</a></li>
+    </ul>
+    
+    <div class="nav-user">
+      <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+      <a href="{% url 'logout' %}" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="container">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Overview of PM-AJAY gaps and progress across villages</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #818cf8);">📊</div>
+        </div>
+        <div class="stat-label">Total Gaps</div>
+        <div class="stat-value">{{ total_gaps }}</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Across all villages</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #34d399);">⏳</div>
+        </div>
+        <div class="stat-label">Pending</div>
+        <div class="stat-value">{{ pending_gaps }}</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Awaiting action</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">🔄</div>
+        </div>
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value">{{ in_progress_gaps }}</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Currently working</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #22c55e, #4ade80);">✅</div>
+        </div>
+        <div class="stat-label">Resolved</div>
+        <div class="stat-value">{{ resolved_gaps }}</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem;">Successfully completed</p>
+      </div>
+    </div>
+
+    <!-- Recent Gaps -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Gaps</h2>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Village</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gap in recent_gaps %}
+            <tr>
+              <td><strong>#{{ gap.id }}</strong></td>
+              <td>{{ gap.village.name }}</td>
+              <td>{{ gap.gap_type|title }}</td>
+              <td>
+                <span class="badge 
+                  {% if gap.severity == 'high' %}badge-danger
+                  {% elif gap.severity == 'medium' %}badge-warning
+                  {% else %}badge-info{% endif %}">
+                  {{ gap.get_severity_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge
+                  {% if gap.status == 'resolved' %}badge-success
+                  {% elif gap.status == 'in_progress' %}badge-warning
+                  {% else %}badge-info{% endif %}">
+                  {{ gap.get_status_display }}
+                </span>
+              </td>
+              <td>{{ gap.created_at|date:"M d, Y" }}</td>
+              <td>
+                <a href="{% url 'manage_gaps' %}" class="btn btn-secondary" style="padding: 0.375rem 0.75rem; font-size: 0.8125rem;">View</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                No gaps found. Upload data to get started.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Villages Overview -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Villages</h2>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Village Name</th>
+              <th>Total Gaps</th>
+              <th>Pending</th>
+              <th>In Progress</th>
+              <th>Resolved</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for village in villages %}
+            <tr>
+              <td><strong>{{ village.name }}</strong></td>
+              <td>{{ village.total_gaps }}</td>
+              <td>{{ village.pending_gaps }}</td>
+              <td>{{ village.in_progress_gaps }}</td>
+              <td>{{ village.resolved_gaps }}</td>
+              <td>
+                <a href="{% url 'village_detail' village.id %}" class="btn btn-secondary" style="padding: 0.375rem 0.75rem; font-size: 0.8125rem;">Details</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                No villages found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleMenu() {
+  document.getElementById('navMenu').classList.toggle('active');
+}
+</script>
+
+</body>
+</html>

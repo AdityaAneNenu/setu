@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SETU</title>
+  <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <div class="nav-logo">S</div>
+      <div class="nav-brand-text">
+        <h1>SETU</h1>
+        <p>Village Development Tracker</p>
+      </div>
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+      </svg>
+    </button>
+    
+    <ul class="nav-menu" id="navMenu">
+      <li class="nav-item"><a href="{% url 'dashboard' %}" class="active">Dashboard</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}">Upload</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}">Manage Gaps</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">Analytics</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">Villages</a></li>
+    </ul>
+    
+    <div class="nav-user">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+      <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="container">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Overview of village development gaps and progress tracking</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Gaps</div>
+        <div class="stat-value">{{ total_gaps }}</div>
+        <p class="stat-subtitle">Across all villages</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value">{{ pending_gaps }}</div>
+        <p class="stat-subtitle">Awaiting action</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value">{{ in_progress_gaps }}</div>
+        <p class="stat-subtitle">Currently working</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Resolved</div>
+        <div class="stat-value">{{ resolved_gaps }}</div>
+        <p class="stat-subtitle">Successfully completed</p>
+      </div>
+    </div>
+
+    <!-- Recent Gaps -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Gaps</h2>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Village</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gap in recent_gaps %}
+            <tr>
+              <td><strong>#{{ gap.id }}</strong></td>
+              <td>{{ gap.village.name }}</td>
+              <td>{{ gap.gap_type|title }}</td>
+              <td>
+                <span class="badge 
+                  {% if gap.severity == 'high' %}badge-danger
+                  {% elif gap.severity == 'medium' %}badge-warning
+                  {% else %}badge-info{% endif %}">
+                  {{ gap.get_severity_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge
+                  {% if gap.status == 'resolved' %}badge-success
+                  {% elif gap.status == 'in_progress' %}badge-warning
+                  {% else %}badge-info{% endif %}">
+                  {{ gap.get_status_display }}
+                </span>
+              </td>
+              <td>{{ gap.created_at|date:"M d, Y" }}</td>
+              <td>
+                <a href="{% url 'manage_gaps' %}" class="btn btn-secondary">View</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="empty-state">
+                No gaps found. Upload data to get started.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Villages Overview -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Villages</h2>
+      </div>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Village Name</th>
+              <th>Total Gaps</th>
+              <th>Pending</th>
+              <th>In Progress</th>
+              <th>Resolved</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for village in villages %}
+            <tr>
+              <td><strong>{{ village.name }}</strong></td>
+              <td>{{ village.total_gaps }}</td>
+              <td>{{ village.pending_gaps }}</td>
+              <td>{{ village.in_progress_gaps }}</td>
+              <td>{{ village.resolved_gaps }}</td>
+              <td>
+                <a href="{% url 'village_detail' village.id %}" class="btn btn-secondary">Details</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="empty-state">
+                No villages found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleMenu() {
+  document.getElementById('navMenu').classList.toggle('active');
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  
+  if (body.classList.contains('light-mode')) {
+    body.classList.remove('light-mode');
+    localStorage.setItem('theme', 'dark');
+    sunIcon.style.display = 'block';
+    moonIcon.style.display = 'none';
+  } else {
+    body.classList.add('light-mode');
+    localStorage.setItem('theme', 'light');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+}
+
+// Check saved theme on load
+document.addEventListener('DOMContentLoaded', function() {
+  const savedTheme = localStorage.getItem('theme');
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    if (sunIcon) sunIcon.style.display = 'none';
+    if (moonIcon) moonIcon.style.display = 'block';
+  }
+});
+</script>
+
+</body>
+</html>

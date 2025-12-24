@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ village.name }} - Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #3b82f6;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      transition: all 0.2s ease;
+    }
+    
+    .back-link:hover {
+      gap: 12px;
+    }
+    
+    .page-header {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .village-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .village-icon {
+      width: 64px;
+      height: 64px;
+      background: #1e293b;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .village-icon svg {
+      width: 36px;
+      height: 36px;
+      stroke: white;
+      stroke-width: 2;
+      fill: none;
+    }
+    
+    .village-title h1 {
+      color: #1e293b;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .village-title p {
+      color: #64748b;
+      font-size: 16px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    
+    .stat-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      color: #1e293b;
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    
+    .stat-label {
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .stat-card.total {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .stat-card.total .stat-value,
+    .stat-card.total .stat-label {
+      color: white;
+    }
+    
+    .stat-card.open {
+      background: #fee2e2;
+    }
+    
+    .stat-card.open .stat-value {
+      color: #dc2626;
+    }
+    
+    .stat-card.progress {
+      background: #fef3c7;
+    }
+    
+    .stat-card.progress .stat-value {
+      color: #d97706;
+    }
+    
+    .stat-card.resolved {
+      background: #d1fae5;
+    }
+    
+    .stat-card.resolved .stat-value {
+      color: #059669;
+    }
+    
+    .section {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .section-header h2 {
+      color: #1e293b;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    
+    .gap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .gap-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+    
+    .gap-item:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .gap-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+      gap: 16px;
+    }
+    
+    .gap-type {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #f1f5f9;
+      color: #475569;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .gap-badges {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    
+    .badge {
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .badge.severity-high {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .badge.severity-medium {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    
+    .badge.severity-low {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+    
+    .badge.status-open {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .badge.status-in_progress {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    
+    .badge.status-resolved {
+      background: #d1fae5;
+      color: #059669;
+    }
+    
+    .gap-description {
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    
+    .gap-recommendations {
+      background: #f8fafc;
+      border-left: 3px solid #3b82f6;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-top: 12px;
+    }
+    
+    .gap-recommendations strong {
+      color: #1e293b;
+      font-size: 13px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+    }
+    
+    .gap-recommendations p {
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+    
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #334155;
+    }
+    
+    .empty-state p {
+      font-size: 15px;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 16px;
+      }
+      
+      .page-header,
+      .section {
+        padding: 24px 20px;
+      }
+      
+      .village-title {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .village-title h1 {
+        font-size: 26px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .gap-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .gap-badges {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="{% url 'villages_list' %}" class="back-link">← Back to Villages</a>
+  
+  <div class="page-header">
+    <div class="village-title">
+      <div class="village-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      </div>
+      <div>
+        <h1>{{ village.name }}</h1>
+        <p>Infrastructure Gap Details</p>
+      </div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-value">{{ total_gaps }}</div>
+        <div class="stat-label">Total Gaps</div>
+      </div>
+      <div class="stat-card open">
+        <div class="stat-value">{{ open_gaps }}</div>
+        <div class="stat-label">Open</div>
+      </div>
+      <div class="stat-card progress">
+        <div class="stat-value">{{ in_progress_gaps }}</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+      <div class="stat-card resolved">
+        <div class="stat-value">{{ resolved_gaps }}</div>
+        <div class="stat-label">Resolved</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-header">
+      <h2>Gap Details</h2>
+    </div>
+    
+    {% if gaps %}
+    <div class="gap-list">
+      {% for gap in gaps %}
+      <div class="gap-item">
+        <div class="gap-header">
+          <span class="gap-type">{{ gap.gap_type }}</span>
+          <div class="gap-badges">
+            <span class="badge severity-{{ gap.severity }}">{{ gap.severity }}</span>
+            <span class="badge status-{{ gap.status }}">{{ gap.get_status_display }}</span>
+          </div>
+        </div>
+        
+        <div class="gap-description">{{ gap.description }}</div>
+        
+        {% if gap.recommendations %}
+        <div class="gap-recommendations">
+          <strong>💡 Recommendations:</strong>
+          <p>{{ gap.recommendations }}</p>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">✓</div>
+      <h3>No Gaps Found</h3>
+      <p>This village currently has no infrastructure gaps recorded.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+</body>
+</html>

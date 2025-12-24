@@ -1,0 +1,1454 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Form - SETU</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+  <style>
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+    
+    .form-container {
+      background: var(--bg-card);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+    }
+    
+    h2 {
+      color: var(--text-primary);
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      letter-spacing: -0.5px;
+    }
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .form-group label {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    select {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b5cf6' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+    
+    select:focus {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    input[type="date"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      outline: none;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    
+    .file-upload-wrapper {
+      position: relative;
+    }
+    
+    input[type="file"] {
+      padding: 12px 16px;
+      font-size: 15px;
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+    
+    input[type="file"]:hover {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.05);
+    }
+    
+    /* Submission Type Selector */
+    .submission-type-selector {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .submission-option {
+      flex: 1;
+      padding: 24px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--bg-secondary);
+    }
+
+    .submission-option:hover {
+      border-color: var(--accent-purple);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    }
+
+    .submission-option.active {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.1);
+    }
+
+    .submission-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .submission-option h3 {
+      margin: 8px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .submission-option p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Audio Recording Styles */
+    .audio-recorder {
+      border: 2px dashed var(--border-color);
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      background: var(--bg-secondary);
+      transition: all 0.3s ease;
+    }
+
+    .audio-recorder:hover {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.05);
+    }
+
+    .audio-recorder.recording {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .recorder-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .recording .recorder-icon {
+      color: #ef4444;
+      animation: bounce 1s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .recorder-controls {
+      margin: 16px 0;
+    }
+
+    .record-btn {
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .record-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .stop-btn {
+      background: #ef4444 !important;
+    }
+
+    .stop-btn:hover {
+      background: #dc2626 !important;
+    }
+
+    .btn-icon {
+      font-size: 14px;
+    }
+
+    .audio-status {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .recording .audio-status {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    .file-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .file-input:hover {
+      border-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.05);
+    }
+
+    .image-preview-container {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .image-preview-container.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .preview-header h3 {
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .remove-image {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: none;
+      font-weight: 500;
+    }
+    
+    .remove-image:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    
+    .remove-image:active {
+      transform: translateY(0);
+    }
+    
+    .image-preview {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: var(--bg-card);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .file-info {
+      margin-top: 12px;
+      padding: 10px;
+      background: var(--bg-card);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .file-info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    
+    .file-info-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    
+    button[type="submit"] {
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+      align-self: flex-start;
+    }
+    
+    button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+    }
+    
+    button[type="submit"]:active {
+      transform: translateY(0);
+    }
+    
+    button[type="submit"]:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: slideUp 0.4s ease;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-content.loading {
+      text-align: center;
+      padding: 60px 40px;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .modal-content.loading h3 {
+      color: #1e293b;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .modal-content.loading p {
+      color: #64748b;
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+    
+    .loading-steps {
+      text-align: left;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    
+    .loading-steps .step {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      color: #94a3b8;
+      font-size: 14px;
+      opacity: 0.6;
+    }
+    
+    .loading-steps .step.active {
+      color: #3b82f6;
+      font-weight: 600;
+      opacity: 1;
+    }
+    
+    .modal-header {
+      text-align: center;
+      padding: 40px 40px 24px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .icon-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 20px;
+      animation: scaleIn 0.5s ease;
+    }
+    
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+    
+    .icon-circle.success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    
+    .icon-circle.error {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+    
+    .modal-header h2 {
+      color: #1e293b;
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .modal-body {
+      padding: 32px 40px;
+    }
+    
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .result-header h3 {
+      color: #1e293b;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .result-item {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+    
+    .result-item.full-width {
+      flex-direction: column;
+    }
+    
+    .result-label {
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 120px;
+    }
+    
+    .result-value {
+      color: #1e293b;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 6px;
+      text-transform: capitalize;
+    }
+    
+    .result-value.badge-water {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .result-value.badge-road {
+      background: #f3e8ff;
+      color: #6b21a8;
+    }
+    
+    .result-value.badge-sanitation {
+      background: #fce7f3;
+      color: #be185d;
+    }
+    
+    .result-value.badge-electricity {
+      background: #fef3c7;
+      color: #b45309;
+    }
+    
+    .result-value.badge-education {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    
+    .result-value.badge-health {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    
+    .result-value.badge-unknown {
+      background: #f1f5f9;
+      color: #475569;
+    }
+    
+    .result-value.severity-high {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .result-value.severity-medium {
+      background: #fef3c7;
+      color: #d97706;
+    }
+    
+    .result-value.severity-low {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+    
+    .result-description {
+      color: #334155;
+      font-size: 15px;
+      line-height: 1.7;
+      margin-top: 8px;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border-left: 3px solid #cbd5e1;
+    }
+    
+    .result-description.extracted {
+      background: #fffbeb;
+      border-left-color: #f59e0b;
+      font-style: italic;
+    }
+    
+    .result-description.translated {
+      background: #f0fdf4;
+      border-left-color: #10b981;
+      font-weight: 500;
+    }
+    
+    .result-value.language {
+      background: #ede9fe;
+      color: #7c3aed;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .result-item.recommendations .result-description {
+      background: #f0f9ff;
+      border-left-color: #3b82f6;
+    }
+    
+    .error-message {
+      color: #dc2626;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 16px;
+      background: #fee2e2;
+      border-radius: 8px;
+      border-left: 3px solid #dc2626;
+    }
+    
+    .modal-footer {
+      padding: 24px 40px 40px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 2px solid #e2e8f0;
+    }
+    
+    .btn-secondary:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+    
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 220px;
+      }
+      
+      .main-content {
+        margin-left: 220px;
+        padding: 32px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.active {
+        transform: translateX(0);
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+      }
+      
+      .form-container {
+        padding: 28px 24px;
+      }
+      
+      h2 {
+        font-size: 22px;
+        margin-bottom: 24px;
+      }
+      
+      .overlay.active {
+        display: block;
+      }
+      
+      button[type="submit"] {
+        width: 100%;
+        align-self: stretch;
+      }
+      
+      .image-preview {
+        max-height: 300px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 95%;
+        max-height: 85vh;
+      }
+      
+      .modal-header,
+      .modal-body,
+      .modal-footer {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      
+      .modal-header {
+        padding-top: 32px;
+      }
+      
+      .modal-footer {
+        flex-direction: column;
+        padding-bottom: 32px;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+      
+      .result-item {
+        flex-direction: column;
+      }
+      
+      .result-label {
+        min-width: auto;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .main-content {
+        padding: 16px;
+      }
+      
+      .form-container {
+        padding: 24px 20px;
+        border-radius: 8px;
+      }
+      
+      h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+      }
+      
+      select,
+      input[type="file"] {
+        font-size: 14px;
+        padding: 10px 14px;
+      }
+      
+      button[type="submit"] {
+        font-size: 15px;
+        padding: 12px 20px;
+      }
+      
+      .preview-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      
+      .remove-image {
+        width: 100%;
+      }
+      
+      .image-preview {
+        max-height: 250px;
+      }
+      
+      .modal-content.loading {
+        padding: 40px 24px;
+      }
+      
+      .modal-header h2 {
+        font-size: 22px;
+      }
+      
+      .icon-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+      }
+      
+      .result-header h3 {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <div class="nav-logo">S</div>
+      <div class="nav-brand-text">
+        <h1>SETU</h1>
+        <p>Village Development Tracker</p>
+      </div>
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+      </svg>
+    </button>
+    
+    <ul class="nav-menu" id="navMenu">
+      <li class="nav-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}" class="active">Upload</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}">Manage Gaps</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">Analytics</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">Villages</a></li>
+    </ul>
+    
+    <div class="nav-user">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+      <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="container">
+  
+  <div class="form-container">
+    <h2>Upload Form</h2>
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="village">Select Village</label>
+        <select name="village" id="village">
+          {% for v in villages %}
+            <option value="{{v.id}}">{{v.name}}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Submission Type Selection -->
+      <div class="form-group">
+        <label>Submission Method</label>
+        <div class="submission-type-selector">
+          <div class="submission-option active" data-type="image">
+            <div class="submission-icon">📄</div>
+            <h3>Paper Document</h3>
+            <p>For literate villagers who wrote complaints</p>
+          </div>
+          <div class="submission-option" data-type="audio">
+            <div class="submission-icon">🎤</div>
+            <h3>Audio Recording</h3>
+            <p>For agents collecting responses from illiterate villagers</p>
+          </div>
+        </div>
+        <input type="hidden" name="submission_type" id="submission_type" value="image">
+      </div>
+
+      <!-- Image Submission Section -->
+      <div class="form-group" id="imageSection">
+        <label for="image">Choose Image</label>
+        <div class="file-upload-wrapper">
+          <input type="file" name="image" id="image" accept="image/*">
+          
+          <div class="image-preview-container" id="previewContainer">
+            <div class="preview-header">
+              <h3>Image Preview</h3>
+              <button type="button" class="remove-image" id="removeImage">Remove</button>
+            </div>
+            <img id="imagePreview" class="image-preview" alt="Image preview">
+            <div class="file-info" id="fileInfo">
+              <div class="file-info-item">
+                <span class="file-info-label">File name:</span>
+                <span id="fileName"></span>
+              </div>
+              <div class="file-info-item">
+                <span class="file-info-label">File size:</span>
+                <span id="fileSize"></span>
+              </div>
+              <div class="file-info-item">
+                <span class="file-info-label">File type:</span>
+                <span id="fileType"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audio Submission Section -->
+      <div class="form-group" id="audioSection" style="display: none;">
+        <label>Audio Recording Options</label>
+        
+        <!-- Language Selection -->
+        <div class="form-group">
+          <label for="language_code">Language</label>
+          <select name="language_code" id="language_code">
+            <option value="hi">🇮🇳 Hindi (हिन्दी)</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="bn">🇧🇩 Bengali (বাংলা)</option>
+            <option value="te">🇮🇳 Telugu (తెలుగు)</option>
+            <option value="mr">🇮🇳 Marathi (मराठी)</option>
+            <option value="ta">🇮🇳 Tamil (தமிழ்)</option>
+            <option value="gu">🇮🇳 Gujarati (ગુજરાતી)</option>
+            <option value="kn">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+            <option value="or">🇮🇳 Odia (ଓଡ଼ିଆ)</option>
+            <option value="pa">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+          </select>
+        </div>
+
+        <!-- Audio Recording Interface -->
+        <div class="audio-recorder" id="audioRecorder">
+          <div class="recorder-icon" id="recorderIcon">🎤</div>
+          <div class="recorder-controls">
+            <button type="button" class="record-btn" id="recordBtn">
+              <span class="btn-icon">●</span> Start Recording
+            </button>
+            <button type="button" class="record-btn stop-btn" id="stopBtn" style="display: none;">
+              <span class="btn-icon">⏹</span> Stop Recording
+            </button>
+          </div>
+          <div class="audio-status" id="audioStatus">Click "Start Recording" to record villager's response</div>
+          <audio id="audioPlayback" controls style="display: none; margin-top: 16px; width: 100%;"></audio>
+          <input type="file" id="audio_file" name="audio_file" accept="audio/*" style="display: none;">
+        </div>
+
+        <!-- Alternative Audio Upload -->
+        <div class="form-group" style="margin-top: 20px;">
+          <label>Or Upload Audio File</label>
+          <input type="file" name="audio_file_upload" accept="audio/*" class="file-input">
+          <small>Supported formats: MP3, WAV, M4A</small>
+        </div>
+
+        <!-- Agent Information -->
+        <div class="form-group">
+          <label for="agent_name">Agent Name</label>
+          <input type="text" name="agent_name" id="agent_name" placeholder="Enter collecting agent name">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="start_date">Project Start Date</label>
+        <input type="date" name="start_date" id="start_date">
+      </div>
+
+      <div class="form-group">
+        <label for="expected_completion">Expected Completion Date</label>
+        <input type="date" name="expected_completion" id="expected_completion">
+      </div>
+
+      <div class="form-group">
+        <label for="latitude">Latitude (Optional)</label>
+        <input type="number" name="latitude" id="latitude" step="0.000001" placeholder="e.g., 28.7041">
+      </div>
+
+      <div class="form-group">
+        <label for="longitude">Longitude (Optional)</label>
+        <input type="number" name="longitude" id="longitude" step="0.000001" placeholder="e.g., 77.1025">
+      </div>
+
+      <button type="submit" id="submitBtn">Upload</button>
+    </form>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="modal">
+  <div class="modal-content loading">
+    <div class="spinner"></div>
+    <h3 id="loadingTitle">Processing Image...</h3>
+    <p id="loadingDescription">AI is analyzing the infrastructure gap. Please wait.</p>
+    <div class="loading-steps">
+      <div class="step active" id="step1">Uploading...</div>
+      <div class="step" id="step2">Analyzing...</div>
+      <div class="step" id="step3">Extracting...</div>
+      <div class="step" id="step4">Categorizing...</div>
+      <div class="step" id="step5">✅ Complete!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Results Modal -->
+{% if analysis_complete %}
+<div id="resultsModal" class="modal active">
+  <div class="modal-content results">
+    {% if error %}
+    <div class="modal-header error">
+      <div class="icon-circle error">⚠️</div>
+      <h2>Processing Error</h2>
+    </div>
+    <div class="modal-body">
+      <p class="error-message">{{ error }}</p>
+    </div>
+    <div class="modal-footer">
+      <a href="{% url 'upload_form' %}" class="btn btn-secondary">Try Again</a>
+      <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+    {% else %}
+    <div class="modal-header success">
+      <div class="icon-circle success">✓</div>
+      <h2>Analysis Complete!</h2>
+    </div>
+    <div class="modal-body">
+      <div class="result-section">
+        <div class="result-header">
+          <h3>📍 Village: {{ village_name }}</h3>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Gap Type:</span>
+          <span class="result-value badge-{{ gap_data.gap_type|lower }}">{{ gap_data.gap_type }}</span>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Severity:</span>
+          <span class="result-value severity-{{ gap_data.severity|lower }}">{{ gap_data.severity }}</span>
+        </div>
+        
+        <div class="result-item full-width">
+          <span class="result-label">Description:</span>
+          <p class="result-description">{{ gap_data.description }}</p>
+        </div>
+        
+        {% if submission_type == 'audio' %}
+        {% if gap_data.language_used %}
+        <div class="result-item">
+          <span class="result-label">Language:</span>
+          <span class="result-value language">{{ gap_data.language_used }}</span>
+        </div>
+        {% endif %}
+        
+        {% if gap_data.extracted_text %}
+        <div class="result-item full-width">
+          <span class="result-label">Original Transcription:</span>
+          <p class="result-description extracted">{{ gap_data.extracted_text }}</p>
+        </div>
+        {% endif %}
+        
+        {% if gap_data.translated_text and gap_data.translated_text != gap_data.extracted_text %}
+        <div class="result-item full-width">
+          <span class="result-label">English Translation:</span>
+          <p class="result-description translated">{{ gap_data.translated_text }}</p>
+        </div>
+        {% endif %}
+        {% else %}
+        {% if gap_data.extracted_text %}
+        <div class="result-item full-width">
+          <span class="result-label">Extracted Text:</span>
+          <p class="result-description extracted">{{ gap_data.extracted_text }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
+        
+        <div class="result-item full-width recommendations">
+          <span class="result-label">💡 Recommendations:</span>
+          <p class="result-description">{{ gap_data.recommendations }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a href="{% url 'upload_form' %}" class="btn btn-secondary">Upload Another</a>
+      <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<script>
+  // DOM elements
+  const fileInput = document.getElementById('image');
+  const previewContainer = document.getElementById('previewContainer');
+  const imagePreview = document.getElementById('imagePreview');
+  const removeButton = document.getElementById('removeImage');
+  const fileName = document.getElementById('fileName');
+  const fileSize = document.getElementById('fileSize');
+  const fileType = document.getElementById('fileType');
+  const uploadForm = document.getElementById('uploadForm');
+  const loadingModal = document.getElementById('loadingModal');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // New elements for audio functionality
+  const submissionOptions = document.querySelectorAll('.submission-option');
+  const submissionTypeInput = document.getElementById('submission_type');
+  const imageSection = document.getElementById('imageSection');
+  const audioSection = document.getElementById('audioSection');
+  const recordBtn = document.getElementById('recordBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const audioStatus = document.getElementById('audioStatus');
+  const audioPlayback = document.getElementById('audioPlayback');
+  const audioRecorder = document.getElementById('audioRecorder');
+  const languageSelect = document.getElementById('language_code');
+
+  // Audio recording variables
+  let mediaRecorder;
+  let recordedBlob;
+
+  // Submission type switching
+  submissionOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      // Remove active class from all options
+      submissionOptions.forEach(opt => opt.classList.remove('active'));
+      // Add active class to clicked option
+      this.classList.add('active');
+      
+      const type = this.dataset.type;
+      submissionTypeInput.value = type;
+      
+      // Show/hide sections based on selection
+      if (type === 'image') {
+        imageSection.style.display = 'block';
+        audioSection.style.display = 'none';
+        submitBtn.innerHTML = '<span class="btn-icon">📄</span> Process Document';
+      } else {
+        imageSection.style.display = 'none';
+        audioSection.style.display = 'block';
+        submitBtn.innerHTML = '<span class="btn-icon">🎤</span> Process Audio';
+      }
+    });
+  });
+
+  // Image handling (existing functionality)
+  fileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    
+    if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        fileInput.value = '';
+        return;
+      }
+      
+      // Create FileReader to read the image
+      const reader = new FileReader();
+      
+      reader.onload = function(event) {
+        imagePreview.src = event.target.result;
+        previewContainer.classList.add('active');
+        
+        // Display file information
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileType.textContent = file.type;
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
+
+  removeButton.addEventListener('click', function() {
+    fileInput.value = '';
+    imagePreview.src = '';
+    previewContainer.classList.remove('active');
+  });
+
+  // Audio recording functionality
+  recordBtn.addEventListener('click', startRecording);
+  stopBtn.addEventListener('click', stopRecording);
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(chunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(recordedBlob);
+        audioPlayback.src = audioUrl;
+        audioPlayback.style.display = 'block';
+        
+        // Create a file input with the recorded audio
+        const file = new File([recordedBlob], 'recorded_complaint.wav', { type: 'audio/wav' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('audio_file').files = dataTransfer.files;
+        
+        const selectedLang = languageSelect.options[languageSelect.selectedIndex].text;
+        audioStatus.textContent = `Recording completed in ${selectedLang}. Ready to submit for AI transcription.`;
+      };
+
+      mediaRecorder.start();
+      recordBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-flex';
+      audioRecorder.classList.add('recording');
+      
+      const selectedLang = languageSelect.options[languageSelect.selectedIndex].text;
+      audioStatus.textContent = `Recording in progress... Speak clearly in ${selectedLang}.`;
+      
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      audioStatus.textContent = 'Error: Could not access microphone. Please check permissions.';
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    
+    recordBtn.style.display = 'inline-flex';
+    stopBtn.style.display = 'none';
+    audioRecorder.classList.remove('recording');
+  }
+
+  // Language selection feedback
+  languageSelect.addEventListener('change', function() {
+    const selectedLang = this.options[this.selectedIndex].text;
+    audioStatus.textContent = `Ready to record in ${selectedLang}`;
+  });
+
+  // Form submission with enhanced validation
+  uploadForm.addEventListener('submit', function(e) {
+    const submissionType = submissionTypeInput.value;
+    
+    if (submissionType === 'image') {
+      const imageFile = fileInput.files[0];
+      if (!imageFile) {
+        e.preventDefault();
+        alert('Please select an image to upload');
+        return;
+      }
+    } else if (submissionType === 'audio') {
+      const hasRecordedAudio = recordedBlob !== undefined;
+      const hasUploadedAudio = document.querySelector('input[name="audio_file_upload"]').files.length > 0;
+      
+      if (!hasRecordedAudio && !hasUploadedAudio) {
+        e.preventDefault();
+        alert('Please record audio or upload an audio file');
+        return;
+      }
+
+      // Ensure agent name is provided for audio submissions
+      const agentName = document.getElementById('agent_name').value.trim();
+      if (!agentName) {
+        e.preventDefault();
+        alert('Please enter the agent name for audio submissions');
+        return;
+      }
+    }
+    
+    // Show loading modal with appropriate content
+    const loadingTitle = document.getElementById('loadingTitle');
+    const loadingDescription = document.getElementById('loadingDescription');
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+    const step4 = document.getElementById('step4');
+    
+    if (submissionType === 'audio') {
+      loadingTitle.textContent = 'Transcribing Audio Complaint';
+      loadingDescription.textContent = 'AI is transcribing and translating your audio. Please wait...';
+      step1.innerHTML = '🎤 Processing audio...';
+      step2.innerHTML = '📝 Transcribing speech...';
+      step3.innerHTML = '🌐 Translating to English...';
+      step4.innerHTML = '🎯 Categorizing complaint...';
+      submitBtn.innerHTML = '<span class="btn-icon">🎤</span> Transcribing Audio...';
+    } else {
+      loadingTitle.textContent = 'Processing Document';
+      loadingDescription.textContent = 'AI is analyzing the infrastructure gap. Please wait...';
+      step1.innerHTML = 'Uploading image...';
+      step2.innerHTML = 'Analyzing content...';
+      step3.innerHTML = 'Extracting text...';
+      step4.innerHTML = 'Categorizing issues...';
+      submitBtn.innerHTML = '<span class="btn-icon"></span> Processing Document...';
+    }
+    
+    loadingModal.classList.add('active');
+    submitBtn.disabled = true;
+  });
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  // Auto-complete agent names
+  const commonAgents = [
+    'Agent Rajiv Kumar',
+    'Agent Sunita Devi', 
+    'Agent Mohammad Khan',
+    'Agent Priya Patel'
+  ];
+
+  const agentNameInput = document.getElementById('agent_name');
+  agentNameInput.addEventListener('input', function() {
+    const value = this.value.toLowerCase();
+    const matches = commonAgents.filter(agent => 
+      agent.toLowerCase().includes(value)
+    );
+    
+    if (matches.length > 0 && value.length > 2) {
+      this.style.borderColor = '#3b82f6';
+    }
+  });
+</script>
+
+<style>
+  @media (max-width: 768px) {
+    .main-content > .menu-toggle {
+      display: block !important;
+    }
+  }
+</style>
+
+  </div>
+</div>
+
+<script>
+function toggleMenu() {
+  document.getElementById('navMenu').classList.toggle('active');
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  
+  if (body.classList.contains('light-mode')) {
+    body.classList.remove('light-mode');
+    localStorage.setItem('theme', 'dark');
+    sunIcon.style.display = 'block';
+    moonIcon.style.display = 'none';
+  } else {
+    body.classList.add('light-mode');
+    localStorage.setItem('theme', 'light');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedTheme = localStorage.getItem('theme');
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    if (sunIcon) sunIcon.style.display = 'none';
+    if (moonIcon) moonIcon.style.display = 'block';
+  }
+});
+</script>
+
+</body>
+</html>

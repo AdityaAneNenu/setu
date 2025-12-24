@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Complaint - PM-AJAY</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #333333;
+            --accent-color: #666666;
+            --text-color: #ffffff;
+            --bg-color: #000000;
+            --card-bg: #1a1a1a;
+            --border-color: #333333;
+        }
+        
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .form-control, .form-select {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: var(--card-bg);
+            border-color: var(--accent-color);
+            color: var(--text-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 102, 102, 0.25);
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--border-color);
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            border-color: var(--accent-color);
+        }
+        
+        .audio-recorder {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .recording {
+            border-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+        
+        .feature-highlight {
+            background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-color) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 0.5rem 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .feature-highlight h5 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-highlight p {
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        
+        .audio-recorder {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            margin: 1rem 0;
+            transition: all 0.3s ease;
+        }
+        
+        .audio-recorder:hover {
+            border-color: var(--accent-color);
+        }
+        
+        .recording {
+            border-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .language-flag {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        /* Equal height cards */
+        .h-100 {
+            height: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .feature-highlight {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'workflow_dashboard' %}">
+                <i class="fas fa-clipboard-list me-2"></i>
+                PM-AJAY Workflow
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'workflow_dashboard' %}">
+                    <i class="fas fa-dashboard me-1"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Submit New Complaint
+                        </h4>
+                        <small class="text-muted">For Post Office Staff & Survey Agents</small>
+                    </div>
+                    <div class="card-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="POST" enctype="multipart/form-data" id="complaintForm">
+                            {% csrf_token %}
+                            
+                            <!-- Basic Information -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="villager_name" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Villager Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="villager_name" name="villager_name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="village" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Village *
+                                    </label>
+                                    <select class="form-select" id="village" name="village" required>
+                                        <option value="">Select Village</option>
+                                        {% for village in villages %}
+                                            <option value="{{ village.id }}">{{ village.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="post_office" class="form-label">
+                                    <i class="fas fa-building me-1"></i>Post Office *
+                                </label>
+                                <select class="form-select" id="post_office" name="post_office" required>
+                                    <option value="">Select Post Office</option>
+                                    {% for po in post_offices %}
+                                        <option value="{{ po.id }}">{{ po.name }} - {{ po.pincode }} ({{ po.district }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Complaint Submission Methods -->
+                            <div class="row mb-4">
+                                <!-- Written Complaint Section -->
+                                <div class="col-md-6">
+                                    <div class="feature-highlight h-100">
+                                        <h5><i class="fas fa-edit me-2"></i>Written Complaint</h5>
+                                        <p class="mb-3">Submit complaint in text format</p>
+                                        
+                                        <div class="mb-3">
+                                            <label for="complaint_text" class="form-label">
+                                                <i class="fas fa-pencil-alt me-1"></i>Complaint Details
+                                            </label>
+                                            <textarea class="form-control" id="complaint_text" name="complaint_text" rows="8" 
+                                                     placeholder="Enter complaint details here..."></textarea>
+                                        </div>
+
+                                        <!-- Image Upload -->
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-image me-1"></i>Upload Supporting Image
+                                            </label>
+                                            <input type="file" class="form-control" name="supporting_image" accept="image/*">
+                                            <small class="form-text text-muted">Optional: Upload photos as evidence</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Complaint Section -->  
+                                <div class="col-md-6">
+                                    <div class="feature-highlight h-100">
+                                        <h5><i class="fas fa-microphone me-2"></i>Audio Complaint</h5>
+                                        <p class="mb-3">Record complaint in your local language</p>
+                                        
+                                        <!-- Language Selection -->
+                                        <div class="mb-3">
+                                            <label class="form-label">
+                                                <i class="fas fa-language me-1"></i>Language
+                                            </label>
+                                            <select class="form-select" name="language_code" id="language_code">
+                                                {% for code, name in language_choices %}
+                                                    <option value="{{ code }}" {% if code == 'hi' %}selected{% endif %}>
+                                                        {% if code == 'hi' %}🇮🇳{% elif code == 'en' %}🇺🇸{% elif code == 'bn' %}🇧🇩{% elif code == 'te' %}🇮🇳{% elif code == 'mr' %}🇮🇳{% elif code == 'ta' %}🇮🇳{% endif %}
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <!-- Audio Recording Interface -->
+                                        <div class="audio-recorder mb-3" id="audioRecorder">
+                                            <i class="fas fa-microphone fa-2x text-muted mb-2"></i>
+                                            <div>
+                                                <button type="button" class="btn btn-primary btn-sm" id="recordBtn">
+                                                    <i class="fas fa-microphone me-1"></i>Start Recording
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm" id="stopBtn" style="display: none;">
+                                                    <i class="fas fa-stop me-1"></i>Stop Recording
+                                                </button>
+                                            </div>
+                                            <div id="audioStatus" class="mt-2 text-muted small">Click "Start Recording" to record complaint</div>
+                                            <audio id="audioPlayback" controls style="display: none; margin-top: 1rem; width: 100%;"></audio>
+                                            <input type="file" id="audio_file" name="audio_file" accept="audio/*" style="display: none;">
+                                        </div>
+
+                                        <div class="text-center mb-2">
+                                            <small class="text-muted">OR</small>
+                                        </div>
+
+                                        <!-- Audio Upload -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Upload Audio File</label>
+                                            <input type="file" class="form-control" name="audio_file_upload" accept="audio/*">
+                                            <small class="form-text text-muted">Formats: MP3, WAV, M4A</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Agent Information -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="recorded_by_agent" name="recorded_by_agent">
+                                        <label class="form-check-label" for="recorded_by_agent">
+                                            <i class="fas fa-user-tie me-1"></i>Recorded by Survey Agent
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6" id="agent_name_field" style="display: none;">
+                                    <label for="agent_name" class="form-label">
+                                        <i class="fas fa-id-badge me-1"></i>Agent Name
+                                    </label>
+                                    <input type="text" class="form-control" id="agent_name" name="agent_name" placeholder="Enter agent name">
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> You can submit either written text, audio recording, or both. 
+                                AI will automatically transcribe audio and analyze the complaint type and priority.
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i>Submit Complaint
+                                </button>
+                                <a href="{% url 'workflow_dashboard' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Information Panel -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle me-2"></i>How It Works</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-route me-2"></i>Post Office Route</h6>
+                                <ol class="small">
+                                    <li>Villager writes/records complaint</li>
+                                    <li>Postman collects and sends to PM-AJAY office</li>
+                                    <li>Officer scans document, AI analyzes problem</li>
+                                    <li>Worker assigned to solve issue</li>
+                                    <li>Report sent back to villager via post office</li>
+                                    <li>Case closed when villager confirms satisfaction</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-users me-2"></i>Survey Agent Support</h6>
+                                <ol class="small">
+                                    <li>Agent visits village twice per month</li>
+                                    <li>Records complaints for illiterate villagers</li>
+                                    <li>Collects geotagged photos as evidence</li>
+                                    <li>Updates on existing complaint progress</li>
+                                    <li>Gets signatures for case closure</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Show/hide agent name field
+        document.getElementById('recorded_by_agent').addEventListener('change', function() {
+            const agentField = document.getElementById('agent_name_field');
+            agentField.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                document.getElementById('agent_name').required = true;
+            } else {
+                document.getElementById('agent_name').required = false;
+            }
+        });
+
+        // Audio recording functionality
+        let mediaRecorder;
+        let recordedBlob;
+
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const audioStatus = document.getElementById('audioStatus');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const audioRecorder = document.getElementById('audioRecorder');
+
+        recordBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    chunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    recordedBlob = new Blob(chunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(recordedBlob);
+                    audioPlayback.src = audioUrl;
+                    audioPlayback.style.display = 'block';
+                    audioStatus.textContent = 'Recording completed. You can play it back or submit the form.';
+                    
+                    // Create a file input with the recorded audio
+                    const file = new File([recordedBlob], 'recorded_complaint.wav', { type: 'audio/wav' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    document.getElementById('audio_file').files = dataTransfer.files;
+                };
+
+                mediaRecorder.start();
+                recordBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                audioRecorder.classList.add('recording');
+                audioStatus.textContent = 'Recording in progress... Speak clearly in your preferred language.';
+                
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                audioStatus.textContent = 'Error: Could not access microphone. Please check permissions.';
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            
+            recordBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            audioRecorder.classList.remove('recording');
+        }
+
+        // Form submission validation and feedback
+        document.getElementById('complaintForm').addEventListener('submit', function(e) {
+            const complaintText = document.getElementById('complaint_text').value.trim();
+            const hasRecordedAudio = recordedBlob !== undefined;
+            const hasUploadedAudio = document.querySelector('input[name="audio_file_upload"]').files.length > 0;
+            
+            if (!complaintText && !hasRecordedAudio && !hasUploadedAudio) {
+                e.preventDefault();
+                alert('Please provide either written complaint text or audio recording.');
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Submitting...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 3 seconds in case of issues
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Auto-fill agent name based on common agents with autocomplete
+        const commonAgents = [
+            'Agent Rajiv Kumar',
+            'Agent Sunita Devi', 
+            'Agent Mohammad Khan',
+            'Agent Priya Patel'
+        ];
+
+        document.getElementById('agent_name').addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            const matches = commonAgents.filter(agent => 
+                agent.toLowerCase().includes(value)
+            );
+            
+            // Simple autocomplete feedback
+            if (matches.length > 0 && value.length > 2) {
+                this.style.borderColor = '#28a745';
+            }
+        });
+
+        // Add visual feedback for text input
+        document.getElementById('complaint_text').addEventListener('input', function() {
+            const wordCount = this.value.trim().split(/\s+/).length;
+            const charCount = this.value.length;
+            
+            // Update placeholder with helpful info
+            if (charCount === 0) {
+                this.placeholder = 'Enter complaint details here... (minimum 10 words recommended)';
+            } else if (wordCount < 10) {
+                this.placeholder = `${wordCount} words entered - add more details for better analysis`;
+            } else {
+                this.placeholder = `${wordCount} words - good detail level for AI analysis`;
+                this.style.borderColor = '#28a745';
+            }
+        });
+
+        // Language selection feedback
+        document.getElementById('language_code').addEventListener('change', function() {
+            const selectedLang = this.options[this.selectedIndex].text;
+            audioStatus.textContent = `Ready to record in ${selectedLang}`;
+        });
+    </script>
+</body>
+</html>

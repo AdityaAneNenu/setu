@@ -1,0 +1,954 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Gaps - SETU</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% static 'css/modern.css' %}">
+  <style>
+    .page-header {
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      text-align: left;
+    }
+    
+    .page-header h1 {
+      color: var(--text-primary);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    
+    .filter-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-select {
+      padding: 10px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    
+    .gaps-table {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    thead {
+      background: var(--bg-secondary);
+    }
+    
+    th {
+      padding: 16px 24px;
+      text-align: left;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    td {
+      padding: 16px 24px;
+      color: var(--text-primary);
+      font-size: 14px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    tbody tr {
+      transition: background 0.2s ease;
+    }
+    
+    tbody tr:hover {
+      background: rgba(139, 92, 246, 0.05);
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .badge.open {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+    
+    .badge.in_progress {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+    }
+    
+    .badge.resolved {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+    
+    .severity-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .severity-badge.low {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+    
+    .severity-badge.medium {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+    }
+    
+    .severity-badge.high {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+    
+    .input-method-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    
+    .input-method-badge.image {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+    }
+    
+    .input-method-badge.voice {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+    
+    .input-method-badge.text {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+    }
+    
+    .status-form {
+      display: inline-block;
+    }
+    
+    .status-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    
+    .status-select:hover {
+      border-color: var(--accent-purple);
+    }
+    
+    .status-select:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.active {
+        transform: translateX(0);
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+      }
+      
+      .overlay.active {
+        display: block;
+      }
+      
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      table {
+        font-size: 12px;
+      }
+      
+      th, td {
+        padding: 12px;
+      }
+      
+      .gaps-table {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <div class="nav-logo">S</div>
+      <div class="nav-brand-text">
+        <h1>SETU</h1>
+        <p>Village Development Tracker</p>
+      </div>
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+      </svg>
+    </button>
+    
+    <ul class="nav-menu" id="navMenu">
+      <li class="nav-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}">Upload</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}" class="active">Manage Gaps</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">Analytics</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">Villages</a></li>
+    </ul>
+    
+    <div class="nav-user">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+      <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="container">
+  
+  <!-- Messages Display -->
+  {% if messages %}
+    <div class="messages-container" style="margin-bottom: 20px;">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="padding: 15px; border-radius: 8px; margin-bottom: 10px; {% if 'error' in message.tags %}background: #fee; border-left: 4px solid #dc3545; color: #721c24;{% elif 'success' in message.tags %}background: #d4edda; border-left: 4px solid #28a745; color: #155724;{% else %}background: #d1ecf1; border-left: 4px solid #17a2b8; color: #0c5460;{% endif %}">
+          {% if 'safe' in message.tags %}
+            {{ message|safe }}
+          {% else %}
+            {{ message }}
+          {% endif %}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="float: right; border: none; background: none; font-size: 20px; cursor: pointer; opacity: 0.5;" onclick="this.parentElement.style.display='none'">&times;</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  
+  <div class="page-header">
+    <h1>Manage Infrastructure Gaps</h1>
+    <div class="filter-group">
+      <select class="filter-select" onchange="window.location.href='?status=' + this.value">
+        <option value="">All Statuses</option>
+        <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>Open</option>
+        <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
+      </select>
+      
+      <select class="filter-select" onchange="window.location.href='?severity=' + this.value">
+        <option value="">All Severities</option>
+        <option value="high" {% if request.GET.severity == 'high' %}selected{% endif %}>High</option>
+        <option value="medium" {% if request.GET.severity == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="low" {% if request.GET.severity == 'low' %}selected{% endif %}>Low</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="gaps-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Village</th>
+          <th>Gap Type</th>
+          <th>Description</th>
+          <th>Input Method</th>
+          <th>Severity</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Voice Recording</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for gap in gaps %}
+        <tr>
+          <td><strong>{{ gap.village.name }}</strong></td>
+          <td>{{ gap.gap_type|title }}</td>
+          <td>{{ gap.description|truncatewords:15 }}</td>
+          <td><span class="input-method-badge {{ gap.input_method }}">{{ gap.get_input_method_display }}</span></td>
+          <td><span class="severity-badge {{ gap.severity }}">{{ gap.severity }}</span></td>
+          <td><span class="badge {{ gap.status }}">{{ gap.get_status_display }}</span></td>
+          <td>{{ gap.created_at|date:"M d, Y" }}</td>
+          <td>
+            {% if gap.audio_file %}
+              <!-- Voice recording button for voice-based gaps -->
+              <button class="btn btn-sm btn-record" onclick="openRecordingModal({{ gap.id }}, '{{ gap.village.name }}')" title="Record voice for verification">
+                🎙️ Record Voice
+              </button>
+            {% else %}
+              <span style="color: #94a3b8; font-size: 12px;">N/A</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if gap.audio_file %}
+              <!-- Voice gap - show verification button -->
+              <div class="d-flex align-items-center gap-2">
+                <form method="post" action="{% url 'update_gap_status' gap.id %}" class="status-form" style="flex: 1;">
+                  {% csrf_token %}
+                  <select name="status" class="status-select" onchange="confirmGapStatusChange(this, {{ gap.id }}, '{{ gap.audio_file }}')">
+                    <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
+                    <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
+                    <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>🔒 Resolved</option>
+                  </select>
+                </form>
+                {% if gap.status != "resolved" %}
+                <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
+                   class="btn btn-sm btn-outline-danger" 
+                   title="Voice verification required">
+                  🎤
+                </a>
+                {% endif %}
+              </div>
+            {% else %}
+              <!-- Regular gap - normal status update -->
+              <form method="post" action="{% url 'update_gap_status' gap.id %}" class="status-form">
+                {% csrf_token %}
+                <select name="status" class="status-select" onchange="this.form.submit()">
+                  <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
+                  <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
+                  <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
+                </select>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8;">
+            No gaps found. Upload an image or audio to create new gap entries.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Voice Recording Modal -->
+<div id="recordingModal" class="recording-modal" style="display: none;">
+  <div class="recording-modal-content">
+    <div class="recording-modal-header">
+      <h3>🎙️ Record Voice for Verification</h3>
+      <button class="close-modal" onclick="closeRecordingModal()">&times;</button>
+    </div>
+    <div class="recording-modal-body">
+      <div class="recording-info">
+        <p><strong>Gap ID:</strong> <span id="recordingGapId"></span></p>
+        <p><strong>Village:</strong> <span id="recordingVillage"></span></p>
+      </div>
+      
+      <div class="recording-status">
+        <div id="recordingStatusIdle" class="status-message">
+          <p>Click the button below to start recording your voice.</p>
+          <p style="font-size: 12px; color: #94a3b8;">This recording will be used for voice verification.</p>
+        </div>
+        <div id="recordingStatusActive" class="status-message" style="display: none;">
+          <div class="recording-animation">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring delay-1"></div>
+            <div class="pulse-ring delay-2"></div>
+          </div>
+          <p style="color: #dc3545; font-weight: bold; margin-top: 20px;">⏺ RECORDING IN PROGRESS...</p>
+          <p id="recordingTimer" style="font-size: 24px; font-weight: bold; margin-top: 10px;">00:00</p>
+        </div>
+        <div id="recordingStatusComplete" class="status-message" style="display: none;">
+          <p style="color: #10b981; font-weight: bold;">✅ Recording Complete!</p>
+          <audio id="recordingPlayback" controls style="margin-top: 15px; width: 100%;"></audio>
+        </div>
+      </div>
+      
+      <div class="recording-controls">
+        <button id="startRecordBtn" class="btn btn-record-start" onclick="startRecording()">
+          <span class="btn-icon">🎙️</span> Start Recording
+        </button>
+        <button id="stopRecordBtn" class="btn btn-record-stop" onclick="stopRecording()" style="display: none;">
+          <span class="btn-icon">⏹️</span> Stop Recording
+        </button>
+        <button id="saveRecordBtn" class="btn btn-record-save" onclick="saveRecording()" style="display: none;">
+          <span class="btn-icon">💾</span> Save & Use for Verification
+        </button>
+        <button id="retryRecordBtn" class="btn btn-record-retry" onclick="retryRecording()" style="display: none;">
+          <span class="btn-icon">🔄</span> Record Again
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media (max-width: 768px) {
+    .main-content > .menu-toggle {
+      display: block !important;
+    }
+  }
+  
+  /* Voice verification button styling */
+  .btn-outline-danger {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background: transparent;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  
+  .btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .gap-2 {
+    gap: 0.5rem;
+  }
+  
+  /* Voice recording button */
+  .btn-record {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  }
+  
+  .btn-record:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+  }
+  
+  /* Recording Modal */
+  .recording-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s;
+  }
+  
+  .recording-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s;
+  }
+  
+  .recording-modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .recording-modal-header h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 20px;
+  }
+  
+  .close-modal {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+  
+  .close-modal:hover {
+    color: #1e293b;
+  }
+  
+  .recording-modal-body {
+    padding: 25px;
+  }
+  
+  .recording-info {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .recording-info p {
+    margin: 5px 0;
+    color: #475569;
+  }
+  
+  .recording-status {
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .status-message {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .recording-animation {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+  }
+  
+  .pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #dc3545;
+    border-radius: 50%;
+    animation: pulse 2s ease-out infinite;
+  }
+  
+  .pulse-ring.delay-1 {
+    animation-delay: 0.5s;
+  }
+  
+  .pulse-ring.delay-2 {
+    animation-delay: 1s;
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(0.5);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  
+  .recording-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .recording-controls button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .btn-record-start {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  
+  .btn-record-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  
+  .btn-record-stop {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .btn-record-stop:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+  }
+  
+  .btn-record-save {
+    background: #10b981;
+    color: white;
+  }
+  
+  .btn-record-save:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+  
+  .btn-record-retry {
+    background: #f59e0b;
+    color: white;
+  }
+  
+  .btn-record-retry:hover {
+    background: #d97706;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+function confirmGapStatusChange(selectElement, gapId, audioFile) {
+  const newStatus = selectElement.value;
+  const form = selectElement.closest('form');
+  const originalValue = selectElement.getAttribute('data-original-value') || 'open';
+  
+  if (newStatus === 'resolved' && audioFile) {
+    // CRITICAL: Voice verification is MANDATORY for voice-based gaps
+    // Prevent immediate form submission
+    selectElement.value = originalValue;
+    
+    const confirmed = confirm(
+      '🔒 VOICE VERIFICATION REQUIRED!\n\n' +
+      '❌ This gap was submitted via VOICE RECORDING.\n\n' +
+      '✅ You MUST complete voice verification before resolving this gap.\n\n' +
+      '👉 Steps:\n' +
+      '   1. Click the 🎤 button next to this dropdown\n' +
+      '   2. Complete voice verification\n' +
+      '   3. Return and select "Resolved" again\n\n' +
+      '⚠️ The system will BLOCK resolution without verification.\n\n' +
+      'Click OK to attempt anyway (will be blocked by backend)'
+    );
+    
+    if (confirmed) {
+      // User wants to try anyway - let backend handle it
+      selectElement.value = newStatus;
+      form.submit();
+    } else {
+      // User cancelled - reset to original value
+      selectElement.value = originalValue;
+    }
+  } else {
+    // Non-voice gap or non-resolution status - allow immediate submission
+    selectElement.setAttribute('data-original-value', selectElement.value);
+    form.submit();
+  }
+}
+
+// Store original values on page load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.status-select').forEach(function(select) {
+    select.setAttribute('data-original-value', select.value);
+  });
+});
+
+// Voice Recording Functions
+let mediaRecorder;
+let audioChunks = [];
+let recordingStartTime;
+let timerInterval;
+let currentGapId;
+let recordedBlob;
+
+function openRecordingModal(gapId, villageName) {
+  currentGapId = gapId;
+  document.getElementById('recordingGapId').textContent = gapId;
+  document.getElementById('recordingVillage').textContent = villageName;
+  document.getElementById('recordingModal').style.display = 'flex';
+  resetRecordingUI();
+}
+
+function closeRecordingModal() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+  document.getElementById('recordingModal').style.display = 'none';
+  clearInterval(timerInterval);
+}
+
+function resetRecordingUI() {
+  document.getElementById('recordingStatusIdle').style.display = 'block';
+  document.getElementById('recordingStatusActive').style.display = 'none';
+  document.getElementById('recordingStatusComplete').style.display = 'none';
+  document.getElementById('startRecordBtn').style.display = 'inline-flex';
+  document.getElementById('stopRecordBtn').style.display = 'none';
+  document.getElementById('saveRecordBtn').style.display = 'none';
+  document.getElementById('retryRecordBtn').style.display = 'none';
+  audioChunks = [];
+  recordedBlob = null;
+}
+
+function startRecording() {
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+      
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(recordedBlob);
+        document.getElementById('recordingPlayback').src = audioUrl;
+        
+        // Show complete status
+        document.getElementById('recordingStatusActive').style.display = 'none';
+        document.getElementById('recordingStatusComplete').style.display = 'block';
+        document.getElementById('saveRecordBtn').style.display = 'inline-flex';
+        document.getElementById('retryRecordBtn').style.display = 'inline-flex';
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+        clearInterval(timerInterval);
+      };
+      
+      mediaRecorder.start();
+      recordingStartTime = Date.now();
+      
+      // Update UI
+      document.getElementById('recordingStatusIdle').style.display = 'none';
+      document.getElementById('recordingStatusActive').style.display = 'block';
+      document.getElementById('startRecordBtn').style.display = 'none';
+      document.getElementById('stopRecordBtn').style.display = 'inline-flex';
+      
+      // Start timer
+      timerInterval = setInterval(updateTimer, 1000);
+    })
+    .catch(error => {
+      alert('❌ Microphone access denied! Please allow microphone access to record.');
+      console.error('Error accessing microphone:', error);
+    });
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    document.getElementById('stopRecordBtn').style.display = 'none';
+  }
+}
+
+function updateTimer() {
+  const elapsed = Date.now() - recordingStartTime;
+  const seconds = Math.floor(elapsed / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const displaySeconds = seconds % 60;
+  document.getElementById('recordingTimer').textContent = 
+    `${String(minutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}`;
+}
+
+function retryRecording() {
+  resetRecordingUI();
+}
+
+function saveRecording() {
+  if (!recordedBlob) {
+    alert('No recording available!');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('verification_audio', recordedBlob, `gap_${currentGapId}_verification_${Date.now()}.wav`);
+  formData.append('gap_id', currentGapId);
+  formData.append('verified_by', 'Web User');
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  
+  // Show loading state
+  document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">⏳</span> Verifying Voice...';
+  document.getElementById('saveRecordBtn').disabled = true;
+  
+  fetch('/api/voice/verify-gap/', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const verification = data.verification;
+      if (verification.is_match) {
+        alert('✅ Voice Biometric Verification PASSED!\n\n' +
+              '🎤 Speaker Recognition Result:\n' +
+              `   • Match: YES - Same person speaking\n` +
+              `   • Confidence: ${verification.confidence.toUpperCase()}\n` +
+              `   • Voice Similarity: ${(verification.similarity_score * 100).toFixed(1)}%\n\n` +
+              '📝 Important: The system compared your VOICE characteristics,\n' +
+              '   not the words you spoke. Different words are OK!\n\n' +
+              '🔓 RESOLUTION UNLOCKED!\n' +
+              '👉 Now change the status dropdown to "Resolved" to close this gap.');
+        closeRecordingModal();
+        location.reload(); // Refresh to show updated status
+      } else {
+        alert('❌ Voice Biometric Verification FAILED!\n\n' +
+              '🎤 Speaker Recognition Result:\n' +
+              `   • Match: NO - Different person speaking\n` +
+              `   • Voice Similarity: ${(verification.similarity_score * 100).toFixed(1)}%\n\n` +
+              '⚠️ The system detected that your voice characteristics\n' +
+              '   do NOT match the original complainant.\n\n' +
+              '🔒 Only the person who filed this complaint can resolve it.\n\n' +
+              'Note: The system compares voice biometrics (pitch, tone, timbre),\n' +
+              '      not the specific words spoken.');
+        document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">💾</span> Save & Use for Verification';
+        document.getElementById('saveRecordBtn').disabled = false;
+      }
+    } else {
+      alert('❌ Verification failed: ' + (data.error || 'Unknown error'));
+      document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">💾</span> Save & Use for Verification';
+      document.getElementById('saveRecordBtn').disabled = false;
+    }
+  })
+  .catch(error => {
+    alert('❌ Verification failed: ' + error.message);
+    console.error('Error verifying voice:', error);
+    document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">💾</span> Save & Use for Verification';
+    document.getElementById('saveRecordBtn').disabled = false;
+  });
+}  
+</script>
+
+  </div>
+</div>
+
+<script>
+function toggleMenu() {
+  document.getElementById('navMenu').classList.toggle('active');
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  
+  if (body.classList.contains('light-mode')) {
+    body.classList.remove('light-mode');
+    localStorage.setItem('theme', 'dark');
+    sunIcon.style.display = 'block';
+    moonIcon.style.display = 'none';
+  } else {
+    body.classList.add('light-mode');
+    localStorage.setItem('theme', 'light');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedTheme = localStorage.getItem('theme');
+  const sunIcon = document.querySelector('.sun-icon');
+  const moonIcon = document.querySelector('.moon-icon');
+  
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    if (sunIcon) sunIcon.style.display = 'none';
+    if (moonIcon) moonIcon.style.display = 'block';
+  }
+});
+</script>
+
+</body>
+</html>

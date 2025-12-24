@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM-AJAY Workflow Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #000000;
+            --secondary-color: #333333;
+            --accent-color: #666666;
+            --text-color: #ffffff;
+            --bg-color: #000000;
+            --card-bg: #1a1a1a;
+            --border-color: #333333;
+        }
+        
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-color) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-color);
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        
+        .stat-label {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-dark {
+            --bs-table-bg: var(--card-bg);
+            --bs-table-border-color: var(--border-color);
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--border-color);
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            border-color: var(--accent-color);
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+        }
+        
+        .status-received_post { background-color: #6c757d; }
+        .status-sent_to_office { background-color: #0dcaf0; }
+        .status-under_analysis { background-color: #fd7e14; }
+        .status-assigned_worker { background-color: #20c997; }
+        .status-work_in_progress { background-color: #0d6efd; }
+        .status-work_completed { background-color: #198754; }
+        .status-villager_satisfied { background-color: #28a745; }
+        .status-case_closed { background-color: #6f42c1; }
+        
+        .priority-urgent { color: #dc3545; }
+        .priority-high { color: #fd7e14; }
+        .priority-medium { color: #ffc107; }
+        .priority-low { color: #28a745; }
+        
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-clipboard-list me-2"></i>
+                PM-AJAY Workflow Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'submit_complaint' %}">
+                    <i class="fas fa-plus me-1"></i>Submit Complaint
+                </a>
+                <a class="nav-link" href="{% url 'agent_dashboard' %}">
+                    <i class="fas fa-users me-1"></i>Agent Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-number">{{ stats.total_complaints }}</div>
+                    <div class="stat-label">Total Complaints</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-number">{{ stats.pending_complaints }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-number">{{ stats.completed_complaints }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-number">{{ stats.urgent_complaints }}</div>
+                    <div class="stat-label">Urgent</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Complaints by Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="statusChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Complaints by Type</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="typeChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Filter by Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">All Status</option>
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if value == current_status_filter %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Filter by Priority</label>
+                                <select name="priority" class="form-select">
+                                    <option value="">All Priority</option>
+                                    {% for value, label in priority_choices %}
+                                        <option value="{{ value }}" {% if value == current_priority_filter %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-filter me-1"></i>Apply Filters
+                                    </button>
+                                    <a href="{% url 'workflow_dashboard' %}" class="btn btn-secondary ms-2">
+                                        <i class="fas fa-times me-1"></i>Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complaints Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recent Complaints</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Villager</th>
+                                <th>Village</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Post Office</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for complaint in complaints %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'complaint_detail' complaint.complaint_id %}" class="text-decoration-none">
+                                        {{ complaint.complaint_id }}
+                                    </a>
+                                </td>
+                                <td>{{ complaint.villager_name }}</td>
+                                <td>{{ complaint.village.name }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ complaint.complaint_type|capfirst }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge status-{{ complaint.status }}">
+                                        {{ complaint.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="priority-{{ complaint.priority_level }}">
+                                        <i class="fas fa-circle"></i> {{ complaint.priority_level|capfirst }}
+                                    </span>
+                                </td>
+                                <td>{{ complaint.post_office.name }}</td>
+                                <td>{{ complaint.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'complaint_detail' complaint.complaint_id %}" class="btn btn-sm btn-outline-light">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No complaints found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Workflow Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ activity.complaint.complaint_id }} - {{ activity.complaint.villager_name }}</div>
+                            <small>{{ activity.get_action_type_display }} by {{ activity.action_by }}</small>
+                            {% if activity.notes %}
+                            <div class="text-muted small mt-1">{{ activity.notes }}</div>
+                            {% endif %}
+                        </div>
+                        <small>{{ activity.timestamp|timesince }} ago</small>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item list-group-item-dark text-center">
+                        No recent activity
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusData = {{ status_data|safe }};
+        const statusLabels = statusData.map(item => item.status);
+        const statusCounts = statusData.map(item => item.count);
+
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: [
+                        '#6c757d', '#0dcaf0', '#fd7e14', '#20c997',
+                        '#0d6efd', '#198754', '#28a745', '#6f42c1'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#333333'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Type Chart  
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        const typeData = {{ type_data|safe }};
+        const typeLabels = typeData.map(item => item.complaint_type);
+        const typeCounts = typeData.map(item => item.count);
+
+        new Chart(typeCtx, {
+            type: 'bar',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    label: 'Complaints',
+                    data: typeCounts,
+                    backgroundColor: '#666666',
+                    borderColor: '#333333',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#333333'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#ffffff'
+                        },
+                        grid: {
+                            color: '#333333'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

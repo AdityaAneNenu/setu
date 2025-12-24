@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SETU - Login Portal</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #ff9933 0%, #ffffff 50%, #138808 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+      pointer-events: none;
+    }
+    
+    .container {
+      display: flex;
+      max-width: 1200px;
+      width: 100%;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .info-panel {
+      flex: 1;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      padding: 50px 40px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .emblem {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: bold;
+      color: #1e3a8a;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .logo-text {
+      flex: 1;
+    }
+    
+    .logo-text h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      letter-spacing: -0.5px;
+    }
+    
+    .logo-text .subtitle {
+      font-size: 13px;
+      opacity: 0.95;
+      font-weight: 500;
+    }
+    
+    .info-content h3 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    .info-content p {
+      font-size: 15px;
+      line-height: 1.7;
+      opacity: 0.95;
+      margin-bottom: 25px;
+    }
+    
+    .features {
+      display: grid;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .feature-item {
+      display: flex;
+      align-items: start;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    
+    .feature-item:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(5px);
+    }
+    
+    .feature-icon {
+      font-size: 24px;
+      min-width: 24px;
+    }
+    
+    .feature-text {
+      font-size: 14px;
+      line-height: 1.5;
+      opacity: 0.95;
+    }
+    
+    .feature-text strong {
+      color: #ffffff;
+    }
+    
+    .login-panel {
+      flex: 0 0 450px;
+      padding: 50px 45px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #fafafa;
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 35px;
+    }
+    
+    .login-header h2 {
+      color: #1a202c;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    
+    .login-header p {
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .input-group {
+      position: relative;
+    }
+
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      transition: color 0.2s ease;
+      width: auto;
+      box-shadow: none;
+      margin: 0;
+    }
+
+    .password-toggle:hover {
+      color: #334155;
+      transform: translateY(-50%);
+      box-shadow: none;
+    }
+
+    .password-toggle:active {
+      transform: translateY(-50%);
+    }
+
+    .password-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .input-group input[type="password"],
+    .input-group input[type="text"] {
+      padding-right: 45px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      transition: border-color 0.2s ease;
+      outline: none;
+      background: white;
+      color: #1a202c;
+    }
+
+    
+    input:focus {
+      border-color: #94a3b8;
+    }
+    
+    input::placeholder {
+      color: #94a3b8;
+    }
+    
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      margin-top: -5px;
+    }
+    
+    .remember-forgot label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #64748b;
+      cursor: pointer;
+    }
+    
+    .remember-forgot a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .remember-forgot a:hover {
+      text-decoration: underline;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+      box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .divider {
+      text-align: center;
+      margin: 25px 0;
+      position: relative;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    
+    .divider::before {
+      left: 0;
+    }
+    
+    .divider::after {
+      right: 0;
+    }
+    
+    .register-link {
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    .register-link a {
+      color: #3b82f6;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+    
+    .govt-footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+    }
+    
+    @media (max-width: 968px) {
+      .container {
+        flex-direction: column;
+      }
+      
+      .info-panel {
+        padding: 40px 30px;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .login-panel {
+        flex: 1;
+        padding: 40px 30px;
+      }
+      
+      .features {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      .container {
+        border-radius: 16px;
+      }
+      
+      .info-panel {
+        padding: 30px 20px;
+      }
+      
+      .login-panel {
+        padding: 30px 20px;
+      }
+      
+      .logo-section {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .logo-text h1 {
+        font-size: 22px;
+      }
+      
+      .login-header h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="info-panel">
+    <div class="logo-section">
+      <div class="emblem">S</div>
+      <div class="logo-text">
+        <h1>SETU</h1>
+        <p class="subtitle">Smart Evaluation and Tracking Utility</p>
+      </div>
+    </div>
+    
+    <div class="info-content">
+      <h3>Smart Evaluation and Tracking Utility for Village Development</h3>
+      <p>SETU aims to holistically develop villages by addressing gaps in infrastructure and services through smart tracking and evaluation.</p>
+      
+      <div class="features">
+        <div class="feature-item">
+          <div class="feature-icon">🏫</div>
+          <div class="feature-text"><strong>Education & Healthcare:</strong> Quality schools and medical facilities for all</div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">💧</div>
+          <div class="feature-text"><strong>Essential Services:</strong> Clean water, sanitation, and electricity access</div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">🛤️</div>
+          <div class="feature-text"><strong>Connectivity:</strong> Improved roads and transportation infrastructure</div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">💼</div>
+          <div class="feature-text"><strong>Livelihood:</strong> Skill development and employment opportunities</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="login-panel">
+    <div class="login-header">
+      <h2>Portal Login</h2>
+      <p>Access your SETU dashboard</p>
+    </div>
+
+    {% if form.errors %}
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 20px; color: #dc2626;">
+      <strong>Login Failed</strong>
+      <p style="margin: 5px 0 0 0; font-size: 14px;">Please enter correct username and password. Note that both fields are case-sensitive.</p>
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="input-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username" required value="{{ form.username.value|default:'' }}">
+      </div>
+      
+      <div class="input-group">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
+            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="remember-forgot">
+        <!-- <label>
+          <input type="checkbox" name="remember">
+          Remember me
+        </label>
+        <a href="#">Forgot password?</a> -->
+      </div>
+      
+      <button type="submit">Login to Dashboard</button>
+    </form>
+    
+    <!-- <div class="divider">OR</div> -->
+    
+    <!-- <div class="register-link">
+      Don't have an account? <a href="#">Register here</a>
+    </div> -->
+    
+    <div class="govt-footer">
+      Ministry of Social Justice and Empowerment<br>
+      Government of India
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePassword() {
+  const passwordInput = document.getElementById('password');
+  const eyeIcon = document.getElementById('eye-icon');
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    eyeIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    `;
+  } else {
+    passwordInput.type = 'password';
+    eyeIcon.innerHTML = `
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+    `;
+  }
+}
+</script>
+
+</body>
+</html>

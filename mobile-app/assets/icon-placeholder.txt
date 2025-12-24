@@ -1,0 +1,4 @@
+Placeholder for app icon.
+The actual icon.png file will be generated when you build the app.
+For development, Expo will use a default icon.
+

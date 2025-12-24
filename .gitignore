@@ -1,0 +1,88 @@
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+env/
+ENV/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/uploads/
+media/gap_audio/
+media/voice_samples/
+*.pot
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node/React Native
+mobile-app/node_modules/
+mobile-app/.expo/
+mobile-app/.expo-shared/
+mobile-app/dist/
+mobile-app/npm-debug.*
+mobile-app/yarn-debug.*
+mobile-app/yarn-error.*
+mobile-app/.DS_Store
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Unwanted backup directories
+pm_ajay_ai - Copy - Copy/
+pm_ajay_ai-iteration 1/
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Misc
+*.bak
+*.tmp
+*.temp

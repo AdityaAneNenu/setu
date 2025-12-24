@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Budget Management - SETU</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{% load static %}{% static 'css/modern.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+    }
+    
+    .main-content {
+      padding: 24px;
+    }
+    
+    
+    .main-content {
+      padding: 40px;
+      width: 100%;
+    }
+    
+    .header {
+      margin-bottom: 32px;
+    }
+    
+    h1 {
+      color: #1e293b;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      color: #64748b;
+      font-size: 16px;
+    }
+    
+    .filters {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 200px;
+    }
+    
+    .filter-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #475569;
+    }
+    
+    .filter-group select {
+      padding: 10px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .filter-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .btn-filter {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+      align-self: flex-end;
+    }
+    
+    .btn-filter:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+    
+    .projects-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .project-card {
+      padding: 24px;
+      border-bottom: 1px solid #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    
+    .project-card:hover {
+      background: #f8fafc;
+    }
+    
+    .project-card:last-child {
+      border-bottom: none;
+    }
+    
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .project-info h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+    
+    .project-meta {
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    .status-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .status-open {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    
+    .status-in_progress {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .status-resolved {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
+    .budget-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .budget-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .budget-input-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .budget-input-group input {
+      padding: 10px 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.3s ease;
+    }
+    
+    .budget-input-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .budget-display {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+    }
+    
+    .budget-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    .budget-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    
+    .budget-remaining {
+      color: #10b981;
+    }
+    
+    .budget-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .btn-save {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+    
+    .no-projects {
+      padding: 60px 24px;
+      text-align: center;
+      color: #64748b;
+    }
+    
+    .no-projects h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .filters {
+        flex-direction: column;
+      }
+      
+      .filter-group {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <div class="nav-logo">PM</div>
+      <div class="nav-brand-text">
+        <h1>SETU</h1>
+        <p>Smart Evaluation & Tracking Utility</p>
+      </div>
+    </a>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+    
+    <ul class="nav-menu" id="navMenu">
+      <li class="nav-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}">Upload</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}">Manage Gaps</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">Analytics</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">Villages</a></li>
+      <li class="nav-item"><a href="{% url 'budget_management' %}" class="active">Budget</a></li>
+    </ul>
+    
+    <div class="nav-user">
+      <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+      <a href="{% url 'logout' %}" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="main-wrapper">
+  <div class="container">
+  <div class="main-content">
+    <div class="header">
+      <h1>Budget Management</h1>
+      <p class="subtitle">Allocate and track project budgets</p>
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Filter by Village</label>
+        <select id="villageFilter" onchange="applyFilters()">
+          <option value="">All Villages</option>
+          {% for village in villages %}
+          <option value="{{ village.id }}" {% if request.GET.village == village.id|stringformat:"s" %}selected{% endif %}>
+            {{ village.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Filter by Status</label>
+        <select id="statusFilter" onchange="applyFilters()">
+          <option value="">All Status</option>
+          <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>Open</option>
+          <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+          <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="projects-container">
+      {% for gap in gaps %}
+      <div class="project-card">
+        <div class="project-header">
+          <div class="project-info">
+            <h3>{{ gap.gap_type|title }} - {{ gap.village.name }}</h3>
+            <p class="project-meta">
+              Severity: {{ gap.severity|upper }} | Created: {{ gap.created_at|date:"d M Y" }}
+            </p>
+          </div>
+          <span class="status-badge status-{{ gap.status }}">{{ gap.get_status_display }}</span>
+        </div>
+
+        <form method="POST" action="{% url 'update_budget' gap.id %}">
+          {% csrf_token %}
+          <div class="budget-section">
+            <div class="budget-input-group">
+              <label>Budget Allocated (₹)</label>
+              <input type="number" name="budget_allocated" step="0.01" 
+                     value="{{ gap.budget_allocated|default:'' }}" 
+                     placeholder="e.g., 500000">
+            </div>
+            
+            <div class="budget-input-group">
+              <label>Budget Spent (₹)</label>
+              <input type="number" name="budget_spent" step="0.01" 
+                     value="{{ gap.budget_spent|default:'0' }}" 
+                     placeholder="e.g., 150000">
+            </div>
+            
+            <div class="budget-display">
+              <div class="budget-label">Remaining Budget</div>
+              <div class="budget-value budget-remaining">
+                ₹{{ gap.budget_remaining|floatformat:0|default:"0" }}
+              </div>
+            </div>
+          </div>
+
+          <div class="budget-actions">
+            <button type="submit" class="btn-save">Save Budget</button>
+          </div>
+        </form>
+      </div>
+    
+    function toggleMenu() {
+      document.getElementById('navMenu').classList.toggle('active');
+    }
+  </script>
+  </div>
+  </divmpty %}
+      <div class="no-projects">
+        <h3>No Projects Found</h3>
+        <p>There are no projects to manage at this time.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    function applyFilters() {
+      const village = document.getElementById('villageFilter').value;
+      const status = document.getElementById('statusFilter').value;
+      
+      let url = '{% url "budget_management" %}?';
+      if (village) url += `village=${village}&`;
+      if (status) url += `status=${status}&`;
+      
+      window.location.href = url;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "PM-AJAY Mobile",
+    "slug": "pm-ajay-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pmajay.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs camera access to scan QR codes and capture photos for complaints.",
+        "NSPhotoLibraryUsageDescription": "This app needs photo library access to attach photos to complaints."
+      }
+    },
+    "android": {
+      "package": "com.pmajay.mobile",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow PM-AJAY to access your camera to scan QR codes and capture photos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow PM-AJAY to access your photos to attach evidence to complaints."
+        }
+      ]
+    ]
+  }
+}
+
