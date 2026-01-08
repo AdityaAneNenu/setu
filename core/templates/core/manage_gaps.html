@@ -50,11 +50,13 @@
       background: var(--bg-card);
       border-radius: 12px;
       border: 1px solid var(--border-color);
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: visible;
     }
     
     table {
       width: 100%;
+      min-width: 1200px;
       border-collapse: collapse;
     }
     
@@ -241,7 +243,7 @@
 <!-- Top Navigation -->
 <nav class="top-nav">
   <div class="nav-container">
-    <a href="{% url 'dashboard' %}" class="nav-brand">
+    <a href="{% url 'home' %}" class="nav-brand">
       <div class="nav-logo">
         <img src="{% static 'images/dark-mode.png' %}" alt="SETU Logo" class="logo-dark">
         <img src="{% static 'images/light-mode.png' %}" alt="SETU Logo" class="logo-light">
@@ -482,13 +484,28 @@
     color: white;
   }
   
+  /* Flexbox utilities */
+  .d-flex {
+    display: flex !important;
+  }
+  
+  .align-items-center {
+    align-items: center !important;
+  }
+  
   .gap-2 {
     gap: 0.5rem;
   }
   
+  /* Button size utilities */
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  
   /* Voice recording button */
   .btn-record {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #8b5cf6;
     color: white;
     border: none;
     padding: 6px 12px;
@@ -646,13 +663,13 @@
   }
   
   .btn-record-start {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #8b5cf6;
     color: white;
   }
   
   .btn-record-start:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
   }
   
   .btn-record-stop {

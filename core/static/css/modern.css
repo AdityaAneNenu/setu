@@ -14,8 +14,8 @@
   --accent-violet: #7c3aed;
   --accent-pink: #ec4899;
   --accent-orange: #f97316;
-  --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f97316 100%);
-  --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --gradient-primary: #8b5cf6;
+  --gradient-purple: #8b5cf6;
   --glow-purple: 0 0 30px rgba(139, 92, 246, 0.3);
 }
 
@@ -411,13 +411,13 @@ body.light-mode .nav-logo .logo-light {
 }
 
 .btn-primary {
-  background: var(--gradient-primary);
+  background: #3b82f6;
   color: white;
-  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
   transform: translateY(-1px);
 }
 
