@@ -48,8 +48,27 @@ def role_required(allowed_roles):
 
             from django.http import HttpResponseForbidden
 
-            return HttpResponseForbidden("You do not have permission to access this page.")
+            return HttpResponseForbidden(
+                "You do not have permission to access this page."
+            )
 
         return _wrapped_view
 
     return decorator
+
+
+def can_resolve_gaps(user):
+    """Check if user has authority to mark gaps as resolved (AUTHORITY or ADMIN only)"""
+    role = get_user_role(user)
+    return role in [Role.AUTHORITY, Role.ADMIN]
+
+
+def can_verify_gaps(user):
+    """Check if user can verify/assign gaps (MANAGER and above)"""
+    role = get_user_role(user)
+    return role in [Role.MANAGER, Role.AUTHORITY, Role.ADMIN]
+
+
+def can_create_gaps(user):
+    """Check if user can create gaps (all authenticated users)"""
+    return user.is_authenticated

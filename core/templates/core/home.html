@@ -107,6 +107,12 @@
             align-items: center;
             justify-content: center;
             margin-top: 2rem;
+            position: relative;
+        }
+
+        #dashboardBtnContainer {
+            z-index: 1;
+            transition: all 0.3s ease;
         }
 
         .btn {
@@ -148,11 +154,85 @@
             border-radius: 0.5rem;
             color: white;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            text-decoration: none;
         }
 
         .btn-secondary:hover {
             background: white;
             color: #1f2937;
+            text-decoration: none;
+        }
+
+        /* Spotlight Effect */
+        .spotlight-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 5000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .spotlight-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn-secondary.spotlight-active {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            right: auto !important;
+            transform: translate(-50%, -50%) scale(1.2) !important;
+            z-index: 5001 !important;
+            box-shadow: 0 0 100px #fbbf24, 0 0 150px #fbbf24, 0 0 200px rgba(251, 191, 36, 0.5) !important;
+            background: #fbbf24 !important;
+            color: #000000 !important;
+            border: 3px solid #ffffff !important;
+            backdrop-filter: none !important;
+            opacity: 1 !important;
+            padding: 1rem 2rem !important;
+            font-size: 1.125rem !important;
+            font-weight: 700 !important;
+            text-decoration: none !important;
+        }
+
+        .btn-secondary.spotlight-active span {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            font-size: 1.125rem !important;
+        }
+
+        /* Spotlight Trigger Button */
+        .btn-spotlight-trigger {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+            backdrop-filter: blur(12px);
+        }
+
+        .btn-spotlight-trigger:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: rgba(251, 191, 36, 0.5);
+            transform: translateY(-2px);
         }
 
         .btn-icon {
@@ -564,6 +644,9 @@
     </style>
 </head>
 <body>
+    <!-- Spotlight Overlay -->
+    <div class="spotlight-overlay" id="spotlightOverlay"></div>
+    
     <!-- Hero Section -->
     <div class="hero-section" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{% static 'hero-section.png' %}');">
         <div class="hero-overlay"></div>
@@ -582,16 +665,13 @@
                 <span class="badge-text">Pradhan Mantri Anusuchit Jaati Abhyudaya Yojana (PM-AJAY)</span>
             </div>
 
-            <div class="cta-buttons">
+            <div class="cta-buttons" style="gap: 1rem; flex-wrap: wrap;">
                 <a href="{% url 'login' %}" class="btn btn-primary">
                     <span>Get Started</span>
                     <span>→</span>
                 </a>
-            </div>
-            
-            <div class="cta-buttons" style="margin-top: 1rem;">
-                <a href="{% url 'public_dashboard' %}" class="btn-secondary">
-                    <span>Explore Development Progress</span>
+                <a href="{% url 'public_dashboard' %}" id="publicDashboardBtn" class="btn-secondary">
+                    <span>Explore the Public Dashboard</span>
                     <span>→</span>
                 </a>
             </div>
@@ -601,6 +681,11 @@
             <div class="scroll-icon">↓</div>
         </div>
     </div>
+
+    <!-- Spotlight Trigger Button - Fixed Position -->
+    <button id="spotlightTriggerBtn" class="btn-spotlight-trigger">
+        <span> Public Dashboard</span>
+    </button>
 
     <!-- About PM-AJAY Section -->
     <section class="section section-white">
@@ -870,5 +955,98 @@
             </div>
         </div>
     </footer>
-</body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dashboardBtn = document.getElementById('publicDashboardBtn');
+            const overlay = document.getElementById('spotlightOverlay');
+            const spotlightTriggerBtn = document.getElementById('spotlightTriggerBtn');
+            let isSpotlightActive = false;
+            let originalParent = null;
+            let originalNextSibling = null;
+
+            console.log('Spotlight script loaded');
+            console.log('Dashboard button:', dashboardBtn);
+            console.log('Overlay:', overlay);
+            console.log('Trigger button:', spotlightTriggerBtn);
+
+            // Spotlight trigger button functionality
+            spotlightTriggerBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Trigger button clicked');
+                
+                if (!isSpotlightActive) {
+                    console.log('Activating spotlight');
+                    
+                    // Save original position
+                    originalParent = dashboardBtn.parentNode;
+                    originalNextSibling = dashboardBtn.nextSibling;
+                    
+                    // Move button to body (outside all stacking contexts)
+                    document.body.appendChild(dashboardBtn);
+                    
+                    // Activate spotlight effect
+                    overlay.classList.add('active');
+                    dashboardBtn.classList.add('spotlight-active');
+                    isSpotlightActive = true;
+                    console.log('Spotlight activated - overlay classes:', overlay.className);
+                    console.log('Button classes:', dashboardBtn.className);
+                } else {
+                    console.log('Deactivating spotlight');
+                    
+                    // Deactivate spotlight effect
+                    overlay.classList.remove('active');
+                    dashboardBtn.classList.remove('spotlight-active');
+                    
+                    // Move button back to original position
+                    if (originalParent) {
+                        if (originalNextSibling) {
+                            originalParent.insertBefore(dashboardBtn, originalNextSibling);
+                        } else {
+                            originalParent.appendChild(dashboardBtn);
+                        }
+                    }
+                    
+                    isSpotlightActive = false;
+                }
+            });
+
+            // Click overlay to deactivate spotlight
+            overlay.addEventListener('click', function() {
+                console.log('Overlay clicked');
+                overlay.classList.remove('active');
+                dashboardBtn.classList.remove('spotlight-active');
+                
+                // Move button back to original position
+                if (originalParent && isSpotlightActive) {
+                    if (originalNextSibling) {
+                        originalParent.insertBefore(dashboardBtn, originalNextSibling);
+                    } else {
+                        originalParent.appendChild(dashboardBtn);
+                    }
+                }
+                
+                isSpotlightActive = false;
+            });
+
+            // ESC key to deactivate spotlight
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isSpotlightActive) {
+                    console.log('ESC pressed');
+                    overlay.classList.remove('active');
+                    dashboardBtn.classList.remove('spotlight-active');
+                    
+                    // Move button back to original position
+                    if (originalParent) {
+                        if (originalNextSibling) {
+                            originalParent.insertBefore(dashboardBtn, originalNextSibling);
+                        } else {
+                            originalParent.appendChild(dashboardBtn);
+                        }
+                    }
+                    
+                    isSpotlightActive = false;
+                }
+            });
+        });
+    </script></body>
 </html>

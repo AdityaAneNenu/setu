@@ -368,32 +368,49 @@
             {% if gap.audio_file %}
               <!-- Voice gap - show verification button -->
               <div class="d-flex align-items-center gap-2">
-                <form method="post" action="{% url 'update_gap_status' gap.id %}" class="status-form" style="flex: 1;">
-                  {% csrf_token %}
-                  <select name="status" class="status-select" onchange="confirmGapStatusChange(this, {{ gap.id }}, '{{ gap.audio_file }}')">
+                {% if gap.status == "resolved" %}
+                  <span class="badge resolved">Resolved</span>
+                  {% if gap.resolved_by %}
+                    <small style="color: var(--text-secondary); font-size: 11px;">by {{ gap.resolved_by.username }}</small>
+                  {% endif %}
+                {% else %}
+                  <select class="status-select" onchange="handleStatusChange(this, {{ gap.id }}, '{{ gap.audio_file }}', {% if can_resolve %}true{% else %}false{% endif %}, '{{ gap.input_method }}')">
                     <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
                     <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
-                    <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>🔒 Resolved</option>
+                    {% if can_resolve %}
+                      <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
+                    {% else %}
+                      <option value="resolved" disabled title="Only AUTHORITY or ADMIN can resolve">🔒 Resolved (Need Authority)</option>
+                    {% endif %}
                   </select>
-                </form>
-                {% if gap.status != "resolved" %}
-                <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
-                   class="btn btn-sm btn-outline-danger" 
-                   title="Voice verification required">
-                  🎤
-                </a>
+                  <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
+                     class="btn btn-sm btn-outline-danger" 
+                     title="Voice verification required">
+                    🎤
+                  </a>
                 {% endif %}
               </div>
             {% else %}
               <!-- Regular gap - normal status update -->
-              <form method="post" action="{% url 'update_gap_status' gap.id %}" class="status-form">
-                {% csrf_token %}
-                <select name="status" class="status-select" onchange="this.form.submit()">
+              {% if gap.status == "resolved" %}
+                <span class="badge resolved">Resolved</span>
+                {% if gap.resolved_by %}
+                  <small style="color: var(--text-secondary); font-size: 11px; display: block;">by {{ gap.resolved_by.username }}</small>
+                {% endif %}
+                {% if gap.resolution_proof %}
+                  <a href="{{ gap.resolution_proof.url }}" target="_blank" style="font-size: 11px; color: #8b5cf6;">📄 View Proof</a>
+                {% endif %}
+              {% else %}
+                <select class="status-select" onchange="handleStatusChange(this, {{ gap.id }}, null, {% if can_resolve %}true{% else %}false{% endif %}, '{{ gap.input_method }}')">
                   <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
                   <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
-                  <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
+                  {% if can_resolve %}
+                    <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
+                  {% else %}
+                    <option value="resolved" disabled title="Only AUTHORITY or ADMIN can resolve">🔒 Resolved (Need Authority)</option>
+                  {% endif %}
                 </select>
-              </form>
+              {% endif %}
             {% endif %}
           </td>
         </tr>
@@ -931,10 +948,121 @@ function saveRecording() {
 }  
 </script>
 
+<!-- Resolution Proof Modal -->
+<div id="resolutionProofModal" class="recording-modal" style="display: none;">
+  <div class="recording-modal-content">
+    <div class="recording-modal-header">
+      <h3>📄 Resolution Proof Required</h3>
+      <button class="close-modal" onclick="closeResolutionProofModal()">&times;</button>
+    </div>
+    <div class="recording-modal-body">
+      <div class="recording-info">
+        <p><strong>Gap ID:</strong> <span id="resolutionGapId"></span></p>
+        <p style="color: var(--text-secondary); font-size: 13px; margin-top: 10px;">
+          As an AUTHORITY, you must provide resolution proof (letter/document) before marking this <strong>photo-based</strong> gap as resolved.<br>
+          <em style="color: var(--text-muted);">Note: Voice-recorded gaps use voice verification instead and don't need this letter.</em>
+        </p>
+      </div>
+      
+      <form id="resolutionProofForm" method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="resolved">
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 600;">Resolution Document/Letter *</label>
+          <input type="file" name="resolution_proof" required accept=".pdf,.jpg,.jpeg,.png" 
+                 style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
+          <small style="color: var(--text-muted); font-size: 12px;">PDF, JPG, or PNG (max 10MB)</small>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 600;">Resolution Reference Number *</label>
+          <input type="text" name="resolution_proof_number" required placeholder="e.g., RES/2026/001"
+                 style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary);">
+        </div>
+        
+        <div class="recording-controls">
+          <button type="submit" class="btn btn-record-start">
+            <span class="btn-icon">✅</span> Submit & Resolve
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeResolutionProofModal()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
   </div>
 </div>
 
 <script>
+// Handle status change with role-based resolution proof
+function handleStatusChange(selectElement, gapId, audioFile, canResolve, inputMethod) {
+  const newStatus = selectElement.value;
+  const oldStatus = selectElement.getAttribute('data-old-status') || selectElement.options[selectElement.selectedIndex].defaultSelected;
+  
+  // Check if this is a voice-based gap
+  const isVoiceGap = inputMethod === 'voice' || audioFile;
+  
+  // If trying to resolve and user has authority
+  if (newStatus === 'resolved' && canResolve) {
+    // Voice gaps: Skip proof modal, submit directly for voice verification
+    if (isVoiceGap) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/update-gap-status/${gapId}/`;
+      
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      form.innerHTML = `
+        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+        <input type="hidden" name="status" value="${newStatus}">
+      `;
+      
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
+    
+    // Photo/image gaps: Show resolution proof modal
+    document.getElementById('resolutionGapId').textContent = gapId;
+    const form = document.getElementById('resolutionProofForm');
+    form.action = `/update-gap-status/${gapId}/`;
+    document.getElementById('resolutionProofModal').style.display = 'flex';
+    
+    // Reset select to old value until form is submitted
+    selectElement.value = oldStatus || 'open';
+  } else if (newStatus === 'resolved' && !canResolve) {
+    // Should not happen due to disabled option, but just in case
+    alert('❌ Only AUTHORITY or ADMIN roles can mark gaps as resolved.');
+    selectElement.value = oldStatus || 'open';
+  } else {
+    // For other status changes (open, in_progress), submit directly
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/update-gap-status/${gapId}/`;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    form.innerHTML = `
+      <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+      <input type="hidden" name="status" value="${newStatus}">
+    `;
+    
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+function closeResolutionProofModal() {
+  document.getElementById('resolutionProofModal').style.display = 'none';
+}
+
+// Old function for backward compatibility with voice gaps
+function confirmGapStatusChange(selectElement, gapId, audioFile) {
+  handleStatusChange(selectElement, gapId, audioFile, true, audioFile ? 'voice' : 'image');
+}
+
 function toggleMenu() {
   document.getElementById('navMenu').classList.toggle('active');
 }

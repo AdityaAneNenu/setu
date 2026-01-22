@@ -472,6 +472,8 @@ def analytics(request):
 @login_required
 @role_required(MANAGER_AND_ABOVE)
 def manage_gaps(request):
+    from .permissions import get_user_role, can_resolve_gaps
+
     gaps = Gap.objects.all().order_by("-id")
     status_filter = request.GET.get("status")
     if status_filter:
@@ -480,7 +482,12 @@ def manage_gaps(request):
     if severity_filter:
         gaps = gaps.filter(severity=severity_filter)
 
-    context = {"gaps": gaps}
+    user_role = get_user_role(request.user)
+    context = {
+        "gaps": gaps,
+        "user_role": user_role,
+        "can_resolve": can_resolve_gaps(request.user),
+    }
 
     return render(request, "core/manage_gaps.html", context)
 
@@ -489,13 +496,16 @@ def manage_gaps(request):
 @role_required(MANAGER_AND_ABOVE)
 def update_gap_status(request, gap_id):
     gap = get_object_or_404(Gap, id=gap_id)
+    from .permissions import get_user_role, Role, can_resolve_gaps
 
     if request.method == "POST":
         new_status = request.POST.get("status")
+        user_role = get_user_role(request.user)
 
         # DEBUG LOGGING - Track execution flow
         print(f"\n{'='*80}")
         print(f"🔍 DEBUG: update_gap_status() called for Gap #{gap.id}")
+        print(f"  👤 User: {request.user.username} | Role: {user_role}")
         print(f"  📊 Current status: {gap.status}")
         print(f"  📊 Requested new status: {new_status}")
         print(f"  🎤 Input method: {gap.input_method}")
@@ -504,9 +514,53 @@ def update_gap_status(request, gap_id):
             print(f"  📁 Audio file path: {gap.audio_file.name}")
         print(f"{'='*80}\n")
 
+        # ROLE CHECK: Only AUTHORITY and ADMIN can mark as "resolved"
+        if new_status == "resolved" and not can_resolve_gaps(request.user):
+            print(
+                f"❌ DEBUG: User {request.user.username} ({user_role}) cannot resolve gaps"
+            )
+            messages.error(
+                request,
+                f"❌ <strong>Permission Denied!</strong><br>"
+                f"Only AUTHORITY or ADMIN roles can mark gaps as resolved. Your role: {user_role.upper()}",
+                extra_tags="safe",
+            )
+            return redirect("manage_gaps")
+
         # CRITICAL: Check if this is a voice-based gap (submitted via audio)
         # Voice verification is ONLY required for gaps submitted through voice recording
         is_voice_gap = gap.input_method == "voice" or bool(gap.audio_file)
+
+        # RESOLUTION PROOF CHECK: AUTHORITY must provide proof when resolving
+        # BUT: Only for photo/image uploads - NOT for voice recordings!
+        if new_status == "resolved" and not is_voice_gap:
+            resolution_proof = request.FILES.get("resolution_proof")
+            resolution_proof_number = request.POST.get(
+                "resolution_proof_number", ""
+            ).strip()
+
+            # Require proof for non-voice gaps, or if not already provided
+            if not gap.resolution_proof and not resolution_proof:
+                print(
+                    f"❌ DEBUG: Resolution proof required but not provided (photo-based gap)"
+                )
+                messages.error(
+                    request,
+                    "❌ <strong>Resolution Proof Required!</strong><br>"
+                    "Please upload the resolution letter/document and provide reference number before marking as resolved.<br>"
+                    "<em>Note: This is required for photo uploads. Voice recordings use voice verification instead.</em>",
+                    extra_tags="safe",
+                )
+                return redirect("manage_gaps")
+
+            # Save resolution proof if provided
+            if resolution_proof:
+                gap.resolution_proof = resolution_proof
+                print(f"✅ DEBUG: Resolution proof uploaded: {resolution_proof.name}")
+
+            if resolution_proof_number:
+                gap.resolution_proof_number = resolution_proof_number
+                print(f"✅ DEBUG: Resolution proof number: {resolution_proof_number}")
 
         print(f"🔍 DEBUG: is_voice_gap = {is_voice_gap}")
         print(
@@ -589,6 +643,10 @@ def update_gap_status(request, gap_id):
 
             # Update status and show success message
             gap.status = new_status
+            gap.resolved_by = request.user
+            from django.utils import timezone
+
+            gap.resolved_at = timezone.now()
             gap.save()
 
             # Send resolution email
@@ -597,13 +655,15 @@ def update_gap_status(request, gap_id):
                 message=(
                     f"Gap in village {gap.village.name} has been marked resolved.\n"
                     f"Type: {gap.gap_type}\n"
-                    f"Description: {gap.description[:200]}..."
+                    f"Description: {gap.description[:200]}...\n"
+                    f"Resolved by: {request.user.username} ({user_role})\n"
+                    f"Voice verification: PASSED"
                 ),
                 recipients=[TEAM_EMAIL],
             )
 
             print(
-                f"✅ DEBUG: Gap #{gap.id} status updated to {new_status} (voice code verified)"
+                f"✅ DEBUG: Gap #{gap.id} status updated to {new_status} (voice code verified + resolution proof)"
             )
             messages.success(
                 request,
@@ -616,7 +676,16 @@ def update_gap_status(request, gap_id):
             f"ℹ️ DEBUG: Non-voice gap or non-resolution status change - allowing update"
         )
         if new_status in dict(Gap.STATUS_CHOICES):
+            old_status = gap.status
             gap.status = new_status
+
+            # Track resolution metadata
+            if new_status == "resolved":
+                gap.resolved_by = request.user
+                from django.utils import timezone
+
+                gap.resolved_at = timezone.now()
+
             gap.save()
 
             # Send email for resolutions
@@ -626,13 +695,15 @@ def update_gap_status(request, gap_id):
                     message=(
                         f"Gap in village {gap.village.name} has been marked resolved.\n"
                         f"Type: {gap.gap_type}\n"
-                        f"Description: {gap.description[:200]}..."
+                        f"Description: {gap.description[:200]}...\n"
+                        f"Resolved by: {request.user.username} ({user_role})\n"
+                        f"Resolution proof: {'Provided' if gap.resolution_proof else 'N/A'}"
                     ),
                     recipients=[TEAM_EMAIL],
                 )
 
             print(
-                f"✅ DEBUG: Gap #{gap.id} status updated to {new_status} (no voice verification required)"
+                f"✅ DEBUG: Gap #{gap.id} status updated from {old_status} to {new_status}"
             )
             messages.success(
                 request, f"✅ Gap status updated to {gap.get_status_display()}"
