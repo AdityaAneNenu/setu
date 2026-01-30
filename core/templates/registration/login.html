@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -331,6 +332,36 @@
       font-size: 12px;
     }
     
+    .language-switcher-login {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+    }
+    
+    .language-switcher-login select {
+      padding: 8px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .language-switcher-login select:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .language-switcher-login select option {
+      background: #1e3a8a;
+      color: white;
+    }
+    
     @media (max-width: 968px) {
       .container {
         flex-direction: column;
@@ -386,6 +417,22 @@
 </head>
 <body>
 
+<div class="language-switcher-login">
+  <form action="{% url 'set_language' %}" method="post" style="display: inline;">
+    {% csrf_token %}
+    <input name="next" type="hidden" value="{{ request.path }}" />
+    <select name="language" onchange="this.form.submit()">
+      {% get_current_language as CURRENT_LANGUAGE %}
+      {% get_available_languages as languages %}
+      {% for lang_code, lang_name in languages %}
+        <option value="{{ lang_code }}" {% if lang_code == CURRENT_LANGUAGE %}selected{% endif %}>
+          {{ lang_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
 <div class="container">
   <div class="info-panel">
     <div class="logo-section">
@@ -393,8 +440,8 @@
     </div>
     
     <div class="info-content">
-      <h3>Smart Evaluation and Tracking Utility for Village Development</h3>
-      <p>SETU aims to holistically develop villages by addressing gaps in infrastructure and services through smart tracking and evaluation.</p>
+      <h3>{% trans "Smart Evaluation and Tracking Utility for Village Development" %}</h3>
+      <p>{% trans "SETU aims to holistically develop villages by addressing gaps in infrastructure and services through smart tracking and evaluation." %}</p>
       
       <div class="features">
         <div class="feature-item">
@@ -419,8 +466,8 @@
   
   <div class="login-panel">
     <div class="login-header">
-      <h2>Portal Login</h2>
-      <p>Access your SETU dashboard</p>
+      <h2>{% trans "Portal Login" %}</h2>
+      <p>{% trans "Access your SETU dashboard" %}</p>
     </div>
 
     {% if form.errors %}
@@ -434,14 +481,14 @@
       {% csrf_token %}
       
       <div class="input-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Enter your username" required value="{{ form.username.value|default:'' }}">
+        <label for="username">{% trans "Username" %}</label>
+        <input type="text" id="username" name="username" placeholder="{% trans 'Enter your username' %}" required value="{{ form.username.value|default:'' }}">
       </div>
       
       <div class="input-group">
-        <label for="password">Password</label>
+        <label for="password">{% trans "Password" %}</label>
         <div class="password-wrapper">
-          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <input type="password" id="password" name="password" placeholder="{% trans 'Enter your password' %}" required>
           <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
             <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
@@ -458,7 +505,7 @@
         <a href="#">Forgot password?</a> -->
       </div>
       
-      <button type="submit">Login to Dashboard</button>
+      <button type="submit">{% trans "Login to Dashboard" %}</button>
     </form>
     
     <!-- <div class="divider">OR</div> -->

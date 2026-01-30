@@ -1,10 +1,11 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - SETU</title>
+  <title>{% trans "Dashboard" %} - SETU</title>
   <link rel="stylesheet" href="{% static 'css/modern.css' %}">
 </head>
 <body>
@@ -30,11 +31,11 @@
     </button>
     
     <ul class="nav-menu" id="navMenu">
-      <li class="nav-item"><a href="{% url 'dashboard' %}" class="active">Dashboard</a></li>
-      <li class="nav-item"><a href="{% url 'upload_form' %}">Upload</a></li>
-      <li class="nav-item"><a href="{% url 'manage_gaps' %}">Manage Gaps</a></li>
-      <li class="nav-item"><a href="{% url 'analytics' %}">Analytics</a></li>
-      <li class="nav-item"><a href="{% url 'villages_list' %}">Villages</a></li>
+      <li class="nav-item"><a href="{% url 'dashboard' %}" class="active">{% trans "Dashboard" %}</a></li>
+      <li class="nav-item"><a href="{% url 'upload_form' %}">{% trans "Upload" %}</a></li>
+      <li class="nav-item"><a href="{% url 'manage_gaps' %}">{% trans "Manage Gaps" %}</a></li>
+      <li class="nav-item"><a href="{% url 'analytics' %}">{% trans "Analytics" %}</a></li>
+      <li class="nav-item"><a href="{% url 'villages_list' %}">{% trans "Villages" %}</a></li>
     </ul>
     
     <div class="nav-user">
@@ -54,8 +55,9 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
+      {% include "language_switcher.html" %}
       <div class="user-avatar">{{ request.user.username|first|upper }}</div>
-      <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+      <a href="{% url 'logout' %}" class="btn btn-secondary">{% trans "Logout" %}</a>
     </div>
   </div>
 </nav>
@@ -63,53 +65,53 @@
 <div class="main-wrapper">
   <div class="container">
     <div class="page-header">
-      <h1>Dashboard</h1>
-      <p>Overview of village development gaps and progress tracking</p>
+      <h1>{% trans "Dashboard" %}</h1>
+      <p>{% trans "Overview of village development gaps and progress tracking" %}</p>
     </div>
 
     <!-- Statistics Cards -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">Total Gaps</div>
+        <div class="stat-label">{% trans "Total Gaps" %}</div>
         <div class="stat-value">{{ total_gaps }}</div>
-        <p class="stat-subtitle">Across all villages</p>
+        <p class="stat-subtitle">{% trans "Across all villages" %}</p>
       </div>
 
       <div class="stat-card">
-        <div class="stat-label">Pending</div>
+        <div class="stat-label">{% trans "Pending" %}</div>
         <div class="stat-value">{{ pending_gaps }}</div>
-        <p class="stat-subtitle">Awaiting action</p>
+        <p class="stat-subtitle">{% trans "Awaiting action" %}</p>
       </div>
 
       <div class="stat-card">
-        <div class="stat-label">In Progress</div>
+        <div class="stat-label">{% trans "In Progress" %}</div>
         <div class="stat-value">{{ in_progress_gaps }}</div>
-        <p class="stat-subtitle">Currently working</p>
+        <p class="stat-subtitle">{% trans "Currently working" %}</p>
       </div>
 
       <div class="stat-card">
-        <div class="stat-label">Resolved</div>
+        <div class="stat-label">{% trans "Resolved" %}</div>
         <div class="stat-value">{{ resolved_gaps }}</div>
-        <p class="stat-subtitle">Successfully completed</p>
+        <p class="stat-subtitle">{% trans "Successfully completed" %}</p>
       </div>
     </div>
 
     <!-- Recent Gaps -->
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">Recent Gaps</h2>
+        <h2 class="card-title">{% trans "Recent Gaps" %}</h2>
       </div>
       <div class="table-wrapper">
         <table class="table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Village</th>
-              <th>Type</th>
-              <th>Severity</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>{% trans "ID" %}</th>
+              <th>{% trans "Village" %}</th>
+              <th>{% trans "Type" %}</th>
+              <th>{% trans "Severity" %}</th>
+              <th>{% trans "Status" %}</th>
+              <th>{% trans "Created" %}</th>
+              <th>{% trans "Actions" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -136,13 +138,13 @@
               </td>
               <td>{{ gap.created_at|date:"M d, Y" }}</td>
               <td>
-                <a href="{% url 'manage_gaps' %}" class="btn btn-secondary">View</a>
+                <a href="{% url 'manage_gaps' %}" class="btn btn-secondary">{% trans "View" %}</a>
               </td>
             </tr>
             {% empty %}
             <tr>
               <td colspan="7" class="empty-state">
-                No gaps found. Upload data to get started.
+                {% trans "No gaps found. Upload data to get started." %}
               </td>
             </tr>
             {% endfor %}
@@ -154,18 +156,18 @@
     <!-- Villages Overview -->
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title">Villages</h2>
+        <h2 class="card-title">{% trans "Villages" %}</h2>
       </div>
       <div class="table-wrapper">
         <table class="table">
           <thead>
             <tr>
-              <th>Village Name</th>
-              <th>Total Gaps</th>
-              <th>Pending</th>
-              <th>In Progress</th>
-              <th>Resolved</th>
-              <th>Actions</th>
+              <th>{% trans "Village Name" %}</th>
+              <th>{% trans "Total Gaps" %}</th>
+              <th>{% trans "Pending" %}</th>
+              <th>{% trans "In Progress" %}</th>
+              <th>{% trans "Resolved" %}</th>
+              <th>{% trans "Actions" %}</th>
             </tr>
           </thead>
           <tbody>

@@ -1,8 +1,9 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Upload Form - SETU</title>
+  <title>{% trans "Upload Form" %} - SETU</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{% static 'css/modern.css' %}">
   <style>
@@ -943,17 +944,17 @@
 
       <!-- Submission Type Selection -->
       <div class="form-group">
-        <label>Submission Method</label>
+        <label>{% trans "Submission Method" %}</label>
         <div class="submission-type-selector">
           <div class="submission-option active" data-type="image">
             <div class="submission-icon">📄</div>
-            <h3>Paper Document</h3>
-            <p>For literate villagers who wrote complaints</p>
+            <h3>{% trans "Paper Document" %}</h3>
+            <p>{% trans "For literate villagers who wrote complaints" %}</p>
           </div>
           <div class="submission-option" data-type="audio">
             <div class="submission-icon">🎤</div>
-            <h3>Audio Recording</h3>
-            <p>For agents collecting responses from illiterate villagers</p>
+            <h3>{% trans "Audio Recording" %}</h3>
+            <p>{% trans "For agents collecting responses from illiterate villagers" %}</p>
           </div>
         </div>
         <input type="hidden" name="submission_type" id="submission_type" value="image">
@@ -961,7 +962,7 @@
 
       <!-- Image Submission Section -->
       <div class="form-group" id="imageSection">
-        <label for="image">Choose Image</label>
+        <label for="image">{% trans "Choose Image" %}</label>
         <div class="file-upload-wrapper">
           <input type="file" name="image" id="image" accept="image/*">
           
@@ -1028,35 +1029,35 @@
 
         <!-- Alternative Audio Upload -->
         <div class="form-group" style="margin-top: 20px;">
-          <label>Or Upload Audio File</label>
+          <label>{% trans "Or Upload Audio File" %}</label>
           <input type="file" name="audio_file_upload" accept="audio/*" class="file-input">
           <small>Supported formats: MP3, WAV, M4A</small>
         </div>
 
         <!-- Agent Information -->
         <div class="form-group">
-          <label for="agent_name">Agent Name</label>
+          <label for="agent_name">{% trans "Agent Name" %}</label>
           <input type="text" name="agent_name" id="agent_name" placeholder="Enter collecting agent name">
         </div>
       </div>
 
       <div class="form-group">
-        <label for="start_date">Project Start Date</label>
+        <label for="start_date">{% trans "Project Start Date" %}</label>
         <input type="date" name="start_date" id="start_date">
       </div>
 
       <div class="form-group">
-        <label for="expected_completion">Expected Completion Date</label>
+        <label for="expected_completion">{% trans "Expected Completion Date" %}</label>
         <input type="date" name="expected_completion" id="expected_completion">
       </div>
 
       <div class="form-group">
-        <label for="latitude">Latitude (Optional)</label>
+        <label for="latitude">{% trans "Latitude (Optional)" %}</label>
         <input type="number" name="latitude" id="latitude" step="0.000001" placeholder="e.g., 28.7041">
       </div>
 
       <div class="form-group">
-        <label for="longitude">Longitude (Optional)</label>
+        <label for="longitude">{% trans "Longitude (Optional)" %}</label>
         <input type="number" name="longitude" id="longitude" step="0.000001" placeholder="e.g., 77.1025">
       </div>
 

@@ -1,0 +1,48 @@
+{% load i18n %}
+<form action="{% url 'set_language' %}" method="post" class="language-switcher" style="display: inline-block;">
+  {% csrf_token %}
+  <input name="next" type="hidden" value="{{ request.path }}" />
+  <select name="language" onchange="this.form.submit()" class="language-select">
+    {% get_current_language as CURRENT_LANGUAGE %}
+    {% get_available_languages as languages %}
+    {% for lang_code, lang_name in languages %}
+      <option value="{{ lang_code }}" {% if lang_code == CURRENT_LANGUAGE %}selected{% endif %}>
+        {{ lang_name }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+<style>
+.language-switcher {
+  margin: 0 10px;
+}
+
+.language-select {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #333);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.language-select:hover {
+  border-color: var(--primary-color, #4CAF50);
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #4CAF50);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+/* Dark mode support */
+[data-theme="dark"] .language-select {
+  background: var(--bg-secondary, #2d3748);
+  border-color: var(--border-color, #4a5568);
+  color: var(--text-primary, #e2e8f0);
+}
+</style>

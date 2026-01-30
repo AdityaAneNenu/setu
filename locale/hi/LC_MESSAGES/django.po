@@ -1,0 +1,190 @@
+# Hindi translation for SETU PM Ajay
+# Copyright (C) 2026
+# This file is distributed under the same license as the SETU package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SETU 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-28 00:00+0000\n"
+"PO-Revision-Date: 2026-01-28 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Hindi\n"
+"Language: hi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Dashboard"
+msgstr "डैशबोर्ड"
+
+msgid "Upload"
+msgstr "अपलोड"
+
+msgid "Manage Gaps"
+msgstr "गैप प्रबंधन"
+
+msgid "Analytics"
+msgstr "विश्लेषण"
+
+msgid "Villages"
+msgstr "गांव"
+
+msgid "Logout"
+msgstr "लॉगआउट"
+
+msgid "Overview of village development gaps and progress tracking"
+msgstr "गांव विकास गैप और प्रगति ट्रैकिंग का अवलोकन"
+
+msgid "Total Gaps"
+msgstr "कुल गैप"
+
+msgid "Pending"
+msgstr "लंबित"
+
+msgid "In Progress"
+msgstr "प्रगति में"
+
+msgid "Completed"
+msgstr "पूर्ण"
+
+msgid "Critical Severity"
+msgstr "महत्वपूर्ण गंभीरता"
+
+msgid "Total Budget"
+msgstr "कुल बजट"
+
+msgid "Recent Gaps"
+msgstr "हालिया गैप"
+
+msgid "Village"
+msgstr "गांव"
+
+msgid "Scheme"
+msgstr "योजना"
+
+msgid "Category"
+msgstr "श्रेणी"
+
+msgid "Severity"
+msgstr "गंभीरता"
+
+msgid "Status"
+msgstr "स्थिति"
+
+msgid "Actions"
+msgstr "कार्रवाई"
+
+msgid "View All"
+msgstr "सभी देखें"
+
+msgid "Login"
+msgstr "लॉगिन"
+
+msgid "Username"
+msgstr "उपयोगकर्ता नाम"
+
+msgid "Password"
+msgstr "पासवर्ड"
+
+msgid "Portal Login"
+msgstr "पोर्टल लॉगिन"
+
+msgid "Access your SETU dashboard"
+msgstr "अपने सेतु डैशबोर्ड तक पहुंचें"
+
+msgid "Enter your username"
+msgstr "अपना उपयोगकर्ता नाम दर्ज करें"
+
+msgid "Enter your password"
+msgstr "अपना पासवर्ड दर्ज करें"
+
+msgid "Login to Dashboard"
+msgstr "डैशबोर्ड में लॉगिन करें"
+
+msgid "Smart Evaluation and Tracking Utility for Village Development"
+msgstr "ग्राम विकास के लिए स्मार्ट मूल्यांकन और ट्रैकिंग उपयोगिता"
+
+msgid "SETU aims to holistically develop villages by addressing gaps in infrastructure and services through smart tracking and evaluation."
+msgstr "सेतु का उद्देश्य स्मार्ट ट्रैकिंग और मूल्यांकन के माध्यम से बुनियादी ढांचे और सेवाओं में अंतराल को दूर करके गांवों का समग्र विकास करना है।"
+
+msgid "Across all villages"
+msgstr "सभी गांवों में"
+
+msgid "Awaiting action"
+msgstr "कार्रवाई की प्रतीक्षा में"
+
+msgid "Currently working"
+msgstr "वर्तमान में कार्य में"
+
+msgid "Resolved"
+msgstr "हल किया गया"
+
+msgid "Successfully completed"
+msgstr "सफलतापूर्वक पूर्ण"
+
+msgid "ID"
+msgstr "आईडी"
+
+msgid "Type"
+msgstr "प्रकार"
+
+msgid "Created"
+msgstr "बनाया गया"
+
+msgid "No gaps found. Upload data to get started."
+msgstr "कोई गैप नहीं मिला। शुरू करने के लिए डेटा अपलोड करें।"
+
+msgid "Village Name"
+msgstr "गांव का नाम"
+
+msgid "Upload Form"
+msgstr "अपलोड फॉर्म"
+
+msgid "Select Village"
+msgstr "गांव चुनें"
+
+msgid "Submission Method"
+msgstr "प्रस्तुत करने का तरीका"
+
+msgid "Choose Image"
+msgstr "छवि चुनें"
+
+msgid "Audio Recording Options"
+msgstr "ऑडियो रिकॉर्डिंग विकल्प"
+
+msgid "Language"
+msgstr "भाषा"
+
+msgid "Or Upload Audio File"
+msgstr "या ऑडियो फ़ाइल अपलोड करें"
+
+msgid "Agent Name"
+msgstr "एजेंट का नाम"
+
+msgid "Project Start Date"
+msgstr "परियोजना प्रारंभ तिथि"
+
+msgid "Expected Completion Date"
+msgstr "अपेक्षित पूर्णता तिथि"
+
+msgid "Latitude (Optional)"
+msgstr "अक्षांश (वैकल्पिक)"
+
+msgid "Longitude (Optional)"
+msgstr "देशांतर (वैकल्पिक)"
+
+msgid "Paper Document"
+msgstr "कागजी दस्तावेज़"
+
+msgid "For literate villagers who wrote complaints"
+msgstr "साक्षर ग्रामीणों के लिए जिन्होंने शिकायतें लिखीं"
+
+msgid "Audio Recording"
+msgstr "ऑडियो रिकॉर्डिंग"
+
+msgid "For agents collecting responses from illiterate villagers"
+msgstr "निरक्षर ग्रामीणों से प्रतिक्रिया एकत्र करने वाले एजेंटों के लिए"
+
+
