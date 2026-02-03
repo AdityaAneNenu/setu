@@ -1,4 +1,5 @@
 from functools import wraps
+from rest_framework.permissions import BasePermission
 
 
 class Role:
@@ -72,3 +73,41 @@ def can_verify_gaps(user):
 def can_create_gaps(user):
     """Check if user can create gaps (all authenticated users)"""
     return user.is_authenticated
+
+
+# DRF Permission Classes for API endpoints
+class CanCreateGaps(BasePermission):
+    """DRF permission: User must be authenticated to create gaps"""
+
+    def has_permission(self, request, view):
+        return can_create_gaps(request.user)
+
+
+class CanVerifyGaps(BasePermission):
+    """DRF permission: Manager+ can verify gaps"""
+
+    def has_permission(self, request, view):
+        return can_verify_gaps(request.user)
+
+
+class CanResolveGaps(BasePermission):
+    """DRF permission: Authority+ can resolve gaps"""
+
+    def has_permission(self, request, view):
+        return can_resolve_gaps(request.user)
+
+
+class CanViewAnalytics(BasePermission):
+    """DRF permission: Manager+ can view analytics"""
+
+    def has_permission(self, request, view):
+        role = get_user_role(request.user)
+        return role in [Role.MANAGER, Role.AUTHORITY, Role.ADMIN]
+
+
+class CanManageBudget(BasePermission):
+    """DRF permission: Authority+ can manage budget"""
+
+    def has_permission(self, request, view):
+        role = get_user_role(request.user)
+        return role in [Role.AUTHORITY, Role.ADMIN]

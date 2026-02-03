@@ -1,0 +1,166 @@
+.formContainer {
+  background: var(--bg-card);
+  padding: 40px;
+  max-width: 700px;
+  margin: 0 auto;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.formContainer h2 {
+  color: var(--text-primary);
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
+/* Submission Type Selector */
+.submissionTypeSelector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.submissionOption {
+  padding: 24px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--bg-secondary);
+}
+
+.submissionOption:hover {
+  border-color: var(--accent-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.submissionOption.active {
+  border-color: var(--accent-purple);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.submissionIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.submissionLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.submissionDesc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* File Input */
+.fileInput {
+  width: 100%;
+  padding: 16px;
+  font-size: 15px;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fileInput:hover {
+  border-color: var(--accent-purple);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.filePreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Audio Recorder */
+.audioRecorder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 24px;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.recordBtn {
+  min-width: 180px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Messages */
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--danger-bg);
+  border-radius: 12px;
+  color: var(--danger-text);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.successMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--success-bg);
+  border-radius: 12px;
+  color: var(--success-text);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .formContainer {
+    padding: 24px;
+  }
+
+  .submissionTypeSelector {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .submissionOption {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+  }
+
+  .submissionIcon {
+    font-size: 24px;
+    margin-bottom: 0;
+  }
+}

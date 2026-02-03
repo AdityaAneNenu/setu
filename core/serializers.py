@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import QRSubmission, QRComplaintDetail, Village, Complaint
+from .models import QRSubmission, QRComplaintDetail, Village, Complaint, PostOffice
 
 
 class QRSubmissionSerializer(serializers.ModelSerializer):
@@ -151,3 +151,36 @@ class VillageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Village
         fields = ["id", "name"]
+
+
+class ComplaintSerializer(serializers.ModelSerializer):
+    """Serializer for Complaint model"""
+
+    class Meta:
+        model = Complaint
+        fields = "__all__"
+
+
+class PostOfficeSerializer(serializers.ModelSerializer):
+    """Serializer for PostOffice model"""
+
+    class Meta:
+        model = PostOffice
+        fields = "__all__"
+
+
+class PhotoUploadSerializer(serializers.Serializer):
+    """Serializer for photo uploads"""
+
+    complaint_id = serializers.CharField(max_length=100)
+    photo = serializers.ImageField(required=False)
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
+    timestamp = serializers.DateTimeField(required=False)
+
+
+class OfflineDataSyncSerializer(serializers.Serializer):
+    """Serializer for offline data sync"""
+
+    gaps = serializers.ListField(required=False)
+    complaints = serializers.ListField(required=False)

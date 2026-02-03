@@ -1,0 +1,211 @@
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-purple);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  transition: all 0.2s ease;
+}
+
+.backLink:hover {
+  gap: 12px;
+}
+
+.pageHeader {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+  border: 1px solid var(--border-color);
+}
+
+.villageTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.villageIcon {
+  width: 64px;
+  height: 64px;
+  background: var(--gradient-primary);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.villageIcon svg {
+  width: 36px;
+  height: 36px;
+  stroke: white;
+}
+
+.villageTitle h1 {
+  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.villageTitle p {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.statValue {
+  color: var(--text-primary);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.statLabel {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statCard.total {
+  background: var(--gradient-primary);
+}
+
+.statCard.total .statValue,
+.statCard.total .statLabel {
+  color: white;
+}
+
+.statCard.open {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.statCard.open .statValue {
+  color: #ef4444;
+}
+
+.statCard.progress {
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.statCard.progress .statValue {
+  color: #f97316;
+}
+
+.statCard.resolved {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.statCard.resolved .statValue {
+  color: #22c55e;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.severityLow {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.severityMedium {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.severityHigh {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.statusOpen {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.statusProgress {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.statusResolved {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.descriptionCell {
+  max-width: 250px;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pageHeader {
+    padding: 24px;
+  }
+
+  .villageTitle h1 {
+    font-size: 24px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

@@ -17,15 +17,15 @@ from django.core.paginator import Paginator
 try:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("⚠️ WARNING: GEMINI_API_KEY not set. Translation will not work.")
+        print("WARNING: GEMINI_API_KEY not set. Translation will not work.")
         model = None
     else:
         genai.configure(api_key=api_key)
         # Use stable gemini-2.5-flash model
         model = genai.GenerativeModel("gemini-2.5-flash")
-        print("✅ Gemini AI initialized successfully with gemini-2.5-flash")
+        print("Gemini AI initialized successfully with gemini-2.5-flash")
 except Exception as e:
-    print(f"❌ Error initializing Gemini AI: {e}")
+    print(f"Error initializing Gemini AI: {e}")
     print(f"   Common issues:")
     print(
         f"   - API key is leaked/disabled (get new key from https://aistudio.google.com/apikey)"
