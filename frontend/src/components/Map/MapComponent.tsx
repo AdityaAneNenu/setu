@@ -33,7 +33,6 @@ interface Project {
   title: string;
   description: string;
   status: string;
-  budget?: string;
 }
 
 interface MapComponentProps {
@@ -123,8 +122,7 @@ export default function MapComponent({ projects = [], height = '500px' }: MapCom
               <em style="color: #6b7280; font-size: 0.875rem;">${project.description}</em>
               <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
                 <strong style="color: #4b5563;">Status:</strong> 
-                <span style="color: #8b5cf6; font-weight: 600;">${project.status}</span><br>
-                ${project.budget ? `<strong style="color: #4b5563;">Budget:</strong> <span style="color: #8b5cf6; font-weight: 600;">${project.budget}</span>` : ''}
+                <span style="color: #8b5cf6; font-weight: 600;">${project.status}</span>
               </div>
             </div>
           `);

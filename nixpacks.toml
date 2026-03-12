@@ -1,0 +1,8 @@
+[phases.setup]
+aptPkgs = ["libsndfile1-dev", "ffmpeg"]
+
+[phases.build]
+cmds = ["pip install -r requirements.txt"]
+
+[start]
+cmd = "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000}"

@@ -19,30 +19,34 @@ class Command(BaseCommand):
         # Define users with their roles
         users_config = [
             {
-                "username": "admin",
-                "password": "Admin@123",
+                "username": "admin1",
+                "email": "admin1@setu.gov.in",
+                "password": "setu1234",
                 "role": "admin",
                 "is_superuser": True,
                 "is_staff": True,
             },
             {
-                "username": "authority",
-                "password": "Authority@123",
-                "role": "authority",
-                "is_superuser": False,
-                "is_staff": True,
-            },
-            {
-                "username": "manager",
-                "password": "Manager@123",
+                "username": "manager1",
+                "email": "manager1@setu.gov.in",
+                "password": "setu1234",
                 "role": "manager",
                 "is_superuser": False,
                 "is_staff": False,
             },
             {
-                "username": "ground",
-                "password": "Ground@123",
+                "username": "ground1",
+                "email": "ground1@setu.gov.in",
+                "password": "setu1234",
                 "role": "ground",
+                "is_superuser": False,
+                "is_staff": False,
+            },
+            {
+                "username": "authority1",
+                "email": "authority1@setu.gov.in",
+                "password": "setu1234",
+                "role": "authority",
                 "is_superuser": False,
                 "is_staff": False,
             },
@@ -53,7 +57,7 @@ class Command(BaseCommand):
             user.set_password(config["password"])
             user.is_superuser = config["is_superuser"]
             user.is_staff = config["is_staff"]
-            user.email = f"{config['username']}@example.com"
+            user.email = config["email"]
             user.save()
 
             # Create or update profile
@@ -92,18 +96,17 @@ class Command(BaseCommand):
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write("USER CREDENTIALS")
         self.stdout.write("=" * 60)
-        self.stdout.write("\n| Role              | Username   | Password       |")
-        self.stdout.write("|-------------------|------------|----------------|")
-        self.stdout.write("| Admin (superuser) | admin      | Admin@123      |")
-        self.stdout.write("| Highest Authority | authority  | Authority@123  |")
-        self.stdout.write("| Manager           | manager    | Manager@123    |")
-        self.stdout.write("| Ground Level      | ground     | Ground@123     |")
+        self.stdout.write("\n| Role              | Username    | Password       |")
+        self.stdout.write("|-------------------|-------------|----------------|")
+        self.stdout.write("| Admin (superuser) | admin1      | setu1234       |")
+        self.stdout.write("| Manager           | manager1    | setu1234       |")
+        self.stdout.write("| Ground Level      | ground1     | setu1234       |")
+        self.stdout.write("| Authority         | authority1  | setu1234       |")
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write("\nRoles and Permissions:")
         self.stdout.write("  - ground: Can create gaps, upload data")
         self.stdout.write("  - manager: Can verify gaps, change status to in_progress")
-        self.stdout.write("  - authority: Can resolve gaps, manage budgets")
-        self.stdout.write("  - admin: Full access to everything")
+        self.stdout.write("  - admin: Full access to everything, can resolve gaps")
         self.stdout.write("\n")
 
         self.stdout.write(self.style.SUCCESS("Setup completed successfully!"))

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth as firebaseAuth } from '@/lib/firebase';
 import styles from './page.module.css';
 
 export default function LoginPage() {
@@ -20,9 +22,24 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
-      router.push('/dashboard');
+      // Role-based redirect: ground workers go to upload, others go to dashboard
+      const uid = firebaseAuth.currentUser?.uid;
+      let role = 'ground';
+      if (uid) {
+        try {
+          const profileDoc = await getDoc(doc(db, 'users', uid));
+          if (profileDoc.exists()) {
+            role = profileDoc.data()?.role || 'ground';
+          }
+        } catch {}
+      }
+      if (role === 'ground') {
+        router.push('/upload');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid username or password');
+      setError(err?.message || 'Invalid username or password');
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +66,7 @@ export default function LoginPage() {
               </div>
               <div className={styles.featureItem}>
                 <span className={styles.featureText}>
-                  <strong>Voice Input</strong> - Submit issues in your language
+                  <strong>Voice Input</strong> - Submit issues using voice recordings
                 </span>
               </div>
               <div className={styles.featureItem}>

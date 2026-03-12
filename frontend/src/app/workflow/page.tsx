@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { workflowApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar/Navbar';
 import styles from './page.module.css';
 
 interface Complaint {
@@ -26,17 +27,22 @@ interface WorkflowStats {
 
 export default function WorkflowDashboardPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, canViewAnalytics } = useAuth();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [stats, setStats] = useState<WorkflowStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+      } else if (!canViewAnalytics) {
+        setAccessDenied(true);
+      }
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user, canViewAnalytics, router]);
 
   useEffect(() => {
     if (user) {
@@ -51,8 +57,8 @@ export default function WorkflowDashboardPage() {
         workflowApi.getComplaints({ status: filter === 'all' ? '' : filter }),
         workflowApi.getStats(),
       ]);
-      setComplaints(complaintsRes);
-      setStats(statsRes);
+      setComplaints(complaintsRes as any);
+      setStats(statsRes as any);
     } catch (err) {
       console.error('Failed to load workflow data:', err);
     } finally {
@@ -84,9 +90,37 @@ export default function WorkflowDashboardPage() {
     );
   }
 
+  if (accessDenied) {
+    return (
+      <>
+        <Navbar />
+        <div className={styles.container}>
+          <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+            <h2>Access Denied</h2>
+            <p style={{ color: 'var(--text-muted)', marginTop: '10px' }}>
+              You need Manager role or higher to access the Workflow Dashboard.
+            </p>
+            <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>
+              Your current role: <strong>{user?.role}</strong>
+            </p>
+            <button 
+              onClick={() => router.push('/upload')} 
+              className="btn btn-primary"
+              style={{ marginTop: '30px' }}
+            >
+              Go to Upload Page
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <>
+      <Navbar />
+      <div className={styles.container}>
+        <div className={styles.header}>
         <div>
           <h1>Workflow Dashboard</h1>
           <p>Manage complaints and assignments</p>
@@ -210,5 +244,6 @@ export default function WorkflowDashboardPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

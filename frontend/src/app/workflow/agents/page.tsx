@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { workflowApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar/Navbar';
 import styles from './page.module.css';
 
 interface Agent {
@@ -42,7 +43,7 @@ export default function AgentsDashboardPage() {
     try {
       setIsLoading(true);
       const response = await workflowApi.getAgents();
-      setAgents(response);
+      setAgents(response as any);
     } catch (err) {
       console.error('Failed to load agents:', err);
     } finally {
@@ -67,8 +68,10 @@ export default function AgentsDashboardPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <>
+      <Navbar />
+      <div className={styles.container}>
+        <div className={styles.header}>
         <div>
           <Link href="/workflow" className={styles.backBtn}>
             ← Back to Workflow

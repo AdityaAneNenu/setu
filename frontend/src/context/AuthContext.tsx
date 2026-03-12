@@ -1,12 +1,25 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import Cookies from 'js-cookie';
 import { User, UserRole } from '@/types';
-import { authApi } from '@/lib/api';
+import { auth, db } from '@/lib/firebase';
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from 'firebase/auth';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 
 // Role hierarchy - higher index = more permissions
-const ROLE_HIERARCHY: UserRole[] = ['ground', 'manager', 'authority', 'admin'];
+const ROLE_HIERARCHY: UserRole[] = ['ground', 'manager', 'admin'];
 
 interface AuthContextType {
   user: User | null;
@@ -19,7 +32,6 @@ interface AuthContextType {
   canVerifyGaps: boolean;
   canManageGaps: boolean;
   canResolveGaps: boolean;
-  canManageBudget: boolean;
   canViewAnalytics: boolean;
   hasRole: (role: UserRole) => boolean;
   hasMinRole: (minRole: UserRole) => boolean;
@@ -27,81 +39,110 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Look up user profile data from Firestore 'users' collection.
+ * Falls back to basic Firebase Auth info if no profile exists.
+ */
+async function getUserProfile(firebaseUser: FirebaseUser): Promise<User> {
+  try {
+    // Try finding by Firebase UID (document ID)
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+      const data = userDocSnap.data();
+      return {
+        id: userDocSnap.id,
+        username: data.username || firebaseUser.displayName || '',
+        email: data.email || firebaseUser.email || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        role: (data.role as UserRole) || 'ground',
+        is_superuser: data.is_superuser || false,
+        is_staff: data.is_staff || false,
+      };
+    }
+
+    // Fallback: find by email
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', firebaseUser.email));
+    const snap = await getDocs(q);
+
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      return {
+        id: snap.docs[0].id,
+        username: data.username || firebaseUser.displayName || '',
+        email: data.email || firebaseUser.email || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        role: (data.role as UserRole) || 'ground',
+        is_superuser: data.is_superuser || false,
+        is_staff: data.is_staff || false,
+      };
+    }
+  } catch (err) {
+    console.warn('Error fetching user profile from Firestore:', err);
+  }
+
+  // Fallback
+  return {
+    id: 0,
+    username: firebaseUser.displayName || firebaseUser.email || '',
+    email: firebaseUser.email || '',
+    first_name: '',
+    last_name: '',
+    role: 'ground',
+    is_superuser: false,
+    is_staff: false,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Prevent double initialization
-    if (isInitialized) return;
-    setIsInitialized(true);
+    // Listen for Firebase Auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const profile = await getUserProfile(firebaseUser);
+        setUser(profile);
 
-    // Check for existing auth token
-    const token = Cookies.get('authToken');
-    if (token) {
-      // Validate token and get user info
-      authApi.getCurrentUser()
-        .then((userData) => {
-          setUser(userData);
-          // Store user in sessionStorage as backup
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('user', JSON.stringify(userData));
-          }
-        })
-        .catch((error) => {
-          console.error('Auth validation failed:', error);
-          Cookies.remove('authToken', { path: '/' });
-          if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('user');
-          }
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      // Try to get user from sessionStorage (in case cookie was cleared)
-      if (typeof window !== 'undefined') {
-        const storedUser = sessionStorage.getItem('user');
-        if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            setUser(userData);
-          } catch (e) {
-            sessionStorage.removeItem('user');
-          }
+        // Store in sessionStorage as backup
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('user', JSON.stringify(profile));
+        }
+      } else {
+        setUser(null);
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('user');
         }
       }
       setIsLoading(false);
-    }
-  }, [isInitialized]);
+    });
 
+    return () => unsubscribe();
+  }, []);
+
+  /**
+   * Login with email & password via Firebase Auth.
+   * The 'username' parameter is treated as email for Firebase Auth.
+   * If the username doesn't contain '@', we append a default domain.
+   */
   const login = async (username: string, password: string) => {
-    try {
-      const response = await authApi.login(username, password);
-      // Set cookie with proper options for persistence across refreshes
-      Cookies.set('authToken', response.token, { 
-        expires: 7, // 7 days
-        path: '/',  // Available across entire site
-        sameSite: 'lax', // CSRF protection while allowing normal navigation
-      });
-      setUser(response.user);
-      // Store user in sessionStorage as backup
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('user', JSON.stringify(response.user));
-      }
-    } catch (error) {
-      throw error;
-    }
+    const email = username.includes('@') ? username : `${username}@setu.gov.in`;
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged callback will set the user
   };
 
   const logout = () => {
-    Cookies.remove('authToken', { path: '/' });
+    signOut(auth);
     setUser(null);
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('user');
+      window.location.href = '/login';
     }
-    authApi.logout();
   };
 
   // Permission helper functions
@@ -121,8 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canCreateGaps = !!user; // All authenticated users
   const canVerifyGaps = hasMinRole('manager'); // Manager and above
   const canManageGaps = hasMinRole('manager'); // Manager and above (change status)
-  const canResolveGaps = hasMinRole('authority'); // Authority and Admin only
-  const canManageBudget = hasMinRole('authority'); // Authority and Admin only
+  const canResolveGaps = hasMinRole('admin'); // Admin only
   const canViewAnalytics = hasMinRole('manager'); // Manager and above
 
   return (
@@ -137,7 +177,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canVerifyGaps,
         canManageGaps,
         canResolveGaps,
-        canManageBudget,
         canViewAnalytics,
         hasRole,
         hasMinRole,

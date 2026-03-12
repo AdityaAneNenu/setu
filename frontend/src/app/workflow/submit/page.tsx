@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { workflowApi, villagesApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar/Navbar';
 import styles from './page.module.css';
 
 interface Village {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -36,13 +37,14 @@ export default function SubmitComplaintPage() {
   }, [authLoading, user, router]);
 
   useEffect(() => {
-    loadVillages();
-  }, []);
+    if (user) loadVillages();
+  }, [user]);
 
   const loadVillages = async () => {
     try {
-      const response = await villagesApi.getAll();
-      setVillages(response);
+      // Pass user role and ID for role-based filtering
+      const response = await villagesApi.getAll(user?.role, user?.id?.toString());
+      setVillages(response as any);
     } catch (err) {
       console.error('Failed to load villages:', err);
     } finally {
@@ -74,7 +76,7 @@ export default function SubmitComplaintPage() {
         router.push('/workflow');
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit complaint');
+      setError(err?.message || 'Failed to submit complaint');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,8 +92,10 @@ export default function SubmitComplaintPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <>
+      <Navbar />
+      <div className={styles.container}>
+        <div className={styles.header}>
         <Link href="/workflow" className={styles.backBtn}>
           ← Back
         </Link>
@@ -206,5 +210,6 @@ export default function SubmitComplaintPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

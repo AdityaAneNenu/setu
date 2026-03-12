@@ -46,8 +46,9 @@ export default function UploadPage() {
 
   const loadVillages = async () => {
     try {
-      const response = await villagesApi.getAll();
-      setVillages(response.villages || response || []);
+      // Pass user role and ID for role-based filtering
+      const response = await villagesApi.getAll(user?.role, user?.id?.toString());
+      setVillages(response as Village[]);
     } catch (err) {
       console.error('Failed to load villages:', err);
     }
@@ -104,6 +105,8 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append('village', selectedVillage);
       formData.append('submission_type', submissionType);
+      formData.append('gap_type', gapType);
+      formData.append('severity', severity);
 
       if (submissionType === 'image' && imageFile) {
         formData.append('image', imageFile);
@@ -111,8 +114,6 @@ export default function UploadPage() {
         formData.append('audio_file', audioFile);
         formData.append('language_code', languageCode);
       } else if (submissionType === 'text') {
-        formData.append('gap_type', gapType);
-        formData.append('severity', severity);
         formData.append('description', description);
         formData.append('language_code', languageCode);
       }
@@ -129,10 +130,10 @@ export default function UploadPage() {
       setAudioFile(null);
       
       setTimeout(() => {
-        router.push('/manage-gaps');
+        router.push(user?.role === 'ground' ? '/upload' : '/manage-gaps');
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit gap');
+      setError(err?.message || 'Failed to submit gap');
     } finally {
       setIsLoading(false);
     }
@@ -288,53 +289,57 @@ export default function UploadPage() {
                 </div>
               )}
 
+              <div className="form-group">
+                <label className="form-label">Gap Type</label>
+                <select
+                  className="form-select"
+                  value={gapType}
+                  onChange={(e) => setGapType(e.target.value)}
+                  required
+                >
+                  <option value="">Select gap type</option>
+                  <option value="water">Water Supply</option>
+                  <option value="road">Road Infrastructure</option>
+                  <option value="sanitation">Sanitation</option>
+                  <option value="electricity">Electricity</option>
+                  <option value="education">Education</option>
+                  <option value="health">Healthcare</option>
+                  <option value="housing">Housing</option>
+                  <option value="agriculture">Agriculture</option>
+                  <option value="connectivity">Connectivity</option>
+                  <option value="employment">Employment</option>
+                  <option value="community_center">Community Center</option>
+                  <option value="drainage">Drainage</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Severity</label>
+                <select
+                  className="form-select"
+                  value={severity}
+                  onChange={(e) => setSeverity(e.target.value)}
+                  required
+                >
+                  <option value="">Select severity</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+
               {submissionType === 'text' && (
-                <>
-                  <div className="form-group">
-                    <label className="form-label">Gap Type</label>
-                    <select
-                      className="form-select"
-                      value={gapType}
-                      onChange={(e) => setGapType(e.target.value)}
-                      required
-                    >
-                      <option value="">Select gap type</option>
-                      <option value="water">Water Supply</option>
-                      <option value="road">Road Infrastructure</option>
-                      <option value="sanitation">Sanitation</option>
-                      <option value="electricity">Electricity</option>
-                      <option value="education">Education</option>
-                      <option value="health">Healthcare</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Severity</label>
-                    <select
-                      className="form-select"
-                      value={severity}
-                      onChange={(e) => setSeverity(e.target.value)}
-                      required
-                    >
-                      <option value="">Select severity</option>
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Description</label>
-                    <textarea
-                      className="form-textarea"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Describe the development gap in detail..."
-                      required
-                    />
-                  </div>
-                </>
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-textarea"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the development gap in detail..."
+                    required
+                  />
+                </div>
               )}
 
               <button

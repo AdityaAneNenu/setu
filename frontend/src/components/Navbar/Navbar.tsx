@@ -10,22 +10,27 @@ import styles from './Navbar.module.css';
 export default function Navbar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const { user, logout, isAuthenticated, canManageBudget, canViewAnalytics } = useAuth();
+  const { user, logout, isAuthenticated, canViewAnalytics, canManageGaps } = useAuth();
   const [menuOpen, setMenuOpen] = React.useState(false);
 
-  // All authenticated users can see these
-  const baseItems = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/upload', label: 'Upload' },
-    { href: '/manage-gaps', label: 'Manage Gaps' },
-    { href: '/villages', label: 'Villages' },
-  ];
-
   // Build nav items based on role
+  // Ground workers only see Upload (their primary function)
   const navItems = [
-    ...baseItems,
+    // Only Manager+ can see Dashboard, Manage Gaps, Villages, Workflow
+    ...(canViewAnalytics ? [
+      { href: '/dashboard', label: 'Dashboard' },
+    ] : []),
+    // Upload visible to all authenticated users
+    { href: '/upload', label: 'Upload' },
+    // Manager+ can manage gaps
+    ...(canManageGaps ? [
+      { href: '/manage-gaps', label: 'Manage Gaps' },
+      { href: '/villages', label: 'Villages' },
+    ] : []),
     // Only show analytics for manager and above
     ...(canViewAnalytics ? [{ href: '/analytics', label: 'Analytics' }] : []),
+    // Workflow visible to manager and above
+    ...(canViewAnalytics ? [{ href: '/workflow', label: 'Workflow' }] : []),
   ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');

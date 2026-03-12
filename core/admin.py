@@ -5,14 +5,13 @@ from .models import (
     Village,
     Submission,
     Gap,
+    GapStatusAuditLog,
     PostOffice,
     PMAJAYOffice,
     Complaint,
     WorkflowLog,
     SurveyAgent,
     SurveyVisit,
-    VillagerContact,
-    SMSStatusUpdate,
     Worker,
     VoiceVerificationLog,
     UserProfile,
@@ -43,14 +42,11 @@ class GapAdmin(admin.ModelAdmin):
         "status",
         "resolved_by",
         "resolution_status",
-        "budget_allocated",
-        "budget_spent",
         "start_date",
         "expected_completion",
         "is_overdue",
     )
     list_filter = ("status", "severity", "gap_type", "created_at", "resolved_by")
-    list_editable = ("budget_allocated", "budget_spent")
     search_fields = (
         "village__name",
         "description",
@@ -60,7 +56,6 @@ class GapAdmin(admin.ModelAdmin):
     readonly_fields = (
         "created_at",
         "is_overdue",
-        "budget_remaining",
         "resolved_by",
         "resolved_at",
     )
@@ -97,15 +92,8 @@ class GapAdmin(admin.ModelAdmin):
                     "resolved_by",
                     "resolved_at",
                 ),
-                "description": "Resolution proof required by AUTHORITY role",
+                "description": "Resolution proof required by ADMIN role",
                 "classes": ("collapse",),
-            },
-        ),
-        (
-            "Budget Management (Manager Only)",
-            {
-                "fields": ("budget_allocated", "budget_spent", "budget_remaining"),
-                "description": "Budget allocation and tracking for this project",
             },
         ),
         (
@@ -131,8 +119,47 @@ class GapAdmin(admin.ModelAdmin):
     is_overdue.short_description = "Overdue?"
 
     def get_readonly_fields(self, request, obj=None):
-        """Make budget_remaining always readonly"""
-        return ("created_at", "is_overdue", "budget_remaining")
+        """Make certain fields always readonly"""
+        return ("created_at", "is_overdue", "resolved_by", "resolved_at")
+
+
+@admin.register(GapStatusAuditLog)
+class GapStatusAuditLogAdmin(admin.ModelAdmin):
+    """Admin for viewing gap status change audit logs"""
+    
+    list_display = (
+        "gap",
+        "old_status",
+        "new_status",
+        "changed_by",
+        "changed_at",
+        "source",
+    )
+    list_filter = ("new_status", "source", "changed_at")
+    search_fields = ("gap__description", "notes", "changed_by__username")
+    readonly_fields = (
+        "gap",
+        "old_status",
+        "new_status",
+        "changed_by",
+        "changed_at",
+        "notes",
+        "source",
+    )
+    ordering = ("-changed_at",)
+    date_hierarchy = "changed_at"
+
+    def has_add_permission(self, request):
+        """Audit logs should not be manually created"""
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """Audit logs should not be modified"""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Only superusers can delete audit logs"""
+        return request.user.is_superuser
 
 
 # Post Office Workflow Admin
@@ -296,7 +323,7 @@ class VoiceVerificationLogAdmin(admin.ModelAdmin):
     ordering = ("-verification_date",)
 
     fieldsets = (
-        ("Complaint Information", {"fields": ("complaint", "verified_by")}),
+        ("Complaint Information", {"fields": ("complaint", "gap", "verified_by")}),
         (
             "Verification Results",
             {
@@ -387,6 +414,7 @@ class QRComplaintDetailAdmin(admin.ModelAdmin):
     list_display = ("qr_submission", "complaint_type", "severity", "created_at")
     list_filter = ("severity", "complaint_type", "synced_from_mobile")
     search_fields = ("complaint_text", "qr_submission__person_name")
+    readonly_fields = ("created_at",)
 
     fieldsets = (
         (

@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "SETU",
+    "slug": "setu-mobile-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.setu.mobileapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "usesCleartextTraffic": true,
+      "package": "com.setu.mobileapp",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow SETU to access your camera for document scanning.",
+          "microphonePermission": "Allow SETU to access your microphone for audio recording."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow SETU to use your location for geo-tagging submissions."
+        }
+      ],
+      "expo-font",
+      "expo-audio"
+    ],
+    "extra": {
+      "PRODUCTION_API_URL": "https://setu-pm-django-production.up.railway.app",
+      "eas": {
+        "projectId": "123b4d80-7812-4153-8e33-17f213538739"
+      }
+    }
+  }
+}

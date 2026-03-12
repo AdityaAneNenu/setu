@@ -34,7 +34,35 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = ["*"]  # Allow all hosts for development - change in production
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+RAILWAY_PUBLIC_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]  # Allow all hosts in development only
+
+CSRF_TRUSTED_ORIGINS = []
+if RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Production security settings
+if not DEBUG:
+    # HTTPS/SSL settings
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS settings (only enable after testing HTTPS works)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Additional security headers
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
 
 
 # Application definition
@@ -55,7 +83,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -104,12 +134,37 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@example.com")
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+# Supports PostgreSQL in production via env vars; falls back to SQLite for development
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+if DATABASE_URL:
+    # Production: PostgreSQL via DATABASE_URL
+    # Format: postgres://USER:PASSWORD@HOST:PORT/DBNAME
+    import dj_database_url
+
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+else:
+    # Development: SQLite (zero setup)
+    DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.sqlite3")
+    if DB_ENGINE == "django.db.backends.sqlite3":
+        DATABASES = {
+            "default": {
+                "ENGINE": DB_ENGINE,
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
+    else:
+        # Manual PostgreSQL config without DATABASE_URL
+        DATABASES = {
+            "default": {
+                "ENGINE": DB_ENGINE,
+                "NAME": os.getenv("DB_NAME", "setu_db"),
+                "USER": os.getenv("DB_USER", "postgres"),
+                "PASSWORD": os.getenv("DB_PASSWORD", ""),
+                "HOST": os.getenv("DB_HOST", "localhost"),
+                "PORT": os.getenv("DB_PORT", "5432"),
+            }
+        }
 
 
 # Password validation
@@ -131,23 +186,32 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# Internationalization with correct timezone
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+LANGUAGES = [
+    ('en', 'English'),
+    ('hi', 'Hindi'),
+]
+
+TIME_ZONE = "Asia/Kolkata"  # Indian Standard Time instead of UTC
 
 USE_I18N = True
 
 USE_TZ = True
+
+LOCALE_PATHS = [BASE_DIR / "locale"]
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "core" / "static"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -160,17 +224,28 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://192.168.1.100:8000",
 ]
+if RAILWAY_PUBLIC_DOMAIN:
+    CORS_ALLOWED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development - disable in production
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all origins in development
 
-# REST Framework settings
+# REST Framework settings with security improvements
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
+    "PAGE_SIZE": 50,  # Reduced from 20 to 50 for better performance
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
+    },
 }

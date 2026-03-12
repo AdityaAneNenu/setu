@@ -11,12 +11,13 @@ import styles from './page.module.css';
 
 export default function ManageGapsPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, isAuthenticated, canManageGaps, canResolveGaps, canVerifyGaps } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated, canManageGaps, canResolveGaps } = useAuth();
   const [gaps, setGaps] = useState<Gap[]>([]);
   const [villages, setVillages] = useState<Village[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [accessDenied, setAccessDenied] = useState(false);
   const [filters, setFilters] = useState({
     village: '',
     status: '',
@@ -24,12 +25,16 @@ export default function ManageGapsPage() {
     gap_type: '',
   });
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, check role
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (!canManageGaps) {
+        setAccessDenied(true);
+      }
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, canManageGaps, router]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -40,12 +45,17 @@ export default function ManageGapsPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
+      // Pass user role and ID for role-based filtering
+      const gapFilters: Record<string, string> = { ...filters };
+      if (user?.role === 'ground') {
+        gapFilters.submitted_by = user.id?.toString();
+      }
       const [gapsResponse, villagesResponse] = await Promise.all([
-        gapsApi.getAll(filters),
-        villagesApi.getAll(),
+        gapsApi.getAll(gapFilters),
+        villagesApi.getAll(user?.role, user?.id?.toString()),
       ]);
-      setGaps(gapsResponse.gaps || gapsResponse || []);
-      setVillages(villagesResponse.villages || villagesResponse || []);
+      setGaps(gapsResponse as Gap[]);
+      setVillages(villagesResponse as Village[]);
     } catch (err) {
       console.error('Failed to load data:', err);
       setErrorMessage('Failed to load gaps data');
@@ -62,16 +72,16 @@ export default function ManageGapsPage() {
     loadData();
   };
 
-  const handleStatusChange = async (gapId: number, newStatus: string, hasAudioFile: boolean) => {
+  const handleStatusChange = async (gapId: string | number, newStatus: string, hasAudioUrl: boolean) => {
     // If trying to resolve a voice gap, redirect to voice verification
-    if (newStatus === 'resolved' && hasAudioFile) {
+    if (newStatus === 'resolved' && hasAudioUrl) {
       router.push(`/voice-verification/${gapId}`);
       return;
     }
 
     // Check permissions
     if (newStatus === 'resolved' && !canResolveGaps) {
-      setErrorMessage('Only Authority or Admin can mark gaps as resolved');
+      setErrorMessage('Only Admin can mark gaps as resolved');
       setTimeout(() => setErrorMessage(''), 5000);
       return;
     }
@@ -148,6 +158,35 @@ export default function ManageGapsPage() {
     return null;
   }
 
+  // Access denied for ground workers
+  if (accessDenied) {
+    return (
+      <>
+        <Navbar />
+        <div className="main-wrapper">
+          <div className="container">
+            <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+              <h2>Access Denied</h2>
+              <p style={{ color: 'var(--text-muted)', marginTop: '10px' }}>
+                You need Manager role or higher to manage gaps.
+              </p>
+              <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>
+                Your current role: <strong>{user?.role}</strong>
+              </p>
+              <button 
+                onClick={() => router.push('/upload')} 
+                className="btn btn-primary"
+                style={{ marginTop: '30px' }}
+              >
+                Go to Upload Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar />
@@ -216,10 +255,10 @@ export default function ManageGapsPage() {
                 <option value="health">Health</option>
                 <option value="agriculture">Agriculture</option>
                 <option value="housing">Housing</option>
-                <option value="communication">Communication</option>
+                <option value="connectivity">Connectivity</option>
                 <option value="employment">Employment</option>
-                <option value="social_welfare">Social Welfare</option>
-                <option value="environment">Environment</option>
+                <option value="community_center">Community Center</option>
+                <option value="drainage">Drainage</option>
                 <option value="other">Other</option>
               </select>
               <button className="btn btn-primary" onClick={applyFilters}>
@@ -276,7 +315,7 @@ export default function ManageGapsPage() {
                         </td>
                         <td className={styles.dateCell}>{new Date(gap.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                         <td>
-                          {gap.audio_file ? (
+                          {gap.audio_url ? (
                             <Link 
                               href={`/voice-verification/${gap.id}`}
                               className={styles.recordBtn}
@@ -305,17 +344,17 @@ export default function ManageGapsPage() {
                                   <select
                                     className={styles.statusSelect}
                                     value={gap.status}
-                                    onChange={(e) => handleStatusChange(gap.id, e.target.value, !!gap.audio_file)}
+                                    onChange={(e) => handleStatusChange(gap.id, e.target.value, !!gap.audio_url)}
                                   >
                                     <option value="open">Open</option>
                                     <option value="in_progress">In Progress</option>
                                     {canResolveGaps ? (
                                       <option value="resolved">
-                                        {gap.audio_file ? '🎤 Resolve (Voice Verify)' : 'Resolved'}
+                                        {gap.audio_url ? '🎤 Resolve (Voice Verify)' : 'Resolved'}
                                       </option>
                                     ) : (
                                       <option value="resolved" disabled>
-                                        🔒 Resolved (Need Authority)
+                                        🔒 Resolved (Need Admin)
                                       </option>
                                     )}
                                   </select>
@@ -324,7 +363,7 @@ export default function ManageGapsPage() {
                                     {gap.status.replace('_', ' ')}
                                   </span>
                                 )}
-                                {gap.audio_file && (
+                                {gap.audio_url && (
                                   <Link 
                                     href={`/voice-verification/${gap.id}`}
                                     className={styles.voiceBtn}

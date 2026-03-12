@@ -1,0 +1,160 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
+  Platform,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { fonts } from '../theme';
+import { authApi } from '../services/api';
+import { useAccessibility } from '../context/AccessibilityContext';
+import { useTranslation } from '../context/LanguageContext';
+
+// Menu items for Ground Level Workers only
+// No Dashboard, Manage Gaps, or Analytics - those are for Manager+ on the web
+const menuItems = [
+  { icon: 'person-circle-outline', labelKey: 'drawer.profile', screen: 'Profile' },
+  { icon: 'scan-outline', labelKey: 'drawer.scanDocument', screen: 'ScanDocument' },
+  { icon: 'mic-outline', labelKey: 'drawer.recordAudio', screen: 'UploadAudio' },
+  { icon: 'time-outline', labelKey: 'drawer.history', screen: 'History' },
+  { icon: 'search-outline', labelKey: 'drawer.search', screen: 'Search' },
+  { icon: 'settings-outline', labelKey: 'drawer.settings', screen: 'Settings' },
+];
+
+export default function CustomDrawer({ navigation }) {
+  const { triggerHaptic } = useAccessibility();
+  const { t } = useTranslation();
+
+  const handleSignOut = async () => {
+    triggerHaptic('medium');
+    try {
+      await authApi.logout();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      Alert.alert(t('common.error'), t('drawer.signOutError'));
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      
+      {/* Decorative background images - matching Figma nodes 118:52, 2521:6 */}
+      <View style={styles.decorativeContainer}>
+        <View style={styles.decorativeImage1} />
+        <View style={styles.decorativeImage2} />
+      </View>
+
+      {/* Menu Items - matching Figma nodes 118:0 to 118:5 */}
+      <View style={styles.menuContainer}>
+        {menuItems.map((item, index) => (
+          <View key={index}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                triggerHaptic('light');
+                navigation.navigate(item.screen);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={item.icon} size={24} color="#FFFFFF" />
+              <Text style={styles.menuLabel}>{t(item.labelKey)}</Text>
+            </TouchableOpacity>
+            {/* Divider line - matching Figma nodes 121:2 to 121:5 */}
+            {index < menuItems.length - 1 && <View style={styles.menuDivider} />}
+          </View>
+        ))}
+      </View>
+
+      {/* Sign Out - matching Figma nodes 118:4 and 121:0 */}
+      <View style={styles.signOutContainer}>
+        <TouchableOpacity 
+          style={styles.signOutButton} 
+          onPress={handleSignOut}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.signOutText}>{t('drawer.signOut')}</Text>
+          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  decorativeContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: '60%',
+    height: '100%',
+    zIndex: 0,
+    overflow: 'hidden',
+  },
+  decorativeImage1: {
+    position: 'absolute',
+    right: -30,
+    top: 156,
+    width: 248,
+    height: 553,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 32,
+    opacity: 0.2,
+  },
+  decorativeImage2: {
+    position: 'absolute',
+    right: -10,
+    top: 207,
+    width: 246,
+    height: 531,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 30,
+    opacity: 0.2,
+  },
+  menuContainer: {
+    paddingHorizontal: 38,
+    paddingTop: Platform.OS === 'ios' ? 161 : 140,
+    zIndex: 1,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 22,
+  },
+  menuLabel: {
+    fontSize: 17,
+    fontFamily: fonts.semiBold,
+    color: '#FFFFFF',
+    marginLeft: 18,
+  },
+  menuDivider: {
+    height: 0.6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginLeft: 42,
+    width: 132,
+  },
+  signOutContainer: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 100 : 80,
+    left: 38,
+    zIndex: 1,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  signOutText: {
+    fontSize: 17,
+    fontFamily: fonts.semiBold,
+    color: '#FFFFFF',
+    marginRight: 12,
+  },
+});

@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { villagesApi } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { Village, Gap } from '@/types';
 import styles from './page.module.css';
 
@@ -14,20 +15,27 @@ interface VillageDetail extends Village {
 
 export default function VillageDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const villageId = params.id as string;
   const [village, setVillage] = useState<VillageDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (villageId) {
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+    if (villageId && user) {
       loadVillage();
     }
-  }, [villageId]);
+  }, [villageId, user, authLoading]);
 
   const loadVillage = async () => {
     try {
       setIsLoading(true);
-      const response = await villagesApi.getById(Number(villageId));
+      // Pass user role and ID for role-based filtering
+      const response = await villagesApi.getById(villageId, user?.role, user?.id?.toString());
       setVillage(response);
     } catch (err) {
       console.error('Failed to load village:', err);

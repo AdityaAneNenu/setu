@@ -4,8 +4,6 @@ Handles multi-language audio transcription for illiterate villagers
 """
 
 import assemblyai as aai
-from django.conf import settings
-from django.core.files.base import ContentFile
 import os
 import tempfile
 
@@ -149,14 +147,18 @@ class ComplaintProcessor:
         
         # Gap type keywords for AI classification
         self.gap_type_keywords = {
-            'healthcare': ['doctor', 'medicine', 'hospital', 'health', 'clinic', 'treatment', 'डॉक्टर', 'अस्पताल', 'दवा'],
+            'water': ['water', 'pipeline', 'tap', 'drinking', 'borewell', 'handpump', 'पानी', 'नल', 'कुआं', 'बोरवेल'],
+            'road': ['road', 'bridge', 'pothole', 'highway', 'construction', 'सड़क', 'पुल', 'गड्ढा'],
+            'sanitation': ['toilet', 'sewage', 'drainage', 'waste', 'garbage', 'शौचालय', 'कचरा', 'नाली'],
+            'electricity': ['electricity', 'power', 'light', 'transformer', 'wire', 'बिजली', 'ट्रांसफार्मर', 'तार'],
             'education': ['school', 'teacher', 'books', 'study', 'education', 'स्कूल', 'शिक्षक', 'पढ़ाई'],
-            'infrastructure': ['road', 'bridge', 'water', 'electricity', 'construction', 'सड़क', 'पुल', 'पानी', 'बिजली'],
+            'health': ['doctor', 'medicine', 'hospital', 'health', 'clinic', 'treatment', 'डॉक्टर', 'अस्पताल', 'दवा'],
+            'housing': ['house', 'home', 'building', 'roof', 'wall', 'shelter', 'घर', 'मकान', 'छत'],
             'agriculture': ['farming', 'crops', 'seeds', 'irrigation', 'fertilizer', 'किसान', 'फसल', 'खेती'],
-            'welfare': ['pension', 'subsidy', 'ration', 'benefits', 'welfare', 'पेंशन', 'राशन', 'लाभ'],
             'connectivity': ['internet', 'mobile', 'network', 'communication', 'phone', 'इंटरनेट', 'फोन'],
-            'load_transport': ['transport', 'bus', 'vehicle', 'loading', 'goods', 'परिवहन', 'बस', 'सामान'],
-            'livelihood_skill': ['job', 'employment', 'skill', 'training', 'work', 'नौकरी', 'काम', 'प्रशिक्षण']
+            'employment': ['job', 'employment', 'skill', 'training', 'work', 'नौकरी', 'काम', 'प्रशिक्षण', 'रोजगार'],
+            'community_center': ['community', 'hall', 'center', 'gathering', 'panchayat', 'सामुदायिक', 'भवन', 'पंचायत'],
+            'drainage': ['drain', 'flooding', 'waterlogging', 'gutter', 'नाला', 'बाढ़', 'जलभराव'],
         }
     
     def analyze_complaint(self, complaint_text):

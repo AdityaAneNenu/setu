@@ -369,22 +369,7 @@
         
         .meta-value { font-size: 1.1rem; color: #1f2937; font-weight: 700; }
         
-        .budget-bar {
-            margin-top: 0.75rem;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 50px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .budget-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #000000, #059669);
-            border-radius: 50px;
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-        }
+
         
         .overdue {
             color: #dc2626;
@@ -757,14 +742,7 @@
                         <option value="low">Low</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label for="filterBudgetMin">Min Budget (₹)</label>
-                    <input type="number" id="filterBudgetMin" placeholder="e.g., 50000">
-                </div>
-                <div class="filter-group">
-                    <label for="filterBudgetMax">Max Budget (₹)</label>
-                    <input type="number" id="filterBudgetMax" placeholder="e.g., 1000000">
-                </div>
+
             </div>
             <div class="filter-actions">
                 <button class="btn-filter btn-apply" onclick="applyFilters()">
@@ -787,16 +765,7 @@
                 <div class="stat-value" id="statCompleted">{{ total_completed }}</div>
                 <div class="stat-label">Completed Projects</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-wallet"></i></div>
-                <div class="stat-value" id="statBudgetAllocated">₹{{ total_budget_allocated|floatformat:0 }}</div>
-                <div class="stat-label">Total Budget Allocated</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-coins"></i></div>
-                <div class="stat-value" id="statBudgetSpent">₹{{ total_budget_spent|floatformat:0 }}</div>
-                <div class="stat-label">Budget Spent</div>
-            </div>
+
         </div>
 
         <div class="map-container">
@@ -865,7 +834,7 @@
                          data-type="{{ project.gap_type }}"
                          data-status="{{ project.status }}"
                          data-severity="{{ project.severity }}"
-                         data-budget="{{ project.budget_allocated|default:'0' }}">
+>
                         <div class="project-header">
                             <div>
                                 <h3 class="project-title">
@@ -900,15 +869,7 @@
                             </div>
                             {% endif %}
                             
-                            {% if project.budget_allocated %}
-                            <div class="meta-item">
-                                <span class="meta-label"><i class="fas fa-rupee-sign"></i> Budget</span>
-                                <span class="meta-value">₹{{ project.budget_allocated|floatformat:0 }}</span>
-                                <div class="budget-bar">
-                                    <div class="budget-fill" style="width: {% widthratio project.budget_spent project.budget_allocated 100 %}%"></div>
-                                </div>
-                            </div>
-                            {% endif %}
+
                             
                             {% if project.recommendations %}
                             <div class="meta-item" style="grid-column: 1 / -1;">
@@ -960,12 +921,7 @@
                             </div>
                             {% endif %}
                             
-                            {% if project.budget_spent %}
-                            <div class="meta-item">
-                                <span class="meta-label"><i class="fas fa-rupee-sign"></i> Final Budget</span>
-                                <span class="meta-value">₹{{ project.budget_spent|floatformat:0 }}</span>
-                            </div>
-                            {% endif %}
+
                         </div>
                     </div>
                     {% endfor %}
@@ -1007,9 +963,7 @@
                     start_date: '{{ gap.start_date|date:"d M Y"|default:"Not set" }}',
                     expected_completion: '{{ gap.expected_completion|date:"d M Y"|default:"Not set" }}',
                     actual_completion: '{{ gap.actual_completion|date:"d M Y"|default:"Not completed" }}',
-                    budget_allocated: '{{ gap.budget_allocated|floatformat:0|default:"Not allocated" }}',
-                    budget_spent: '{{ gap.budget_spent|floatformat:0|default:"0" }}',
-                    budget_remaining: '{{ gap.budget_remaining|floatformat:0|default:"0" }}',
+
                     created_at: '{{ gap.created_at|date:"d M Y" }}',
                     is_overdue: {{ gap.is_overdue|yesno:"true,false" }}
                 },
@@ -1091,22 +1045,7 @@
                                     </div>
                                 ` : ''}
                                 
-                                <div class="detail-box">
-                                    <div class="detail-label"><i class="fas fa-rupee-sign"></i> Budget Allocated</div>
-                                    <div class="detail-value" style="color: #3b82f6;">
-                                        ${project.budget_allocated !== 'Not allocated' ? '₹' + project.budget_allocated : project.budget_allocated}
-                                    </div>
-                                </div>
-                                
-                                <div class="detail-box">
-                                    <div class="detail-label"><i class="fas fa-money-bill-wave"></i> Budget Spent</div>
-                                    <div class="detail-value" style="color: #000000;">₹${project.budget_spent}</div>
-                                </div>
-                                
-                                <div class="detail-box">
-                                    <div class="detail-label"><i class="fas fa-wallet"></i> Budget Remaining</div>
-                                    <div class="detail-value" style="color: #000000;">₹${project.budget_remaining}</div>
-                                </div>
+
                                 
                                 <div class="detail-box">
                                     <div class="detail-label"><i class="fas fa-calendar-plus"></i> Reported On</div>
@@ -1150,10 +1089,8 @@
             const type = document.getElementById('filterType').value.toLowerCase();
             const status = document.getElementById('filterStatus').value.toLowerCase();
             const severity = document.getElementById('filterSeverity').value.toLowerCase();
-            const budgetMin = parseFloat(document.getElementById('filterBudgetMin').value) || 0;
-            const budgetMax = parseFloat(document.getElementById('filterBudgetMax').value) || Infinity;
 
-            console.log('Applying filters:', { village, type, status, severity, budgetMin, budgetMax });
+            console.log('Applying filters:', { village, type, status, severity });
 
             const projects = document.querySelectorAll('.project-card');
             let visibleCount = 0;
@@ -1163,15 +1100,13 @@
                 const projectType = project.dataset.type ? project.dataset.type.toLowerCase() : '';
                 const projectStatus = project.dataset.status ? project.dataset.status.toLowerCase() : '';
                 const projectSeverity = project.dataset.severity ? project.dataset.severity.toLowerCase() : '';
-                const projectBudget = parseFloat(project.dataset.budget) || 0;
 
                 const matchesVillage = !village || projectVillage === village;
                 const matchesType = !type || projectType === type;
                 const matchesStatus = !status || projectStatus === status;
                 const matchesSeverity = !severity || projectSeverity === severity;
-                const matchesBudget = projectBudget >= budgetMin && projectBudget <= budgetMax;
 
-                if (matchesVillage && matchesType && matchesStatus && matchesSeverity && matchesBudget) {
+                if (matchesVillage && matchesType && matchesStatus && matchesSeverity) {
                     project.style.display = '';
                     visibleCount++;
                 } else {
@@ -1202,8 +1137,7 @@
             document.getElementById('filterType').value = '';
             document.getElementById('filterStatus').value = '';
             document.getElementById('filterSeverity').value = '';
-            document.getElementById('filterBudgetMin').value = '';
-            document.getElementById('filterBudgetMax').value = '';
+
             
             const projects = document.querySelectorAll('.project-card');
             projects.forEach(project => {
@@ -1273,8 +1207,7 @@
                 lng: {{ project.longitude }},
                 title: '{{ project.gap_type|title }} - {{ project.village.name }}',
                 description: '{{ project.description|truncatewords:20|escapejs }}',
-                status: '{{ project.get_status_display }}',
-                budget: '{% if project.budget_allocated %}₹{{ project.budget_allocated|floatformat:0 }}{% else %}N/A{% endif %}'
+                status: '{{ project.get_status_display }}'
             },
             {% endfor %}
         ];
@@ -1291,7 +1224,7 @@
                 })
             }).addTo(map);
             
-            projectMarker.bindPopup('<div style="font-family: \'Poppins\', sans-serif; padding: 0.5rem;"><strong style="font-size: 1.1rem; color: #1f2937;">Active Project</strong><br><strong style="color: #000000;">' + project.title + '</strong><br><em style="color: #6b7280; font-size: 0.875rem;">' + project.description + '</em><br><div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;"><strong style="color: #4b5563;">Status:</strong> <span style="color: #000000; font-weight: 600;">' + project.status + '</span><br><strong style="color: #4b5563;">Budget:</strong> <span style="color: #000000; font-weight: 600;">' + project.budget + '</span></div></div>');
+            projectMarker.bindPopup('<div style="font-family: \'Poppins\', sans-serif; padding: 0.5rem;"><strong style="font-size: 1.1rem; color: #1f2937;">Active Project</strong><br><strong style="color: #000000;">' + project.title + '</strong><br><em style="color: #6b7280; font-size: 0.875rem;">' + project.description + '</em><br><div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;"><strong style="color: #4b5563;">Status:</strong> <span style="color: #000000; font-weight: 600;">' + project.status + '</span></div></div>');
         });
 
         // Set map view to show all of India with PM-AJAY states
@@ -1316,8 +1249,7 @@
                     village: project.dataset.village,
                     type: project.dataset.type,
                     status: project.dataset.status,
-                    severity: project.dataset.severity,
-                    budget: project.dataset.budget
+                    severity: project.dataset.severity
                 });
             });
         });

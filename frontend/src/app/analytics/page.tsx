@@ -9,16 +9,8 @@ import styles from './page.module.css';
 
 interface AnalyticsData {
   total_gaps: number;
-  status_distribution: {
-    open: number;
-    in_progress: number;
-    resolved: number;
-  };
-  severity_distribution: {
-    high: number;
-    medium: number;
-    low: number;
-  };
+  status_distribution: Record<string, number>;
+  severity_distribution: Record<string, number>;
   gaps_by_type: Array<{ gap_type: string; count: number }>;
   village_gaps: Array<{
     id: number;
@@ -28,6 +20,7 @@ interface AnalyticsData {
     in_progress: number;
     resolved: number;
   }>;
+  monthly_trend?: Array<{ month: string; count: number }>;
 }
 
 export default function AnalyticsPage() {
@@ -77,6 +70,13 @@ export default function AnalyticsPage() {
     electricity: 'electricity',
     education: 'education',
     health: 'health',
+    housing: 'housing',
+    agriculture: 'agriculture',
+    connectivity: 'connectivity',
+    employment: 'employment',
+    community_center: 'community_center',
+    drainage: 'drainage',
+    other: 'other',
   };
 
   const gapTypeLabels: Record<string, string> = {
@@ -86,6 +86,13 @@ export default function AnalyticsPage() {
     electricity: 'Electricity',
     education: 'Education',
     health: 'Healthcare',
+    housing: 'Housing',
+    agriculture: 'Agriculture',
+    connectivity: 'Connectivity',
+    employment: 'Employment',
+    community_center: 'Community Center',
+    drainage: 'Drainage',
+    other: 'Other',
   };
 
   // Show loading while checking auth

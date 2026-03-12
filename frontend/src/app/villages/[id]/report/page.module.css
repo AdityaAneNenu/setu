@@ -208,57 +208,6 @@
   text-align: right;
 }
 
-/* Budget */
-.budgetStats {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.budgetItem {
-  display: flex;
-  flex-direction: column;
-}
-
-.budgetLabel {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.budgetValue {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.utilizationProgress {
-  margin-top: 1rem;
-}
-
-.utilizationHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.utilizationBar {
-  height: 10px;
-  background: rgba(139, 92, 246, 0.2);
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.utilizationFill {
-  height: 100%;
-  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
-  border-radius: 5px;
-  transition: width 0.5s ease;
-}
 
 /* Table */
 .table {

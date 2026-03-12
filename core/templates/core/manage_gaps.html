@@ -380,7 +380,7 @@
                     {% if can_resolve %}
                       <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
                     {% else %}
-                      <option value="resolved" disabled title="Only AUTHORITY or ADMIN can resolve">🔒 Resolved (Need Authority)</option>
+                      <option value="resolved" disabled title="Only ADMIN can resolve">🔒 Resolved (Need Admin)</option>
                     {% endif %}
                   </select>
                   <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
@@ -407,7 +407,7 @@
                   {% if can_resolve %}
                     <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
                   {% else %}
-                    <option value="resolved" disabled title="Only AUTHORITY or ADMIN can resolve">🔒 Resolved (Need Authority)</option>
+                    <option value="resolved" disabled title="Only ADMIN can resolve">🔒 Resolved (Need Admin)</option>
                   {% endif %}
                 </select>
               {% endif %}
@@ -959,7 +959,7 @@ function saveRecording() {
       <div class="recording-info">
         <p><strong>Gap ID:</strong> <span id="resolutionGapId"></span></p>
         <p style="color: var(--text-secondary); font-size: 13px; margin-top: 10px;">
-          As an AUTHORITY, you must provide resolution proof (letter/document) before marking this <strong>photo-based</strong> gap as resolved.<br>
+          As an ADMIN, you must provide resolution proof (letter/document) before marking this <strong>photo-based</strong> gap as resolved.<br>
           <em style="color: var(--text-muted);">Note: Voice-recorded gaps use voice verification instead and don't need this letter.</em>
         </p>
       </div>
@@ -1006,7 +1006,7 @@ function handleStatusChange(selectElement, gapId, audioFile, canResolve, inputMe
   // Check if this is a voice-based gap
   const isVoiceGap = inputMethod === 'voice' || audioFile;
   
-  // If trying to resolve and user has authority
+  // If trying to resolve and user has admin role
   if (newStatus === 'resolved' && canResolve) {
     // Voice gaps: Skip proof modal, submit directly for voice verification
     if (isVoiceGap) {
@@ -1035,7 +1035,7 @@ function handleStatusChange(selectElement, gapId, audioFile, canResolve, inputMe
     selectElement.value = oldStatus || 'open';
   } else if (newStatus === 'resolved' && !canResolve) {
     // Should not happen due to disabled option, but just in case
-    alert('❌ Only AUTHORITY or ADMIN roles can mark gaps as resolved.');
+    alert('❌ Only ADMIN role can mark gaps as resolved.');
     selectElement.value = oldStatus || 'open';
   } else {
     // For other status changes (open, in_progress), submit directly

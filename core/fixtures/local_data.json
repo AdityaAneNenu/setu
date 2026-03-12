@@ -1,0 +1,1467 @@
+[
+  {
+    "model": "core.village",
+    "pk": 1,
+    "fields": {
+      "name": "Rampur"
+    }
+  },
+  {
+    "model": "core.village",
+    "pk": 2,
+    "fields": {
+      "name": "Sitapur"
+    }
+  },
+  {
+    "model": "core.village",
+    "pk": 3,
+    "fields": {
+      "name": "Mahavir Nagar"
+    }
+  },
+  {
+    "model": "core.village",
+    "pk": 4,
+    "fields": {
+      "name": "Krishna Village"
+    }
+  },
+  {
+    "model": "core.village",
+    "pk": 5,
+    "fields": {
+      "name": "Laxmi Nagar"
+    }
+  },
+  {
+    "model": "core.village",
+    "pk": 6,
+    "fields": {
+      "name": "Shanti Gram"
+    }
+  },
+  {
+    "model": "core.village",
+    "pk": 7,
+    "fields": {
+      "name": "Jai Nagar"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 1,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "Due to the rains, the water level has increased a lot in our area, due to which our roads have been filled with water. Please come and see our plight.",
+      "created_at": "2025-12-17T12:16:39.207Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 2,
+    "fields": {
+      "village": 2,
+      "image": "",
+      "extracted_text": "The water is leaking over there. Can you please fix it?",
+      "created_at": "2025-12-17T12:23:07.467Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 3,
+    "fields": {
+      "village": 1,
+      "image": "uploads/Ussye.jpg",
+      "extracted_text": null,
+      "created_at": "2025-12-18T06:37:27.859Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 4,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "There is a slight problem in my village right now, water is not coming properly, please reserve water.",
+      "created_at": "2025-12-24T07:15:23.844Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 5,
+    "fields": {
+      "village": 5,
+      "image": "",
+      "extracted_text": "अभी मेरे गांव में पानी का प्रॉब्लम है, जल्दी उसको टीक कर। 2।",
+      "created_at": "2025-12-24T08:30:55.234Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 6,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "ಸ್ಟ್ರೇಟ್ಲೇಡ್ ಸರಿಗಾ ಪಂಜೇಡ್ಲೇದು, ವಾಟರ ಪ್ರಾರ್ಣಮ್​ ಕರವನ್ನಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ.",
+      "created_at": "2026-01-05T12:06:28.359Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 7,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "मेगा में है पानी का।",
+      "created_at": "2026-01-08T12:50:32.921Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 8,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "Water is not available during suffering/distress.",
+      "created_at": "2026-01-08T13:28:58.169Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 9,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "There is a water problem in our village. Please fix it immediately.",
+      "created_at": "2026-01-09T10:12:25.798Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 10,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "I am facing a lot of difficulty. The water problem here is very severe. Please fix it quickly.",
+      "created_at": "2026-01-09T10:12:27.230Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 11,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "There is a problem in our village. Water is not coming. Please fix it soon.",
+      "created_at": "2026-01-09T10:40:33.609Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 12,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "Our village has a water problem, including issues with water supply/source and leaks. Please fix it quickly.",
+      "created_at": "2026-01-21T11:58:46.673Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 13,
+    "fields": {
+      "village": 1,
+      "image": "",
+      "extracted_text": "",
+      "created_at": "2026-03-12T04:41:37.999Z"
+    }
+  },
+  {
+    "model": "core.submission",
+    "pk": 14,
+    "fields": {
+      "village": 2,
+      "image": "",
+      "extracted_text": "Due to strong winds, our huts are being blown away/damaged. Therefore, please provide us with necessary facilities.",
+      "created_at": "2026-03-12T04:48:04.346Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 1,
+    "fields": {
+      "village": 1,
+      "description": "The text describes a situation where heavy rains have caused waterlogging, leading to roads being submerged. This directly relates to issues with water management and the impact on transportation infrastructure.",
+      "gap_type": "water/road",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint.wav",
+      "voice_code": "39327d3fc82f167120ba8e121200cdbe6a46405b809bce9ff5e0d50a887235d3",
+      "recommendations": "['Implement improved drainage systems in the area to manage rainwater effectively.', 'Repair and strengthen the roads to withstand waterlogging and potential damage.', 'Conduct a site visit to assess the extent of the problem and identify specific areas for intervention.', 'Consider constructing elevated pathways or alternative routes if frequent flooding is a persistent issue.']",
+      "created_at": "2025-12-17T12:16:39.220Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 2,
+    "fields": {
+      "village": 2,
+      "description": "The text explicitly mentions 'पानी लीक हो रहा है' which translates to 'water is leaking', indicating a problem related to water infrastructure or supply.",
+      "gap_type": "water",
+      "severity": "medium",
+      "status": "open",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_EpDfvKH.wav",
+      "voice_code": "2645320247c71918f74a5088e798692ac2386c29fe6bae6129e1800135f2961b",
+      "recommendations": "Identify the source of the leak, assess the extent of the damage, and dispatch a plumber or maintenance crew to repair the leaking pipe or fixture. Advise residents to conserve water until the repair is completed.",
+      "created_at": "2025-12-17T12:23:07.487Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 3,
+    "fields": {
+      "village": 1,
+      "description": "The text indicates a problem related to 'education' (शिक्षा), with a description stating 'children are being taken' (बेच लई हुई हैं), suggesting a potential issue with child labor or exploitation within the educational context. The severity is marked as 'medium' due to the sensitive nature of the problem, and recommendations include 'repair' or 'improvement' (मरम्मत) for the suggested actions and recommendations, implying a need for intervention to address the educational gap.",
+      "gap_type": "education",
+      "severity": "medium",
+      "status": "resolved",
+      "input_method": "image",
+      "audio_file": "",
+      "voice_code": null,
+      "recommendations": "Improvement and repair in the education sector, addressing the issue of children being taken, and focusing on recommendations for betterment.",
+      "created_at": "2025-12-18T06:37:33.216Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 4,
+    "fields": {
+      "village": 1,
+      "description": "The user is explicitly stating a problem with water supply in their village and requesting water to be reserved.",
+      "gap_type": "water",
+      "severity": "medium",
+      "status": "in_progress",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_MDNJbsS.wav",
+      "voice_code": "b23b7fccc2944d918086defa12754a2ae39dccf611af03f0acf444675b5526b3",
+      "recommendations": "1. Investigate the cause of the water shortage (e.g., pipe burst, pump malfunction, low reservoir levels). 2. Implement immediate water rationing or alternative water supply measures. 3. Develop a long-term plan for sustainable water management and infrastructure repair/upgrades.",
+      "created_at": "2025-12-24T07:15:23.853Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 5,
+    "fields": {
+      "village": 5,
+      "description": "अभी मेरे गांव में पानी का प्रॉब्लम है, जल्दी उसको टीक कर। 2।",
+      "gap_type": "infrastructure",
+      "severity": "medium",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_Kya6x1d.wav",
+      "voice_code": "6cd24a25978c5d44e9b5b282582c7c879dc5bd7d8d2d5162771451f95dd1958b",
+      "recommendations": "Auto-analyzed from audio complaint in Hindi",
+      "created_at": "2025-12-24T08:30:55.243Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 6,
+    "fields": {
+      "village": 1,
+      "description": "ಸ್ಟ್ರೇಟ್ಲೇಡ್ ಸರಿಗಾ ಪಂಜೇಡ್ಲೇದು, ವಾಟರ ಪ್ರಾರ್ಣಮ್​ ಕರವನ್ನಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ್ತಿರುತ.",
+      "gap_type": "other",
+      "severity": "medium",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_4mHKoXW.wav",
+      "voice_code": "70a876cdb8a6a65bd976d4c85316b3adce70ca93309a4cee0829a35f63b074db",
+      "recommendations": "Auto-analyzed from audio complaint in Telugu",
+      "created_at": "2026-01-05T12:06:28.369Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 7,
+    "fields": {
+      "village": 1,
+      "description": "मेगा में है पानी का।",
+      "gap_type": "infrastructure",
+      "severity": "low",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_5MLyP84.wav",
+      "voice_code": "b3dd1b39e957057e91b3a0fb797d9a9f5ae78e4ea111b4effdd5e78f4c081090",
+      "recommendations": "Auto-analyzed from audio complaint in Hindi",
+      "created_at": "2026-01-08T12:50:32.936Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 8,
+    "fields": {
+      "village": 1,
+      "description": "The text directly states 'पानी नहीं आता' (water does not come/is not available), clearly indicating a problem related to water supply and accessibility, especially when individuals are in a state of 'दर्द' (pain or distress).",
+      "gap_type": "water",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_i7ekMKZ.wav",
+      "voice_code": "b99187d1e67e72f7ae57ea51eacf91eef75aeabce9cd75fb5c6f3aea4fd8ac4f",
+      "recommendations": "['Ensure consistent and reliable access to potable water in all communities, particularly in areas prone to distress or where vulnerable populations reside.', 'Improve and maintain water infrastructure (pipelines, pumps, storage facilities) to prevent interruptions in supply.', 'Establish emergency water supply mechanisms (e.g., water tankers, readily available bottled water) for situations of immediate need or crisis.', 'Implement water quality monitoring and purification systems to ensure the delivered water is safe for consumption.', 'Educate communities on water conservation and hygiene practices, especially during periods of scarcity or distress.']",
+      "created_at": "2026-01-08T13:28:58.184Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": "2026-01-09T10:42:57.786Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 9,
+    "fields": {
+      "village": 1,
+      "description": "The text explicitly mentions 'water problem' (నీటి సమస్య).",
+      "gap_type": "water",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_M6oiywX.wav",
+      "voice_code": "f3da0ca61a2ca661f4c9b4df7692d5b58da227fbcafc5bfc072685ee467e9987",
+      "recommendations": "1. **Immediate Action:** Arrange for emergency water supply (e.g., water tankers) to meet daily needs. 2. **Short-term Solution:** Investigate the root cause of the water problem (e.g., borewell depletion, pipeline damage, source contamination). Repair or replace damaged infrastructure. 3. **Long-term Strategy:** Explore sustainable water sources (e.g., new borewells, rainwater harvesting, connection to a larger water scheme). Implement water conservation measures and improve the distribution network. 4. **Community Engagement:** Involve local authorities and community members in planning and implementing solutions.",
+      "created_at": "2026-01-09T10:12:25.814Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 10,
+    "fields": {
+      "village": 1,
+      "description": "The text explicitly mentions 'नील समस्य' (water problem) and describes it as 'चाल एक्गूगा उन्दी' (very severe).",
+      "gap_type": "water",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_0LPRqsW.wav",
+      "voice_code": "089a24f941fb17a2dd0a9e47db7da6169bfee4646bbceb3475b5d19c3046f4fb",
+      "recommendations": "Investigate the root cause of the severe water problem, arrange for immediate alternative water supply (e.g., tankers), and implement a long-term solution such as infrastructure repair, pipeline maintenance, or exploring new water sources/conservation methods.",
+      "created_at": "2026-01-09T10:12:27.242Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": "2026-01-09T10:20:24.891Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 11,
+    "fields": {
+      "village": 1,
+      "description": "The text explicitly states 'पानी नहीं आ रहा है' which translates to 'water is not coming', clearly indicating a water supply issue.",
+      "gap_type": "water",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_Xi42GGG.wav",
+      "voice_code": "39b7eb51fb985d67d1ac1f79bf039cd5d62821d8228804b6363df136137908de",
+      "recommendations": "Immediately investigate the cause of the water supply disruption (e.g., pipeline issue, pump failure, source depletion). Mobilize the local water department to restore supply as soon as possible. Arrange for temporary water supply (e.g., water tankers) to mitigate the immediate crisis for the villagers.",
+      "created_at": "2026-01-09T10:40:33.632Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": "2026-01-31T06:24:11.991Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 12,
+    "fields": {
+      "village": 1,
+      "description": "The text explicitly mentions a 'water problem' (ನಿಲು ಸಮಸ್ಯೆ) and 'leaks' (ಲಿಕಾ ಉತ್ತನೆ) affecting the village's water supply and source, indicating a clear issue with water infrastructure and availability.",
+      "gap_type": "water",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_XDmNHwx.wav",
+      "voice_code": "b478719000432935df6d0857d2618f1dea3a1bfb848b78402bf7c853737d0484",
+      "recommendations": "1. Conduct a comprehensive survey to identify and repair all water leaks in the supply system. 2. Assess the current water source (e.g., wells, river, reservoir) for its adequacy, quality, and sustainability. 3. Upgrade outdated or damaged water infrastructure, including pipelines and storage tanks. 4. Explore additional water sources or implement rainwater harvesting solutions to augment supply. 5. Establish a robust maintenance schedule for the water supply system.",
+      "created_at": "2026-01-21T11:58:46.683Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": "2026-01-21T12:00:40.809Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 14,
+    "fields": {
+      "village": 1,
+      "description": "मेरे घर में लाइट नहीं चल रही है। जल्दी से फिक्स करो।",
+      "gap_type": "other",
+      "severity": "medium",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recording_VTDvkEM.webm",
+      "voice_code": "7f909da7feacf0db65873c6df7f637f8eccedd9154f38506793a1f3f1a596eae",
+      "recommendations": "Audio transcribed but AI analysis failed",
+      "created_at": "2026-02-02T08:57:43.384Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": "2026-02-02T09:40:04.092Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 17,
+    "fields": {
+      "village": 7,
+      "description": "In my house, the light is not working, please fix it quickly.",
+      "gap_type": "electricity",
+      "severity": "high",
+      "status": "resolved",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recording_6iWftXW.webm",
+      "voice_code": "AAAAgAAAAIAAAAAAAAAAgAAAAIAAAACA",
+      "recommendations": "Check the electrical circuit breaker or fuse for the house/specific area. Verify if the issue is limited to one light or affects multiple electrical points. If it's a wider power outage in the locality, report it to the local electricity utility. If it's an internal wiring issue, contact a certified electrician.",
+      "created_at": "2026-02-02T12:49:30.606Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": 15,
+      "resolved_at": "2026-02-02T12:49:52.009Z"
+    }
+  },
+  {
+    "model": "core.gap",
+    "pk": 19,
+    "fields": {
+      "village": 2,
+      "description": "The text explicitly states that huts are being damaged by strong winds and requests the provision of 'facilities,' indicating a lack of basic, resilient shelter and support for community well-being.",
+      "gap_type": "welfare",
+      "severity": "high",
+      "status": "open",
+      "input_method": "voice",
+      "audio_file": "gap_audio/recorded_complaint_r6XEe1D.wav",
+      "voice_code": "AAAAgAAAAAAAAAAAAAAAgAAAAAAAAACA",
+      "recommendations": "['Provide resilient housing solutions: Supply materials or construct robust, weather-resistant shelters to replace damaged huts.', 'Conduct a comprehensive needs assessment: Identify and address other critical facilities lacking in the community (e.g., safe water, sanitation, electricity, or community shelters).', 'Implement disaster risk reduction programs: Train residents and develop strategies for communities to better withstand natural calamities like strong winds.']",
+      "created_at": "2026-03-12T04:48:04.357Z",
+      "start_date": null,
+      "expected_completion": null,
+      "actual_completion": null,
+      "latitude": null,
+      "longitude": null,
+      "resolution_proof": "",
+      "resolution_proof_number": null,
+      "resolved_by": null,
+      "resolved_at": null
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 67,
+    "fields": {
+      "complaint": null,
+      "gap": 17,
+      "verification_audio_path": "voice_samples/gap_17/verification_ced374f2dfd5e7c945485df2a123d4d6.webm",
+      "similarity_score": 0.22317986831001868,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-02-02T12:49:50.056Z",
+      "verified_by": "admin1",
+      "notes": "",
+      "used_for_closure": true,
+      "verification_voice_code": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 66,
+    "fields": {
+      "complaint": null,
+      "gap": 17,
+      "verification_audio_path": "voice_samples/gap_17/verification_ced374f2dfd5e7c945485df2a123d4d6.webm",
+      "similarity_score": 0.22317986831001868,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-02-02T12:49:50.049Z",
+      "verified_by": "",
+      "notes": "Gap #17 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 65,
+    "fields": {
+      "complaint": null,
+      "gap": 17,
+      "verification_audio_path": "voice_samples/gap_17/verification_fd0f9eb2a6771118d2f7e0bb2b96bbd3.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T12:49:44.439Z",
+      "verified_by": "admin1",
+      "notes": "",
+      "used_for_closure": false,
+      "verification_voice_code": "AAAAAAAAAIAAAACAAAAAAAAAAIAAAACA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 64,
+    "fields": {
+      "complaint": null,
+      "gap": 17,
+      "verification_audio_path": "voice_samples/gap_17/verification_fd0f9eb2a6771118d2f7e0bb2b96bbd3.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T12:49:44.431Z",
+      "verified_by": "",
+      "notes": "Gap #17 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "AAAAAAAAAIAAAACAAAAAAAAAAIAAAACA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 49,
+    "fields": {
+      "complaint": null,
+      "gap": 14,
+      "verification_audio_path": "voice_samples/gap_14/verification_7319587aee4232ff38d0872473d20cf1.webm",
+      "similarity_score": 0.26064249728010225,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-02-02T09:40:02.799Z",
+      "verified_by": "admin",
+      "notes": "",
+      "used_for_closure": true,
+      "verification_voice_code": "AAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 48,
+    "fields": {
+      "complaint": null,
+      "gap": 14,
+      "verification_audio_path": "voice_samples/gap_14/verification_7319587aee4232ff38d0872473d20cf1.webm",
+      "similarity_score": 0.26064249728010225,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-02-02T09:40:02.790Z",
+      "verified_by": "",
+      "notes": "Gap #14 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "AAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 47,
+    "fields": {
+      "complaint": null,
+      "gap": 4,
+      "verification_audio_path": "voice_samples/gap_4/verification_946462ab41a7e9c7e6dfca6db9015730_LSn7Rhg.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T09:37:22.208Z",
+      "verified_by": "admin",
+      "notes": "",
+      "used_for_closure": false,
+      "verification_voice_code": "AAAAAAAAAIAAAACAAAAAAAAAAIAAAACA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 46,
+    "fields": {
+      "complaint": null,
+      "gap": 4,
+      "verification_audio_path": "voice_samples/gap_4/verification_946462ab41a7e9c7e6dfca6db9015730_LSn7Rhg.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T09:37:22.189Z",
+      "verified_by": "",
+      "notes": "Gap #4 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "AAAAAAAAAIAAAACAAAAAAAAAAIAAAACA"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 45,
+    "fields": {
+      "complaint": null,
+      "gap": 14,
+      "verification_audio_path": "voice_samples/gap_14/verification_cd2c17febb98607bbfb5dbfd0a460858.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T09:33:09.502Z",
+      "verified_by": "admin",
+      "notes": "",
+      "used_for_closure": false,
+      "verification_voice_code": "57998fdf04002e9c426428472d27b8781ba6e28dc439cb971deeeffda51abfcc"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 44,
+    "fields": {
+      "complaint": null,
+      "gap": 14,
+      "verification_audio_path": "voice_samples/gap_14/verification_cd2c17febb98607bbfb5dbfd0a460858.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T09:33:09.494Z",
+      "verified_by": "",
+      "notes": "Gap #14 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "57998fdf04002e9c426428472d27b8781ba6e28dc439cb971deeeffda51abfcc"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 43,
+    "fields": {
+      "complaint": null,
+      "gap": 14,
+      "verification_audio_path": "voice_samples/gap_14/verification_a9edf3c8bb92b0d5d7fc5d925f312216.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T09:32:56.907Z",
+      "verified_by": "admin",
+      "notes": "",
+      "used_for_closure": false,
+      "verification_voice_code": "ac8888a6a0cf46dd3e8690c6ba97de637fe3609203bd79dbc36ce4dffc21856c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 42,
+    "fields": {
+      "complaint": null,
+      "gap": 14,
+      "verification_audio_path": "voice_samples/gap_14/verification_a9edf3c8bb92b0d5d7fc5d925f312216.webm",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-02-02T09:32:56.899Z",
+      "verified_by": "",
+      "notes": "Gap #14 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "ac8888a6a0cf46dd3e8690c6ba97de637fe3609203bd79dbc36ce4dffc21856c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 41,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_11/verification_455c921b3f719551267167913ef2d7de.wav",
+      "similarity_score": 0.26418782961460896,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-01-31T06:24:01.964Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #11 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "24203a979a53c9d02a62741466b40966f56bb6eecd7dacc1df3af73936c6121f"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 40,
+    "fields": {
+      "complaint": null,
+      "gap": 11,
+      "verification_audio_path": "voice_samples/gap_11/verification_455c921b3f719551267167913ef2d7de.wav",
+      "similarity_score": 0.26418782961460896,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-01-31T06:24:01.954Z",
+      "verified_by": "",
+      "notes": "Used for Gap #11 resolution. Voice codes matched. Gap #11 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "24203a979a53c9d02a62741466b40966f56bb6eecd7dacc1df3af73936c6121f"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 39,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_12/verification_9c1f3ad33209d7492da73d2dc1d1da9f.wav",
+      "similarity_score": 0.02665772976279679,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2026-01-21T12:00:07.345Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #12 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "5675391a7a6b5a4554e822dc8035e2d78f0017e1c80c31c2a3992f4964f53d08"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 38,
+    "fields": {
+      "complaint": null,
+      "gap": 12,
+      "verification_audio_path": "voice_samples/gap_12/verification_9c1f3ad33209d7492da73d2dc1d1da9f.wav",
+      "similarity_score": 0.02665772976279679,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2026-01-21T12:00:07.337Z",
+      "verified_by": "",
+      "notes": "Used for Gap #12 resolution. Voice codes matched. Gap #12 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "5675391a7a6b5a4554e822dc8035e2d78f0017e1c80c31c2a3992f4964f53d08"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 37,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_12/verification_2deeade1b3a0a3753b288ad116c326ad.wav",
+      "similarity_score": 0.2876576611982473,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-01-21T11:59:57.661Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #12 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "bd5d58f01c525e9c95d9f8a87d2c0fd5329d1dde1406395b008132068134da37"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 36,
+    "fields": {
+      "complaint": null,
+      "gap": 12,
+      "verification_audio_path": "voice_samples/gap_12/verification_2deeade1b3a0a3753b288ad116c326ad.wav",
+      "similarity_score": 0.2876576611982473,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-01-21T11:59:57.652Z",
+      "verified_by": "",
+      "notes": "Gap #12 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "bd5d58f01c525e9c95d9f8a87d2c0fd5329d1dde1406395b008132068134da37"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 35,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_8/verification_d17ab162d8a17a8f9d5d69ec045b9611.wav",
+      "similarity_score": 0.14640772244461153,
+      "is_match": true,
+      "confidence": "low",
+      "verification_date": "2026-01-09T10:42:45.398Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #8 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "d10f470bdd0683faffc774555a0d35544d7e9768da17b7e48ad87d2cbb682358"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 34,
+    "fields": {
+      "complaint": null,
+      "gap": 8,
+      "verification_audio_path": "voice_samples/gap_8/verification_d17ab162d8a17a8f9d5d69ec045b9611.wav",
+      "similarity_score": 0.14640772244461153,
+      "is_match": true,
+      "confidence": "low",
+      "verification_date": "2026-01-09T10:42:45.379Z",
+      "verified_by": "",
+      "notes": "Used for Gap #8 resolution. Voice codes matched. Gap #8 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "d10f470bdd0683faffc774555a0d35544d7e9768da17b7e48ad87d2cbb682358"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 33,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_11/verification_6a5fa3323d538e8acba0e6591ecec6fd.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:33.405Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #11 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "9057994b88b6a9d44b0c7c17a9fdeb86e9b02b8ced2cf6c1cbf86f2d78c11f1b"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 32,
+    "fields": {
+      "complaint": null,
+      "gap": 11,
+      "verification_audio_path": "voice_samples/gap_11/verification_6a5fa3323d538e8acba0e6591ecec6fd.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:33.394Z",
+      "verified_by": "",
+      "notes": "Gap #11 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "9057994b88b6a9d44b0c7c17a9fdeb86e9b02b8ced2cf6c1cbf86f2d78c11f1b"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 31,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_11/verification_fcb0ac30088690811b3090a43ac866d9.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:21.923Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #11 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "9d595ba161c43bf6bdb5ae1c2d06db39b4c74e1ee008a1990f36d5ebbade332c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 30,
+    "fields": {
+      "complaint": null,
+      "gap": 11,
+      "verification_audio_path": "voice_samples/gap_11/verification_fcb0ac30088690811b3090a43ac866d9.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:21.914Z",
+      "verified_by": "",
+      "notes": "Gap #11 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "9d595ba161c43bf6bdb5ae1c2d06db39b4c74e1ee008a1990f36d5ebbade332c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 29,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_11/verification_9e7335be55a5d9b60a59d9f5ae091a8e.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:16.197Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #11 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "bd809fe3dc269748cc4bb34eb25b946d2189bd1c1ae9ec11509d575ae21bbc0b"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 28,
+    "fields": {
+      "complaint": null,
+      "gap": 11,
+      "verification_audio_path": "voice_samples/gap_11/verification_9e7335be55a5d9b60a59d9f5ae091a8e.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:16.186Z",
+      "verified_by": "",
+      "notes": "Gap #11 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "bd809fe3dc269748cc4bb34eb25b946d2189bd1c1ae9ec11509d575ae21bbc0b"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 27,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_11/verification_e01f70c88b072787d7bdbdd71732e967.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:09.288Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #11 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "29c9a95a1e340e0258eda6ebf7c0a59dc3461c6a4389a3a6161850bfc5a332c2"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 26,
+    "fields": {
+      "complaint": null,
+      "gap": 11,
+      "verification_audio_path": "voice_samples/gap_11/verification_e01f70c88b072787d7bdbdd71732e967.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:42:09.270Z",
+      "verified_by": "",
+      "notes": "Gap #11 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "29c9a95a1e340e0258eda6ebf7c0a59dc3461c6a4389a3a6161850bfc5a332c2"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 25,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_11/verification_68dda836e80b12670c127502685b78dd.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:41:36.504Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #11 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "8f13a2b9b003bdd3209c5968cb82671f1c87e1c3a2fba9893de266ec93f30dc8"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 24,
+    "fields": {
+      "complaint": null,
+      "gap": 11,
+      "verification_audio_path": "voice_samples/gap_11/verification_68dda836e80b12670c127502685b78dd.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-09T10:41:36.494Z",
+      "verified_by": "",
+      "notes": "Gap #11 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "8f13a2b9b003bdd3209c5968cb82671f1c87e1c3a2fba9893de266ec93f30dc8"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 23,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_10/verification_6f65bd5b2289f01f48a52fb603171142.wav",
+      "similarity_score": 0.2484030705707312,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-01-09T10:14:25.640Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #10 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "d658712f2c246722873da5122b0f3e6f51538d90130d98d1e20dd592881d2303"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 22,
+    "fields": {
+      "complaint": null,
+      "gap": 10,
+      "verification_audio_path": "voice_samples/gap_10/verification_6f65bd5b2289f01f48a52fb603171142.wav",
+      "similarity_score": 0.2484030705707312,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2026-01-09T10:14:25.627Z",
+      "verified_by": "",
+      "notes": "Used for Gap #10 resolution. Voice codes matched. Gap #10 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "d658712f2c246722873da5122b0f3e6f51538d90130d98d1e20dd592881d2303"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 21,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_7/verification_1d807451707de9cddb617fc72c883ef6.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-08T12:51:08.854Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #7 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "b825f8933a101f1e8f7b6799db2deb08647ce40aae354b74d4deb4f3fd3c516a"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 20,
+    "fields": {
+      "complaint": null,
+      "gap": 7,
+      "verification_audio_path": "voice_samples/gap_7/verification_1d807451707de9cddb617fc72c883ef6.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-08T12:51:08.841Z",
+      "verified_by": "",
+      "notes": "Gap #7 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "b825f8933a101f1e8f7b6799db2deb08647ce40aae354b74d4deb4f3fd3c516a"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 19,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_6/verification_5263784262ce592a464ac176a4468dc3.wav",
+      "similarity_score": 0.04635432653632299,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2026-01-05T12:07:31.225Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #6 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "dc409276b6cf708943f78b2acc604f91409dc3724c7445e5a44ea112e8a24ecc"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 18,
+    "fields": {
+      "complaint": null,
+      "gap": 6,
+      "verification_audio_path": "voice_samples/gap_6/verification_5263784262ce592a464ac176a4468dc3.wav",
+      "similarity_score": 0.04635432653632299,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2026-01-05T12:07:31.216Z",
+      "verified_by": "",
+      "notes": "Used for Gap #6 resolution. Voice codes matched. Gap #6 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "dc409276b6cf708943f78b2acc604f91409dc3724c7445e5a44ea112e8a24ecc"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 17,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_6/verification_c1e9fb4c5999a8a3868409d2648a7ae2.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-05T12:07:20.115Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #6 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "0deee75874efec7746dde7493c5ddc62fd1529a582f8ed60fbb4ebbe76b17f33"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 16,
+    "fields": {
+      "complaint": null,
+      "gap": 6,
+      "verification_audio_path": "voice_samples/gap_6/verification_c1e9fb4c5999a8a3868409d2648a7ae2.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-05T12:07:20.098Z",
+      "verified_by": "",
+      "notes": "Gap #6 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "0deee75874efec7746dde7493c5ddc62fd1529a582f8ed60fbb4ebbe76b17f33"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 15,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_6/verification_5c39b51eb280141785056605aa833c3c.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-05T12:07:06.198Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #6 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "dacf8cdf4aa500f8855b23dd12736239fca01a3262271f7a710c9251bd4a4652"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 14,
+    "fields": {
+      "complaint": null,
+      "gap": 6,
+      "verification_audio_path": "voice_samples/gap_6/verification_5c39b51eb280141785056605aa833c3c.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2026-01-05T12:07:06.188Z",
+      "verified_by": "",
+      "notes": "Gap #6 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "dacf8cdf4aa500f8855b23dd12736239fca01a3262271f7a710c9251bd4a4652"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 13,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_5/verification_c2789f413768701a81d3c5fda286bc6c.wav",
+      "similarity_score": 0.003552308936722537,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2025-12-24T08:32:00.873Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #5 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "26c3c4a18720565dfc12062f2c966343ab993899155f1ddd22d1507413e7fa44"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 12,
+    "fields": {
+      "complaint": null,
+      "gap": 5,
+      "verification_audio_path": "voice_samples/gap_5/verification_c2789f413768701a81d3c5fda286bc6c.wav",
+      "similarity_score": 0.003552308936722537,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2025-12-24T08:32:00.864Z",
+      "verified_by": "",
+      "notes": "Used for Gap #5 resolution. Voice codes matched. Gap #5 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "26c3c4a18720565dfc12062f2c966343ab993899155f1ddd22d1507413e7fa44"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 11,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_5/verification_37d36c17e7bef27c2f3b3a8dd7a09df3.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2025-12-24T08:31:46.740Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #5 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "7ddb01267a54d718ace9df6176ca4fe7aa5b73b8cc3660cf42db74d8ac9f9336"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 10,
+    "fields": {
+      "complaint": null,
+      "gap": 5,
+      "verification_audio_path": "voice_samples/gap_5/verification_37d36c17e7bef27c2f3b3a8dd7a09df3.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2025-12-24T08:31:46.730Z",
+      "verified_by": "",
+      "notes": "Gap #5 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "7ddb01267a54d718ace9df6176ca4fe7aa5b73b8cc3660cf42db74d8ac9f9336"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 9,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_2/verification_c7cf57620f362eb9bb0a3a8629882785.wav",
+      "similarity_score": 0.34436854392612526,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2025-12-17T14:23:53.294Z",
+      "verified_by": "Unknown",
+      "notes": "Gap #2 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "01d864903d2867c9fb5a182d5248170cad4dbdea769fd7d6605810522f4f815c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 8,
+    "fields": {
+      "complaint": null,
+      "gap": 2,
+      "verification_audio_path": "voice_samples/gap_2/verification_c7cf57620f362eb9bb0a3a8629882785.wav",
+      "similarity_score": 0.34436854392612526,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2025-12-17T14:23:53.279Z",
+      "verified_by": "",
+      "notes": "Used for Gap #2 resolution. Voice codes matched. Gap #2 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "01d864903d2867c9fb5a182d5248170cad4dbdea769fd7d6605810522f4f815c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 7,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_1/verification_f6d26b9d99215317831222ddc31279aa.wav",
+      "similarity_score": 0.06916001021812068,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2025-12-17T12:22:16.841Z",
+      "verified_by": "Web User",
+      "notes": "Gap #1 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "ad943915f7c2515fb487794a20cd1714cd52fc8eb05526d5ad8416d88ad0661c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 6,
+    "fields": {
+      "complaint": null,
+      "gap": 1,
+      "verification_audio_path": "voice_samples/gap_1/verification_f6d26b9d99215317831222ddc31279aa.wav",
+      "similarity_score": 0.06916001021812068,
+      "is_match": true,
+      "confidence": "very_low",
+      "verification_date": "2025-12-17T12:22:16.833Z",
+      "verified_by": "",
+      "notes": "Used for Gap #1 resolution. Voice codes matched. Gap #1 - Voice biometric verification. Codes match: False",
+      "used_for_closure": true,
+      "verification_voice_code": "ad943915f7c2515fb487794a20cd1714cd52fc8eb05526d5ad8416d88ad0661c"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 5,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_1/verification_f24828e0378784cd0d600b97397c2193.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2025-12-17T12:21:56.044Z",
+      "verified_by": "Web User",
+      "notes": "Gap #1 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "5cbaa735d560b193647980fc603132af110559ad108f8aa4b0ffc43ccb443f33"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 4,
+    "fields": {
+      "complaint": null,
+      "gap": 1,
+      "verification_audio_path": "voice_samples/gap_1/verification_f24828e0378784cd0d600b97397c2193.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2025-12-17T12:21:56.035Z",
+      "verified_by": "",
+      "notes": "Gap #1 - Voice biometric verification. Codes match: False",
+      "used_for_closure": false,
+      "verification_voice_code": "5cbaa735d560b193647980fc603132af110559ad108f8aa4b0ffc43ccb443f33"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 3,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_1/verification_35e444c3df9089e171273da273c6dfbe.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2025-12-17T12:17:37.192Z",
+      "verified_by": "Web User",
+      "notes": "Gap #1 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "e977dbe4acb3f88f8c9087b13818230048300375dd4eebbd5ba7d64d478278d9"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 2,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_1/verification_0d22a2c15e2adc7095e14c06a3052f78_VCABxRh.wav",
+      "similarity_score": 0.0,
+      "is_match": false,
+      "confidence": "very_low",
+      "verification_date": "2025-12-17T12:17:22.566Z",
+      "verified_by": "Web User",
+      "notes": "Gap #1 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "5022648832da3c441f19ed5e5c1b2418367cafa0ce5eb8be47c4707d5eda9b91"
+    }
+  },
+  {
+    "model": "core.voiceverificationlog",
+    "pk": 1,
+    "fields": {
+      "complaint": null,
+      "gap": null,
+      "verification_audio_path": "voice_samples/gap_1/verification_0d22a2c15e2adc7095e14c06a3052f78.wav",
+      "similarity_score": 0.17477533846651183,
+      "is_match": true,
+      "confidence": "medium",
+      "verification_date": "2025-12-17T12:17:19.119Z",
+      "verified_by": "Web User",
+      "notes": "Gap #1 - Voice biometric verification (speaker recognition)",
+      "used_for_closure": false,
+      "verification_voice_code": "615ddfa69ce399bd4d23aeff3186155e5347318c19539d2ecfaaa6b4ff627430"
+    }
+  }
+]

@@ -19,8 +19,6 @@ urlpatterns = [
         name="update_gap_status",
     ),
     path("public-dashboard/", views.public_dashboard, name="public_dashboard"),
-    path("budget-management/", views.budget_management, name="budget_management"),
-    path("update-budget/<int:gap_id>/", views.update_budget, name="update_budget"),
     # Workflow Management URLs
     path("workflow/", workflow_views.workflow_dashboard, name="workflow_dashboard"),
     path("workflow/submit/", workflow_views.submit_complaint, name="submit_complaint"),

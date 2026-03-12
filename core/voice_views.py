@@ -9,14 +9,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.core.files.storage import default_storage
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
-import json
 import os
 
 from .models import Complaint, VoiceVerificationLog
 from .voice_verification import VoiceVerificationManager, VoiceComparator
 
 
+@login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def verify_voice_for_closure(request):
@@ -108,6 +109,7 @@ def verify_voice_for_closure(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def close_complaint_with_voice(request):
@@ -165,6 +167,7 @@ def close_complaint_with_voice(request):
 
         # Voice verified - proceed with closure
         with transaction.atomic():
+            old_status = complaint.status
             complaint.status = "case_closed"
             complaint.save()
 
@@ -185,7 +188,7 @@ def close_complaint_with_voice(request):
 
             WorkflowLog.objects.create(
                 complaint=complaint,
-                from_status=complaint.status,
+                from_status=old_status,
                 to_status="case_closed",
                 action_by="Voice Verified Closure",
                 action_type="case_closed",
@@ -205,6 +208,7 @@ def close_complaint_with_voice(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@login_required
 @require_http_methods(["GET"])
 def get_verification_history(request, complaint_id):
     """
@@ -242,6 +246,7 @@ def get_verification_history(request, complaint_id):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def check_audio_quality(request):
@@ -263,6 +268,7 @@ def check_audio_quality(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@login_required
 def voice_verification_dashboard(request, complaint_id):
     """
     Web interface for voice verification
@@ -280,6 +286,7 @@ def voice_verification_dashboard(request, complaint_id):
     return render(request, "core/voice_verification_dashboard.html", context)
 
 
+@login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def test_voice_comparison(request):
@@ -320,6 +327,7 @@ def test_voice_comparison(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+@login_required
 def gap_voice_verification_dashboard(request, gap_id):
     """
     Voice verification dashboard specifically for Gap resolution
@@ -356,6 +364,7 @@ def gap_voice_verification_dashboard(request, gap_id):
     return render(request, "core/voice_verification_dashboard.html", context)
 
 
+@login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def verify_voice_for_gap_resolution(request):
@@ -409,9 +418,10 @@ def verify_voice_for_gap_resolution(request):
             gap.save(update_fields=["voice_code"])
             print(f"✅ Stored voice code for Gap #{gap.id}")
 
-        # Log the verification attempt (store gap reference in notes)
+        # Log the verification attempt
         log = VoiceVerificationLog.objects.create(
-            complaint=None,  # No complaint for gaps
+            gap=gap,
+            complaint=None,
             verification_audio_path=result.get("verification_audio_path", ""),
             similarity_score=result.get("similarity_score", 0.0),
             is_match=result.get("is_match", False),

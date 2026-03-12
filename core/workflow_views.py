@@ -5,18 +5,15 @@ Views for the PM-AJAY Post Office Workflow System
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
-from django.core.files.base import ContentFile
 import json
-import base64
 
 from .models import (
     Complaint,
     PostOffice,
-    PMAJAYOffice,
     Worker,
     WorkflowLog,
     SurveyAgent,
@@ -25,6 +22,7 @@ from .models import (
 from .services import ComplaintProcessor
 
 
+@login_required
 def workflow_dashboard(request):
     """Main workflow dashboard showing all complaints and their status"""
 
@@ -96,6 +94,7 @@ def workflow_dashboard(request):
     return render(request, "core/workflow_dashboard.html", context)
 
 
+@login_required
 def complaint_detail(request, complaint_id):
     """Detailed view of a specific complaint"""
     complaint = get_object_or_404(Complaint, complaint_id=complaint_id)
@@ -128,6 +127,7 @@ def complaint_detail(request, complaint_id):
     return render(request, "core/complaint_detail.html", context)
 
 
+@login_required
 @require_POST
 def update_complaint_status(request, complaint_id):
     """Update complaint status and log the change"""
@@ -188,6 +188,7 @@ def update_complaint_status(request, complaint_id):
     return redirect("complaint_detail", complaint_id=complaint_id)
 
 
+@login_required
 def submit_complaint(request):
     """Interface for submitting new complaints (for agents/post office staff)"""
     if request.method == "POST":
@@ -303,6 +304,7 @@ def submit_complaint(request):
     return render(request, "core/submit_complaint.html", context)
 
 
+@login_required
 def agent_dashboard(request):
     """Dashboard for survey agents to track their visits and complaints"""
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import QRSubmission, QRComplaintDetail, Village, Complaint, PostOffice
+from .models import QRSubmission, Village, Complaint, PostOffice
 
 
 class QRSubmissionSerializer(serializers.ModelSerializer):
@@ -62,89 +62,6 @@ class QRSubmissionSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class QRComplaintDetailSerializer(serializers.ModelSerializer):
-    """Serializer for complaint details linked to QR submissions"""
-
-    class Meta:
-        model = QRComplaintDetail
-        fields = [
-            "qr_submission",
-            "complaint_text",
-            "complaint_type",
-            "severity",
-            "additional_photos",
-            "audio_file",
-            "created_at",
-            "synced_from_mobile",
-        ]
-        read_only_fields = ["created_at"]
-
-
-class MobileDataSyncSerializer(serializers.Serializer):
-    """Serializer for batch sync from mobile app"""
-
-    qr_submissions = QRSubmissionSerializer(many=True, required=False)
-    complaint_details = QRComplaintDetailSerializer(many=True, required=False)
-
-    def create(self, validated_data):
-        """Process batch sync data"""
-        results = {
-            "qr_submissions_created": 0,
-            "complaint_details_created": 0,
-            "errors": [],
-        }
-
-        # Process QR submissions
-        qr_submissions_data = validated_data.get("qr_submissions", [])
-        for qr_data in qr_submissions_data:
-            try:
-                # Check if submission already exists
-                existing = QRSubmission.objects.filter(
-                    submission_uuid=qr_data.get("submission_uuid")
-                ).first()
-
-                if not existing:
-                    serializer = QRSubmissionSerializer(data=qr_data)
-                    if serializer.is_valid():
-                        serializer.save()
-                        results["qr_submissions_created"] += 1
-                    else:
-                        results["errors"].append(
-                            {
-                                "type": "qr_submission",
-                                "data": qr_data,
-                                "errors": serializer.errors,
-                            }
-                        )
-            except Exception as e:
-                results["errors"].append(
-                    {"type": "qr_submission", "data": qr_data, "error": str(e)}
-                )
-
-        # Process complaint details
-        complaint_details_data = validated_data.get("complaint_details", [])
-        for detail_data in complaint_details_data:
-            try:
-                serializer = QRComplaintDetailSerializer(data=detail_data)
-                if serializer.is_valid():
-                    serializer.save()
-                    results["complaint_details_created"] += 1
-                else:
-                    results["errors"].append(
-                        {
-                            "type": "complaint_detail",
-                            "data": detail_data,
-                            "errors": serializer.errors,
-                        }
-                    )
-            except Exception as e:
-                results["errors"].append(
-                    {"type": "complaint_detail", "data": detail_data, "error": str(e)}
-                )
-
-        return results
-
-
 class VillageSerializer(serializers.ModelSerializer):
     """Simple village serializer for mobile app"""
 
@@ -167,20 +84,3 @@ class PostOfficeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostOffice
         fields = "__all__"
-
-
-class PhotoUploadSerializer(serializers.Serializer):
-    """Serializer for photo uploads"""
-
-    complaint_id = serializers.CharField(max_length=100)
-    photo = serializers.ImageField(required=False)
-    latitude = serializers.FloatField(required=False)
-    longitude = serializers.FloatField(required=False)
-    timestamp = serializers.DateTimeField(required=False)
-
-
-class OfflineDataSyncSerializer(serializers.Serializer):
-    """Serializer for offline data sync"""
-
-    gaps = serializers.ListField(required=False)
-    complaints = serializers.ListField(required=False)

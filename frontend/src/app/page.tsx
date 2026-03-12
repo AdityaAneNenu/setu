@@ -174,7 +174,7 @@ export default function Home() {
       {/* Footer */}
       <footer className={styles.footer}>
         <div className={styles.container}>
-          <p>© 2024 SETU - Village Development Tracker | PM-AJAY Initiative | Government of India</p>
+          <p>© {new Date().getFullYear()} SETU - Village Development Tracker | PM-AJAY Initiative | Government of India</p>
         </div>
       </footer>
     </main>

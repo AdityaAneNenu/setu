@@ -6,31 +6,49 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import { dashboardApi } from '@/lib/api';
-import { Gap, Village, DashboardStats } from '@/types';
+import { Village } from '@/types';
 import styles from './page.module.css';
+
+interface RecentGap {
+  id: string | number;
+  gap_id?: string;
+  village_name: string;
+  gap_type: string;
+  severity: string;
+  status: string;
+  created_at: string;
+  description: string;
+  audio_url?: string | null;
+}
 
 interface DashboardData {
   total_gaps: number;
   open_gaps: number;
   in_progress_gaps: number;
   resolved_gaps: number;
-  recent_gaps: Gap[];
+  recent_gaps: RecentGap[];
   villages: Village[];
 }
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated, canViewAnalytics } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, check role
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (!canViewAnalytics) {
+        // Ground workers don't have dashboard access - redirect to upload
+        setAccessDenied(true);
+      }
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, canViewAnalytics, router]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -41,7 +59,8 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     try {
       setIsLoading(true);
-      const response = await dashboardApi.getStats();
+      // Pass user role and ID for role-based filtering
+      const response = await dashboardApi.getStats(user?.role, user?.id?.toString());
       setData(response);
     } catch (err: any) {
       setError('Failed to load dashboard data');
@@ -84,6 +103,35 @@ export default function DashboardPage() {
   // Don't render if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Access denied for ground workers
+  if (accessDenied) {
+    return (
+      <>
+        <Navbar />
+        <div className="main-wrapper">
+          <div className="container">
+            <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+              <h2>Access Denied</h2>
+              <p style={{ color: 'var(--text-muted)', marginTop: '10px' }}>
+                You need Manager role or higher to view the Dashboard.
+              </p>
+              <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>
+                Your current role: <strong>{user?.role}</strong>
+              </p>
+              <button 
+                onClick={() => router.push('/upload')} 
+                className="btn btn-primary"
+                style={{ marginTop: '30px' }}
+              >
+                Go to Upload Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   if (isLoading) {
@@ -182,8 +230,8 @@ export default function DashboardPage() {
                   {data?.recent_gaps && data.recent_gaps.length > 0 ? (
                     data.recent_gaps.map((gap) => (
                       <tr key={gap.id}>
-                        <td><strong>#{gap.id}</strong></td>
-                        <td>{gap.village?.name || 'N/A'}</td>
+                        <td><strong>#{gap.gap_id || String(gap.id).slice(0, 8)}</strong></td>
+                        <td>{gap.village_name || 'N/A'}</td>
                         <td style={{ textTransform: 'capitalize' }}>{gap.gap_type}</td>
                         <td>
                           <span className={`badge ${getSeverityBadgeClass(gap.severity)}`}>
@@ -241,7 +289,7 @@ export default function DashboardPage() {
                       <tr key={village.id}>
                         <td><strong>{village.name}</strong></td>
                         <td>{village.total_gaps || 0}</td>
-                        <td>{village.pending_gaps || 0}</td>
+                        <td>{village.open_gaps || 0}</td>
                         <td>{village.in_progress_gaps || 0}</td>
                         <td>{village.resolved_gaps || 0}</td>
                         <td>

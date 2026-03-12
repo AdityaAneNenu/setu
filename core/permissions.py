@@ -5,10 +5,9 @@ from rest_framework.permissions import BasePermission
 class Role:
     GROUND = "ground"
     MANAGER = "manager"
-    AUTHORITY = "authority"
     ADMIN = "admin"
 
-    ALL = [GROUND, MANAGER, AUTHORITY, ADMIN]
+    ALL = [GROUND, MANAGER, ADMIN]
 
 
 def get_user_role(user):
@@ -59,15 +58,15 @@ def role_required(allowed_roles):
 
 
 def can_resolve_gaps(user):
-    """Check if user has authority to mark gaps as resolved (AUTHORITY or ADMIN only)"""
+    """Check if user has permission to mark gaps as resolved (ADMIN only)"""
     role = get_user_role(user)
-    return role in [Role.AUTHORITY, Role.ADMIN]
+    return role in [Role.ADMIN]
 
 
 def can_verify_gaps(user):
     """Check if user can verify/assign gaps (MANAGER and above)"""
     role = get_user_role(user)
-    return role in [Role.MANAGER, Role.AUTHORITY, Role.ADMIN]
+    return role in [Role.MANAGER, Role.ADMIN]
 
 
 def can_create_gaps(user):
@@ -91,7 +90,7 @@ class CanVerifyGaps(BasePermission):
 
 
 class CanResolveGaps(BasePermission):
-    """DRF permission: Authority+ can resolve gaps"""
+    """DRF permission: Admin can resolve gaps"""
 
     def has_permission(self, request, view):
         return can_resolve_gaps(request.user)
@@ -102,12 +101,4 @@ class CanViewAnalytics(BasePermission):
 
     def has_permission(self, request, view):
         role = get_user_role(request.user)
-        return role in [Role.MANAGER, Role.AUTHORITY, Role.ADMIN]
-
-
-class CanManageBudget(BasePermission):
-    """DRF permission: Authority+ can manage budget"""
-
-    def has_permission(self, request, view):
-        role = get_user_role(request.user)
-        return role in [Role.AUTHORITY, Role.ADMIN]
+        return role in [Role.MANAGER, Role.ADMIN]

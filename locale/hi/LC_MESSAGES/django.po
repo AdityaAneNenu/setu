@@ -52,9 +52,6 @@ msgstr "पूर्ण"
 msgid "Critical Severity"
 msgstr "महत्वपूर्ण गंभीरता"
 
-msgid "Total Budget"
-msgstr "कुल बजट"
-
 msgid "Recent Gaps"
 msgstr "हालिया गैप"
 

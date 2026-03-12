@@ -34,8 +34,8 @@ except Exception as e:
     print(f"   - Network connectivity issues")
     model = None
 
-MANAGER_AND_ABOVE = [Role.MANAGER, Role.AUTHORITY, Role.ADMIN]
-AUTHORITY_AND_ABOVE = [Role.AUTHORITY, Role.ADMIN]
+MANAGER_AND_ABOVE = [Role.MANAGER, Role.ADMIN]
+ADMIN_ONLY = [Role.ADMIN]
 ALL_ROLES = Role.ALL
 
 
@@ -43,8 +43,8 @@ ALL_ROLES = Role.ALL
 def post_login_redirect(request):
     """
     Route users to the correct landing page based on role.
-    - Admin/staff: dashboard
-    - Highest authority/Manager: dashboard
+    - Admin: dashboard
+    - Manager: dashboard
     - Ground: upload form
     """
     role = get_user_role(request.user)
@@ -115,7 +115,7 @@ def upload_form(request):
                 
                 {{
                   "translated_text": "English translation of the text",
-                  "gap_type": "water/road/sanitation/electricity/education/health/agriculture/welfare/connectivity/load_transport/livelihood_skill",
+                  "gap_type": "water/road/sanitation/electricity/education/health/housing/agriculture/connectivity/employment/community_center/drainage/other",
                   "reason": "Clear description of the problem in English",
                   "severity": "low/medium/high",
                   "recommendations": "Specific recommendations to solve this issue"
@@ -207,7 +207,7 @@ def upload_form(request):
             Extract text from this image and respond only with JSON and no other text in the following format and only fill in english if there is any other language please translate to english:
             {
               "extracted_text": "",
-              "gap_type": "water/road/sanitation/electricity/education/health/agriculture/welfare/connectivity/load_transport/livelihood_skill",
+              "gap_type": "water/road/sanitation/electricity/education/health/housing/agriculture/connectivity/employment/community_center/drainage/other",
               "reason": "",
               "severity": "low/medium/high",
               "recommendations":""
@@ -233,7 +233,7 @@ def upload_form(request):
             except Exception as e:
                 data = {
                     "extracted_text": "Error processing image",
-                    "gap_type": "unknown",
+                    "gap_type": "other",
                     "reason": f"Image processing error: {str(e)}",
                     "severity": "low",
                     "recommendations": "Manual review required",
@@ -256,7 +256,7 @@ def upload_form(request):
         gap = Gap.objects.create(
             village=submission.village,
             description=data.get("reason", "No description available"),
-            gap_type=data.get("gap_type", "unknown"),
+            gap_type=data.get("gap_type", "other"),
             severity=data.get("severity", "low"),
             input_method=input_method,
             audio_file=(
@@ -298,7 +298,7 @@ def upload_form(request):
                 language_name = temp_processor.speech_service.get_language_name(
                     language_code
                 )
-            except:
+            except Exception:
                 language_name = "Unknown Language"
 
         context = {
@@ -415,12 +415,13 @@ def analytics(request):
         "electricity": "linear-gradient(90deg, #f59e0b 0%, #d97706 100%)",
         "education": "linear-gradient(90deg, #ec4899 0%, #db2777 100%)",
         "health": "linear-gradient(90deg, #10b981 0%, #059669 100%)",
+        "housing": "linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)",
         "agriculture": "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)",
-        "welfare": "linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%)",
         "connectivity": "linear-gradient(90deg, #a855f7 0%, #7c3aed 100%)",
-        "load_transport": "linear-gradient(90deg, #f97316 0%, #ea580c 100%)",
-        "livelihood_skill": "linear-gradient(90deg, #14b8a6 0%, #0d9488 100%)",
-        "unknown": "linear-gradient(90deg, #1e293b 0%, #0f172a 100%)",
+        "employment": "linear-gradient(90deg, #f97316 0%, #ea580c 100%)",
+        "community_center": "linear-gradient(90deg, #14b8a6 0%, #0d9488 100%)",
+        "drainage": "linear-gradient(90deg, #06b6d4 0%, #0891b2 100%)",
+        "other": "linear-gradient(90deg, #1e293b 0%, #0f172a 100%)",
     }
 
     gaps_by_type = []
@@ -431,13 +432,13 @@ def analytics(request):
         display_percentage = max(
             round(raw_percentage, 1), 6 if item["count"] > 0 else 0
         )
-        type_slug = slugify(item["gap_type"] or "unknown")
+        type_slug = slugify(item["gap_type"] or "other")
         gaps_by_type.append(
             {
                 "type_name": item["gap_type"],
                 "count": item["count"],
                 "percentage": display_percentage,
-                "color": type_color_map.get(type_slug, type_color_map["unknown"]),
+                "color": type_color_map.get(type_slug, type_color_map["other"]),
                 "slug": type_slug,
             }
         )
@@ -514,7 +515,7 @@ def update_gap_status(request, gap_id):
             print(f"  📁 Audio file path: {gap.audio_file.name}")
         print(f"{'='*80}\n")
 
-        # ROLE CHECK: Only AUTHORITY and ADMIN can mark as "resolved"
+        # ROLE CHECK: Only ADMIN can mark as "resolved"
         if new_status == "resolved" and not can_resolve_gaps(request.user):
             print(
                 f"❌ DEBUG: User {request.user.username} ({user_role}) cannot resolve gaps"
@@ -522,7 +523,7 @@ def update_gap_status(request, gap_id):
             messages.error(
                 request,
                 f"❌ <strong>Permission Denied!</strong><br>"
-                f"Only AUTHORITY or ADMIN roles can mark gaps as resolved. Your role: {user_role.upper()}",
+                f"Only ADMIN role can mark gaps as resolved. Your role: {user_role.upper()}",
                 extra_tags="safe",
             )
             return redirect("manage_gaps")
@@ -531,7 +532,7 @@ def update_gap_status(request, gap_id):
         # Voice verification is ONLY required for gaps submitted through voice recording
         is_voice_gap = gap.input_method == "voice" or bool(gap.audio_file)
 
-        # RESOLUTION PROOF CHECK: AUTHORITY must provide proof when resolving
+        # RESOLUTION PROOF CHECK: ADMIN must provide proof when resolving
         # BUT: Only for photo/image uploads - NOT for voice recordings!
         if new_status == "resolved" and not is_voice_gap:
             resolution_proof = request.FILES.get("resolution_proof")
@@ -769,52 +770,10 @@ def village_report(request, village_id):
     return render(request, "core/village_report.html", context)
 
 
-@login_required
-@role_required(AUTHORITY_AND_ABOVE)  # Highest authority or admin
-def budget_management(request):
-    """Management view for budget allocation"""
-    gaps = Gap.objects.all().order_by("-created_at")
-
-    # Apply filters
-    status_filter = request.GET.get("status")
-    if status_filter:
-        gaps = gaps.filter(status=status_filter)
-
-    village_filter = request.GET.get("village")
-    if village_filter:
-        gaps = gaps.filter(village_id=village_filter)
-
-    context = {
-        "gaps": gaps,
-        "villages": Village.objects.all(),
-    }
-
-    return render(request, "core/budget_management.html", context)
-
-
-@login_required
-@role_required(AUTHORITY_AND_ABOVE)
-def update_budget(request, gap_id):
-    """Update budget for a specific gap"""
-    if request.method == "POST":
-        gap = get_object_or_404(Gap, id=gap_id)
-        budget_allocated = request.POST.get("budget_allocated")
-        budget_spent = request.POST.get("budget_spent")
-
-        if budget_allocated:
-            gap.budget_allocated = budget_allocated
-        if budget_spent:
-            gap.budget_spent = budget_spent
-
-        gap.save()
-
-    return redirect("budget_management")
-
-
 def public_dashboard(request):
     """Public dashboard showing ongoing development works - no login required"""
     from django.utils import timezone
-    from django.db.models import Sum, Q
+    from django.db.models import Q
 
     # Get all gaps/projects that are not yet resolved
     ongoing_projects = (
@@ -833,21 +792,6 @@ def public_dashboard(request):
     # Statistics
     total_ongoing = ongoing_projects.count()
     total_completed = Gap.objects.filter(status="resolved").count()
-
-    # Budget statistics
-    total_budget_allocated = (
-        Gap.objects.filter(Q(status="open") | Q(status="in_progress")).aggregate(
-            total=Sum("budget_allocated")
-        )["total"]
-        or 0
-    )
-
-    total_budget_spent = (
-        Gap.objects.filter(Q(status="open") | Q(status="in_progress")).aggregate(
-            total=Sum("budget_spent")
-        )["total"]
-        or 0
-    )
 
     # Projects by type (all gaps for complete chart display)
     projects_by_type = (
@@ -879,9 +823,6 @@ def public_dashboard(request):
         "completed_projects": completed_projects,
         "total_ongoing": total_ongoing,
         "total_completed": total_completed,
-        "total_budget_allocated": total_budget_allocated,
-        "total_budget_spent": total_budget_spent,
-        "budget_remaining": total_budget_allocated - total_budget_spent,
         "projects_by_type": projects_by_type,
         "villages_with_projects": villages_with_projects,
         "all_villages": all_villages,  # Add all villages for filter dropdown
@@ -981,7 +922,7 @@ def qr_submission_detail(request, submission_id):
                     name__icontains=qr_submission.village_name
                 ).first(),
                 description=f"Gap submitted via QR code: {qr_submission.qr_code}",
-                gap_type=request.POST.get("gap_type", "unknown"),
+                gap_type=request.POST.get("gap_type", "other"),
                 severity=request.POST.get("severity", "medium"),
                 input_method="text",
                 latitude=qr_submission.latitude,

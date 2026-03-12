@@ -1,7 +1,8 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, action, permission_classes
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from .permissions import (
@@ -9,88 +10,19 @@ from .permissions import (
     CanVerifyGaps,
     CanResolveGaps,
     CanViewAnalytics,
-    CanManageBudget,
 )
 from django.shortcuts import get_object_or_404
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
 from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from datetime import datetime
 import os
 import json
-import uuid
+import logging
 
-from .models import Complaint, Village, PostOffice, QRSubmission, Gap, SurveyAgent
-from .serializers import (
-    ComplaintSerializer,
-    VillageSerializer,
-    PostOfficeSerializer,
-    PhotoUploadSerializer,
-    OfflineDataSyncSerializer,
-    QRSubmissionSerializer,
-)
-from django.db.models import Count
-
-
-class ComplaintViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint for viewing complaints
-    GET /api/complaints/ - List all complaints
-    GET /api/complaints/{id}/ - Get specific complaint
-    GET /api/complaints/by_complaint_id/{complaint_id}/ - Get by complaint ID
-    """
-
-    queryset = Complaint.objects.all().order_by("-created_at")
-    serializer_class = ComplaintSerializer
-    permission_classes = [AllowAny]  # Change to appropriate permissions in production
-
-    @action(
-        detail=False,
-        methods=["get"],
-        url_path="by_complaint_id/(?P<complaint_id>[^/.]+)",
-    )
-    def by_complaint_id(self, request, complaint_id=None):
-        """Get complaint by complaint_id (e.g., PMC2024001)"""
-        complaint = get_object_or_404(Complaint, complaint_id=complaint_id)
-        serializer = self.get_serializer(complaint)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=["get"])
-    def search(self, request):
-        """Search complaints by various parameters"""
-        query = request.query_params.get("q", "")
-        status_filter = request.query_params.get("status", "")
-
-        queryset = self.queryset
-
-        if query:
-            queryset = queryset.filter(complaint_id__icontains=query) | queryset.filter(
-                villager_name__icontains=query
-            )
-
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
-class VillageViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint for viewing villages"""
-
-    queryset = Village.objects.all().order_by("name")
-    serializer_class = VillageSerializer
-    permission_classes = [AllowAny]
-
-
-class PostOfficeViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint for viewing post offices"""
-
-    queryset = PostOffice.objects.all().order_by("name")
-    serializer_class = PostOfficeSerializer
-    permission_classes = [AllowAny]
+from .models import Complaint, Village, QRSubmission, Gap, SurveyAgent
+from .serializers import QRSubmissionSerializer
+from django.db.models import Count, Q
+from django.db import transaction
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -101,7 +33,7 @@ class QRSubmissionAPIView(APIView):
     POST /api/qr-submissions/ - Create new submission
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         submissions = QRSubmission.objects.all().order_by("-created_at")[:50]
@@ -114,215 +46,6 @@ class QRSubmissionAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["POST"])
-def upload_photo(request):
-    """
-    Upload a photo for a specific complaint
-    POST /api/upload-photo/
-    Body: {
-        "complaint_id": "PMC2024001",
-        "photo": <file>,
-        "latitude": 28.4595,
-        "longitude": 77.0266,
-        "timestamp": "2024-01-15T10:30:00Z"
-    }
-    """
-    # Log request data for debugging
-    print(f"Upload photo request - Data: {request.data.keys()}")
-    print(f"Files: {request.FILES.keys()}")
-    print(f"Complaint ID: {request.data.get('complaint_id')}")
-
-    serializer = PhotoUploadSerializer(data=request.data)
-
-    if serializer.is_valid():
-        complaint_id = serializer.validated_data["complaint_id"]
-        photo = serializer.validated_data["photo"]
-        latitude = serializer.validated_data.get("latitude")
-        longitude = serializer.validated_data.get("longitude")
-
-        try:
-            complaint = Complaint.objects.get(complaint_id=complaint_id)
-        except Complaint.DoesNotExist:
-            return Response(
-                {"error": f"Complaint {complaint_id} not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        # Save photo to media directory
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"complaint_photos/{complaint_id}_{timestamp}_{photo.name}"
-        path = default_storage.save(filename, ContentFile(photo.read()))
-
-        # Update complaint's geotagged_photos list
-        if complaint.geotagged_photos is None:
-            complaint.geotagged_photos = []
-
-        photo_data = {
-            "path": path,
-            "url": default_storage.url(path),
-            "uploaded_at": datetime.now().isoformat(),
-        }
-
-        if latitude and longitude:
-            photo_data["latitude"] = str(latitude)
-            photo_data["longitude"] = str(longitude)
-
-        complaint.geotagged_photos.append(photo_data)
-        complaint.save()
-
-        print(f"Photo uploaded successfully: {path}")
-
-        return Response(
-            {
-                "success": True,
-                "message": "Photo uploaded successfully",
-                "complaint_id": complaint_id,
-                "photo_url": default_storage.url(path),
-            },
-            status=status.HTTP_201_CREATED,
-        )
-
-    print(f"Validation errors: {serializer.errors}")
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["POST"])
-def sync_offline_data(request):
-    """
-    Sync offline collected data (multiple photos and notes)
-    POST /api/sync-offline/
-    Body: {
-        "complaint_id": "PMC2024001",
-        "photos": [<file1>, <file2>, ...],
-        "notes": "Additional notes",
-        "latitude": 28.4595,
-        "longitude": 77.0266,
-        "collected_at": "2024-01-15T10:30:00Z"
-    }
-    """
-    complaint_id = request.data.get("complaint_id")
-
-    if not complaint_id:
-        return Response(
-            {"error": "complaint_id is required"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    try:
-        complaint = Complaint.objects.get(complaint_id=complaint_id)
-    except Complaint.DoesNotExist:
-        return Response(
-            {"error": f"Complaint {complaint_id} not found"},
-            status=status.HTTP_404_NOT_FOUND,
-        )
-
-    # Process multiple photos
-    uploaded_photos = []
-    photos = request.FILES.getlist("photos")
-
-    for photo in photos:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"complaint_photos/{complaint_id}_{timestamp}_{photo.name}"
-        path = default_storage.save(filename, ContentFile(photo.read()))
-        uploaded_photos.append(default_storage.url(path))
-
-    return Response(
-        {
-            "success": True,
-            "message": f"Synced {len(uploaded_photos)} photos for complaint {complaint_id}",
-            "complaint_id": complaint_id,
-            "photos_uploaded": len(uploaded_photos),
-        },
-        status=status.HTTP_200_OK,
-    )
-
-
-@api_view(["POST"])
-def test_upload(request):
-    """
-    Test endpoint to debug photo uploads
-    """
-    print("=" * 50)
-    print("TEST UPLOAD ENDPOINT")
-    print("=" * 50)
-    print(f"Request method: {request.method}")
-    print(f"Content-Type: {request.content_type}")
-    print(f"POST data keys: {list(request.POST.keys())}")
-    print(f"FILES keys: {list(request.FILES.keys())}")
-    print(f"Data keys: {list(request.data.keys())}")
-
-    for key in request.POST.keys():
-        print(f"POST[{key}] = {request.POST[key]}")
-
-    for key in request.FILES.keys():
-        file = request.FILES[key]
-        print(
-            f"FILE[{key}] = {file.name}, size={file.size}, content_type={file.content_type}"
-        )
-
-    return Response(
-        {
-            "success": True,
-            "message": "Test successful",
-            "received_post": list(request.POST.keys()),
-            "received_files": list(request.FILES.keys()),
-        }
-    )
-
-
-@api_view(["POST"])
-def upload_gap_photo(request):
-    """
-    Upload a photo for a gap and optionally update its status
-    POST /api/upload-gap-photo/
-    Body: {
-        "gap_id": 12,
-        "photo": <file>,
-        "status": "resolved" (optional)
-    }
-    """
-    from .models import Gap
-
-    gap_id = request.data.get("gap_id")
-    new_status = request.data.get("status")
-
-    if not gap_id:
-        return Response(
-            {"error": "gap_id is required"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    try:
-        gap = Gap.objects.get(id=gap_id)
-    except Gap.DoesNotExist:
-        return Response(
-            {"error": f"Gap {gap_id} not found"}, status=status.HTTP_404_NOT_FOUND
-        )
-
-    # Process photo if provided
-    photo_url = None
-    if "photo" in request.FILES:
-        photo = request.FILES["photo"]
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"gap_photos/gap_{gap_id}_{timestamp}_{photo.name}"
-        path = default_storage.save(filename, ContentFile(photo.read()))
-        photo_url = default_storage.url(path)
-
-    # Update status if provided
-    if new_status and new_status in ["open", "in_progress", "resolved"]:
-        gap.status = new_status
-        gap.save()
-
-    return Response(
-        {
-            "success": True,
-            "message": "Gap updated successfully",
-            "gap_id": gap_id,
-            "photo_url": photo_url,
-            "status": gap.status,
-        },
-        status=status.HTTP_200_OK,
-    )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -352,16 +75,9 @@ class LoginAPIView(APIView):
             token, created = Token.objects.get_or_create(user=user)
 
             # Get user role from profile if exists
-            role = "user"
-            try:
-                if hasattr(user, "userprofile"):
-                    role = user.userprofile.role
-                elif user.is_superuser:
-                    role = "admin"
-                elif user.is_staff:
-                    role = "manager"
-            except:
-                pass
+            from .permissions import get_user_role
+
+            role = get_user_role(user) or "ground"
 
             return Response(
                 {
@@ -391,39 +107,37 @@ class LogoutAPIView(APIView):
     POST /api/auth/logout/
     """
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Delete the user's auth token to invalidate the session
+        try:
+            Token.objects.filter(user=request.user).delete()
+        except Exception as e:
+            # Log the exception but don't fail the logout
+            import logging
+            logging.getLogger(__name__).error(f"Error deleting token during logout: {e}")
         return Response({"success": True, "message": "Logged out successfully"})
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_user_profile(request):
     """Get current user profile"""
-    if request.user.is_authenticated:
-        role = "user"
-        try:
-            if hasattr(request.user, "userprofile"):
-                role = request.user.userprofile.role
-            elif request.user.is_superuser:
-                role = "admin"
-            elif request.user.is_staff:
-                role = "manager"
-        except:
-            pass
+    from .permissions import get_user_role
 
-        return Response(
-            {
-                "id": request.user.id,
-                "username": request.user.username,
-                "email": request.user.email or "",
-                "role": role,
-                "is_superuser": request.user.is_superuser,
-                "is_staff": request.user.is_staff,
-            }
-        )
-    return Response({"error": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+    role = get_user_role(request.user) or "ground"
+
+    return Response(
+        {
+            "id": request.user.id,
+            "username": request.user.username,
+            "email": request.user.email or "",
+            "role": role,
+            "is_superuser": request.user.is_superuser,
+            "is_staff": request.user.is_staff,
+        }
+    )
 
 
 # =============================================================================
@@ -432,35 +146,33 @@ def get_user_profile(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([CanViewAnalytics])
 def api_villages_list(request):
-    """JSON API endpoint to list all villages with gap statistics"""
-    villages = Village.objects.all()
-    villages_data = []
+    """JSON API endpoint to list all villages with gap statistics (Manager+ only)"""
+    villages = Village.objects.annotate(
+        total_gaps=Count('gap'),
+        open_gaps=Count('gap', filter=Q(gap__status='open')),
+        in_progress_gaps=Count('gap', filter=Q(gap__status='in_progress')),
+        resolved_gaps=Count('gap', filter=Q(gap__status='resolved')),
+        high_severity=Count('gap', filter=Q(gap__severity='high')),
+        medium_severity=Count('gap', filter=Q(gap__severity='medium')),
+        low_severity=Count('gap', filter=Q(gap__severity='low')),
+    )
 
-    for village in villages:
-        gaps = Gap.objects.filter(village=village)
-        open_gaps = gaps.filter(status="open").count()
-        in_progress_gaps = gaps.filter(status="in_progress").count()
-        resolved_gaps = gaps.filter(status="resolved").count()
-        total_gaps = gaps.count()
-        high_severity = gaps.filter(severity="high").count()
-        medium_severity = gaps.filter(severity="medium").count()
-        low_severity = gaps.filter(severity="low").count()
-
-        villages_data.append(
-            {
-                "id": village.id,
-                "name": village.name,
-                "total_gaps": total_gaps,
-                "open_gaps": open_gaps,
-                "in_progress_gaps": in_progress_gaps,
-                "resolved_gaps": resolved_gaps,
-                "high_severity": high_severity,
-                "medium_severity": medium_severity,
-                "low_severity": low_severity,
-            }
-        )
+    villages_data = [
+        {
+            "id": v.id,
+            "name": v.name,
+            "total_gaps": v.total_gaps,
+            "open_gaps": v.open_gaps,
+            "in_progress_gaps": v.in_progress_gaps,
+            "resolved_gaps": v.resolved_gaps,
+            "high_severity": v.high_severity,
+            "medium_severity": v.medium_severity,
+            "low_severity": v.low_severity,
+        }
+        for v in villages
+    ]
 
     return Response({"villages": villages_data})
 
@@ -468,25 +180,51 @@ def api_villages_list(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def api_gaps_list(request):
-    """JSON API endpoint to list all gaps with filters"""
+    """JSON API endpoint to list all gaps with filters and pagination"""
     gaps = Gap.objects.select_related("village").all().order_by("-id")
 
-    # Apply filters
+    # Valid filter values
+    VALID_STATUSES = ["open", "in_progress", "resolved"]
+    VALID_SEVERITIES = ["low", "medium", "high"]
+    VALID_GAP_TYPES = [
+        "water", "road", "sanitation", "electricity", "education",
+        "health", "housing", "agriculture", "connectivity", "employment",
+        "community_center", "drainage", "other"
+    ]
+
+    # Apply filters with validation
     status_filter = request.GET.get("status")
-    if status_filter:
+    if status_filter and status_filter in VALID_STATUSES:
         gaps = gaps.filter(status=status_filter)
 
     severity_filter = request.GET.get("severity")
-    if severity_filter:
+    if severity_filter and severity_filter in VALID_SEVERITIES:
         gaps = gaps.filter(severity=severity_filter)
 
     village_filter = request.GET.get("village")
     if village_filter:
-        gaps = gaps.filter(village_id=village_filter)
+        try:
+            village_id = int(village_filter)
+            gaps = gaps.filter(village_id=village_id)
+        except (ValueError, TypeError):
+            pass  # Ignore invalid village IDs
 
     gap_type_filter = request.GET.get("gap_type")
-    if gap_type_filter:
+    if gap_type_filter and gap_type_filter in VALID_GAP_TYPES:
         gaps = gaps.filter(gap_type=gap_type_filter)
+
+    # Pagination
+    try:
+        page = max(1, int(request.GET.get("page", 1)))
+        limit = min(100, max(1, int(request.GET.get("limit", 50))))
+    except (ValueError, TypeError):
+        page = 1
+        limit = 50
+
+    total_count = gaps.count()
+    start = (page - 1) * limit
+    end = start + limit
+    gaps = gaps[start:end]
 
     gaps_data = []
     for gap in gaps:
@@ -502,17 +240,21 @@ def api_gaps_list(request):
                 "input_method": gap.input_method,
                 "recommendations": gap.recommendations,
                 "created_at": gap.created_at.isoformat() if gap.created_at else None,
-                "budget_allocated": (
-                    float(gap.budget_allocated) if gap.budget_allocated else None
-                ),
-                "budget_spent": float(gap.budget_spent) if gap.budget_spent else 0,
                 "latitude": float(gap.latitude) if gap.latitude else None,
                 "longitude": float(gap.longitude) if gap.longitude else None,
                 "audio_file": gap.audio_file.url if gap.audio_file else None,
             }
         )
 
-    return Response({"gaps": gaps_data})
+    return Response({
+        "gaps": gaps_data,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total_count,
+            "total_pages": (total_count + limit - 1) // limit,
+        }
+    })
 
 
 @api_view(["GET"])
@@ -540,10 +282,6 @@ def api_gap_detail(request, gap_id):
             "actual_completion": (
                 gap.actual_completion.isoformat() if gap.actual_completion else None
             ),
-            "budget_allocated": (
-                float(gap.budget_allocated) if gap.budget_allocated else None
-            ),
-            "budget_spent": float(gap.budget_spent) if gap.budget_spent else 0,
             "latitude": float(gap.latitude) if gap.latitude else None,
             "longitude": float(gap.longitude) if gap.longitude else None,
             "audio_file": gap.audio_file.url if gap.audio_file else None,
@@ -557,21 +295,24 @@ def api_gap_detail(request, gap_id):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([CanVerifyGaps])
 def api_update_gap_status(request, gap_id):
-    """JSON API endpoint to update gap status"""
+    """JSON API endpoint to update gap status (Manager+ can update, Admin can resolve)"""
     from .permissions import can_resolve_gaps
+    from .models import GapStatusAuditLog
 
     try:
         gap = Gap.objects.get(id=gap_id)
+        old_status = gap.status
         new_status = request.data.get("status")
+        notes = request.data.get("notes", "")
 
-        # Check if trying to resolve - requires authority+
+        # Check if trying to resolve - requires admin
         if new_status == "resolved" and not can_resolve_gaps(request.user):
             return Response(
                 {
                     "success": False,
-                    "error": "Only Authority or Admin can mark gaps as resolved",
+                    "error": "Only Admin can mark gaps as resolved",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -579,6 +320,45 @@ def api_update_gap_status(request, gap_id):
         if new_status and new_status in ["open", "in_progress", "resolved"]:
             gap.status = new_status
             gap.save()
+
+            # Create audit log entry
+            GapStatusAuditLog.objects.create(
+                gap=gap,
+                old_status=old_status,
+                new_status=new_status,
+                changed_by=request.user if request.user.is_authenticated else None,
+                notes=notes,
+                source="web_api",
+            )
+
+            # Sync to Firebase Firestore with retry logic
+            try:
+                from .firebase_utils import sync_gap_to_firestore
+                sync_gap_to_firestore(gap)
+            except Exception as fb_err:
+                # ✅ IMPROVED: Enhanced Firebase sync with retry mechanism
+                import logging
+                from django.core.cache import cache
+                logger = logging.getLogger(__name__)
+                logger.error(f"Firebase sync failed for gap {gap.id}: {fb_err}")
+                
+                # Add to retry queue in cache (expires in 24 hours)
+                retry_key = f"firebase_retry_gap_{gap.id}_{int(time.time())}"
+                cache.set(retry_key, {
+                    'gap_id': gap.id,
+                    'action': 'update_status',
+                    'attempts': 1,
+                    'error': str(fb_err),
+                    'timestamp': time.time()
+                }, 86400)  # 24 hours
+                
+                # Maintain retry index for easier cleanup
+                retry_index = cache.get('firebase_retry_index', set())
+                retry_index.add(retry_key)
+                cache.set('firebase_retry_index', retry_index, 86400)
+                
+                logger.info(f"Added gap {gap.id} to Firebase retry queue: {retry_key}")
+
             return Response(
                 {
                     "success": True,
@@ -665,7 +445,7 @@ class GapUploadAPIView(APIView):
                         gemini_key = os.getenv("GEMINI_API_KEY")
                         if gemini_key:
                             genai.configure(api_key=gemini_key)
-                            model = genai.GenerativeModel("gemini-pro")
+                            model = genai.GenerativeModel("gemini-2.5-flash")
 
                             categories_list = ", ".join(self.GAP_CATEGORIES)
 
@@ -722,6 +502,14 @@ class GapUploadAPIView(APIView):
             if "audio_file" in request.FILES:
                 input_method = "voice"
                 audio_file = request.FILES["audio_file"]
+                
+                # ✅ SECURITY: Validate audio file size (max 50MB)
+                MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
+                if audio_file.size > MAX_AUDIO_SIZE:
+                    return Response(
+                        {"success": False, "error": "Audio file too large. Maximum size is 50MB."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
                 try:
                     from .services import ComplaintProcessor
@@ -824,6 +612,14 @@ class GapUploadAPIView(APIView):
             elif "image" in request.FILES:
                 input_method = "image"
                 image_file = request.FILES["image"]
+                
+                # ✅ SECURITY: Validate image file size (max 10MB)
+                MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
+                if image_file.size > MAX_IMAGE_SIZE:
+                    return Response(
+                        {"success": False, "error": "Image file too large. Maximum size is 10MB."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
                 try:
                     from PIL import Image
@@ -832,7 +628,7 @@ class GapUploadAPIView(APIView):
 
                     if gemini_key:
                         genai.configure(api_key=gemini_key)
-                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        model = genai.GenerativeModel("gemini-2.5-flash")
 
                         # Save image temporarily
                         img = Image.open(image_file)
@@ -885,23 +681,40 @@ class GapUploadAPIView(APIView):
             if processed_severity not in ["low", "medium", "high"]:
                 processed_severity = "medium"
 
-            # Create the gap
-            gap = Gap.objects.create(
-                village=village,
-                description=processed_description,
-                gap_type=processed_gap_type,
-                severity=processed_severity,
-                input_method=input_method,
-                recommendations=recommendations,
-                status="open",
-                latitude=latitude if latitude else None,
-                longitude=longitude if longitude else None,
-            )
+            # Create the gap with transaction handling
+            with transaction.atomic():
+                gap = Gap.objects.create(
+                    village=village,
+                    description=processed_description,
+                    gap_type=processed_gap_type,
+                    severity=processed_severity,
+                    input_method=input_method,
+                    recommendations=recommendations,
+                    status="open",
+                    latitude=latitude if latitude else None,
+                    longitude=longitude if longitude else None,
+                )
 
-            # Save audio file to gap
-            if "audio_file" in request.FILES:
-                gap.audio_file = request.FILES["audio_file"]
-                gap.save()
+                # Save audio file to gap
+                if "audio_file" in request.FILES:
+                    audio_file = request.FILES["audio_file"]
+                    # ✅ SECURITY: Validate audio file size
+                    MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
+                    if audio_file.size > MAX_AUDIO_SIZE:
+                        return Response(
+                            {"success": False, "error": "Audio file too large. Maximum size is 50MB."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    gap.audio_file = audio_file
+                    gap.save()
+
+            # Sync to Firebase Firestore (outside transaction - non-critical)
+            try:
+                from .firebase_utils import sync_gap_to_firestore
+
+                sync_gap_to_firestore(gap)
+            except Exception as fb_err:
+                print(f"Firebase sync warning (non-blocking): {fb_err}")
 
             return Response(
                 {
@@ -925,9 +738,9 @@ class GapUploadAPIView(APIView):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([CanViewAnalytics])
 def api_dashboard_stats(request):
-    """JSON API endpoint for dashboard statistics"""
+    """JSON API endpoint for dashboard statistics (Manager+ only)"""
     gaps = Gap.objects.all()
     villages_qs = Village.objects.all()
 
@@ -943,34 +756,36 @@ def api_dashboard_stats(request):
     # Gap types distribution
     gaps_by_type = list(gaps.values("gap_type").annotate(count=Count("id")))
 
-    # Recent gaps
-    recent_gaps = []
-    for gap in gaps.order_by("-created_at")[:5]:
-        recent_gaps.append(
-            {
-                "id": gap.id,
-                "village_name": gap.village.name,
-                "gap_type": gap.gap_type,
-                "severity": gap.severity,
-                "status": gap.status,
-                "created_at": gap.created_at.isoformat() if gap.created_at else None,
-            }
-        )
+    # Recent gaps (select_related to avoid N+1 on village FK)
+    recent_gaps = [
+        {
+            "id": gap.id,
+            "village_name": gap.village.name if gap.village else "N/A",
+            "gap_type": gap.gap_type,
+            "severity": gap.severity,
+            "status": gap.status,
+            "created_at": gap.created_at.isoformat() if gap.created_at else None,
+        }
+        for gap in Gap.objects.select_related("village").order_by("-created_at")[:5]
+    ]
 
-    # Villages data
-    villages_data = []
-    for village in villages_qs:
-        v_gaps = Gap.objects.filter(village=village)
-        villages_data.append(
-            {
-                "id": village.id,
-                "name": village.name,
-                "total_gaps": v_gaps.count(),
-                "open_gaps": v_gaps.filter(status="open").count(),
-                "in_progress_gaps": v_gaps.filter(status="in_progress").count(),
-                "resolved_gaps": v_gaps.filter(status="resolved").count(),
-            }
+    # Villages data (single annotated query instead of N+1)
+    villages_data = [
+        {
+            "id": v.id,
+            "name": v.name,
+            "total_gaps": v.total_gaps,
+            "open_gaps": v.open_gaps,
+            "in_progress_gaps": v.in_progress_gaps,
+            "resolved_gaps": v.resolved_gaps,
+        }
+        for v in Village.objects.annotate(
+            total_gaps=Count('gap'),
+            open_gaps=Count('gap', filter=Q(gap__status='open')),
+            in_progress_gaps=Count('gap', filter=Q(gap__status='in_progress')),
+            resolved_gaps=Count('gap', filter=Q(gap__status='resolved')),
         )
+    ]
 
     return Response(
         {
@@ -1010,20 +825,23 @@ def api_analytics(request):
         "low": gaps.filter(severity="low").count(),
     }
 
-    # Village-wise gaps
-    village_gaps = []
-    for village in Village.objects.all():
-        v_gaps = Gap.objects.filter(village=village)
-        village_gaps.append(
-            {
-                "id": village.id,
-                "name": village.name,
-                "total": v_gaps.count(),
-                "open": v_gaps.filter(status="open").count(),
-                "in_progress": v_gaps.filter(status="in_progress").count(),
-                "resolved": v_gaps.filter(status="resolved").count(),
-            }
+    # Village-wise gaps (single annotated query instead of N+1)
+    village_gaps = [
+        {
+            "id": v.id,
+            "name": v.name,
+            "total": v.total,
+            "open": v.open,
+            "in_progress": v.in_progress,
+            "resolved": v.resolved,
+        }
+        for v in Village.objects.annotate(
+            total=Count('gap'),
+            open=Count('gap', filter=Q(gap__status='open')),
+            in_progress=Count('gap', filter=Q(gap__status='in_progress')),
+            resolved=Count('gap', filter=Q(gap__status='resolved')),
         )
+    ]
 
     return Response(
         {
@@ -1041,110 +859,6 @@ def api_analytics(request):
 
 
 # =============================================================================
-# BUDGET API ENDPOINTS
-# =============================================================================
-
-
-@api_view(["GET"])
-@permission_classes([CanManageBudget])
-def api_budget_list(request):
-    """Get budget data for all gaps"""
-    from django.db.models import Sum
-
-    # Get filters
-    village_id = request.GET.get("village", "")
-    gap_type = request.GET.get("category", "")
-
-    gaps = Gap.objects.select_related("village").all()
-
-    if village_id:
-        gaps = gaps.filter(village_id=village_id)
-    if gap_type:
-        gaps = gaps.filter(gap_type=gap_type)
-
-    budget_items = []
-    for gap in gaps:
-        if gap.budget_allocated or gap.budget_spent:
-            budget_items.append(
-                {
-                    "id": gap.id,
-                    "village_name": gap.village.name if gap.village else "N/A",
-                    "category": gap.gap_type,
-                    "allocated_amount": float(gap.budget_allocated or 0),
-                    "spent_amount": float(gap.budget_spent or 0),
-                    "remaining_amount": float(
-                        (gap.budget_allocated or 0) - (gap.budget_spent or 0)
-                    ),
-                    "fiscal_year": "2024",
-                    "status": gap.status,
-                    "description": gap.description[:100] if gap.description else "",
-                }
-            )
-
-    return Response(
-        {
-            "items": budget_items,
-            "total_items": len(budget_items),
-        }
-    )
-
-
-@api_view(["GET"])
-@permission_classes([CanManageBudget])
-def api_budget_summary(request):
-    """Get budget summary statistics"""
-    from django.db.models import Sum
-
-    gaps = Gap.objects.all()
-
-    total_allocated = gaps.aggregate(total=Sum("budget_allocated"))["total"] or 0
-    total_spent = gaps.aggregate(total=Sum("budget_spent"))["total"] or 0
-    total_remaining = total_allocated - total_spent
-
-    utilization = (total_spent / total_allocated * 100) if total_allocated > 0 else 0
-
-    return Response(
-        {
-            "total_allocated": float(total_allocated),
-            "total_spent": float(total_spent),
-            "total_remaining": float(total_remaining),
-            "utilization_percentage": round(utilization, 1),
-        }
-    )
-
-
-@api_view(["POST"])
-@permission_classes([CanManageBudget])
-def api_budget_update(request, gap_id):
-    """Update budget for a gap"""
-    try:
-        gap = Gap.objects.get(id=gap_id)
-
-        budget_allocated = request.data.get("budget_allocated")
-        budget_spent = request.data.get("budget_spent")
-
-        if budget_allocated is not None:
-            gap.budget_allocated = budget_allocated
-        if budget_spent is not None:
-            gap.budget_spent = budget_spent
-
-        gap.save()
-
-        return Response(
-            {
-                "success": True,
-                "message": "Budget updated successfully",
-                "gap_id": gap.id,
-                "budget_allocated": float(gap.budget_allocated or 0),
-                "budget_spent": float(gap.budget_spent or 0),
-            }
-        )
-
-    except Gap.DoesNotExist:
-        return Response({"error": "Gap not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-# =============================================================================
 # PUBLIC DASHBOARD API ENDPOINTS
 # =============================================================================
 
@@ -1153,7 +867,7 @@ def api_budget_update(request, gap_id):
 @permission_classes([AllowAny])
 def api_public_dashboard(request):
     """Public dashboard data - no authentication required"""
-    from django.db.models import Sum, Count
+    from django.db.models import Count
 
     # Get filters
     village_id = request.GET.get("village", "")
@@ -1175,10 +889,6 @@ def api_public_dashboard(request):
     # Resolution rate
     resolution_rate = (resolved_gaps / total_gaps * 100) if total_gaps > 0 else 0
 
-    # Budget data
-    total_budget = gaps.aggregate(total=Sum("budget_allocated"))["total"] or 0
-    spent_budget = gaps.aggregate(total=Sum("budget_spent"))["total"] or 0
-
     # Gap type distribution
     gap_types_list = gaps.values("gap_type").annotate(count=Count("id"))
     gap_types = {item["gap_type"]: item["count"] for item in gap_types_list}
@@ -1190,25 +900,27 @@ def api_public_dashboard(request):
         "low": gaps.filter(severity="low").count(),
     }
 
-    # Village-wise data
-    village_data = []
-    for village in Village.objects.all():
-        v_gaps = gaps.filter(village=village)
-        if v_gaps.exists():
-            village_data.append(
-                {
-                    "id": village.id,
-                    "name": village.name,
-                    "total_gaps": v_gaps.count(),
-                    "resolved": v_gaps.filter(status="resolved").count(),
-                    "pending": v_gaps.filter(status="open").count(),
-                    "in_progress": v_gaps.filter(status="in_progress").count(),
-                    "lat": getattr(village, "latitude", None)
-                    or 26.0 + village.id * 0.1,
-                    "lng": getattr(village, "longitude", None)
-                    or 80.0 + village.id * 0.1,
-                }
-            )
+    # Village-wise data (single annotated query instead of N+1)
+    village_annotations = Village.objects.annotate(
+        total_gaps=Count('gap', filter=Q(gap__in=gaps)),
+        resolved=Count('gap', filter=Q(gap__status='resolved', gap__in=gaps)),
+        pending=Count('gap', filter=Q(gap__status='open', gap__in=gaps)),
+        in_progress=Count('gap', filter=Q(gap__status='in_progress', gap__in=gaps)),
+    ).filter(total_gaps__gt=0)
+
+    village_data = [
+        {
+            "id": v.id,
+            "name": v.name,
+            "total_gaps": v.total_gaps,
+            "resolved": v.resolved,
+            "pending": v.pending,
+            "in_progress": v.in_progress,
+            "lat": getattr(v, "latitude", None) or 26.0 + v.id * 0.1,
+            "lng": getattr(v, "longitude", None) or 80.0 + v.id * 0.1,
+        }
+        for v in village_annotations
+    ]
 
     # Recent activity
     recent_gaps = []
@@ -1231,8 +943,6 @@ def api_public_dashboard(request):
             "in_progress_gaps": in_progress_gaps,
             "pending_gaps": pending_gaps,
             "resolution_rate": round(resolution_rate, 1),
-            "total_budget": float(total_budget),
-            "spent_budget": float(spent_budget),
             "gap_types": gap_types,
             "severity_distribution": severity_data,
             "villages": village_data,
@@ -1367,6 +1077,15 @@ class VoiceVerificationSubmitAPIView(APIView):
                 )
 
             verification_audio = request.FILES["audio_file"]
+            
+            # ✅ SECURITY: Validate verification audio file size
+            MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
+            if verification_audio.size > MAX_AUDIO_SIZE:
+                return Response(
+                    {"success": False, "error": "Verification audio file too large. Maximum size is 50MB."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
             verified_by = request.data.get("verified_by", "Unknown")
             notes = request.data.get("notes", "")
 
@@ -1438,21 +1157,21 @@ class VoiceVerificationSubmitAPIView(APIView):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([CanResolveGaps])  # Admin only can resolve gaps
 def api_resolve_gap_with_voice(request, gap_id):
-    """Resolve a gap after successful voice verification"""
+    """Resolve a gap after successful voice verification (Admin only)"""
     from .models import VoiceVerificationLog
     from .permissions import can_resolve_gaps
 
     try:
         gap = Gap.objects.get(id=gap_id)
 
-        # Check if user can resolve gaps (AUTHORITY or ADMIN only)
+        # Check if user can resolve gaps (ADMIN only)
         if request.user.is_authenticated and not can_resolve_gaps(request.user):
             return Response(
                 {
                     "success": False,
-                    "error": "Only Authority or Admin can resolve gaps",
+                    "error": "Only Admin can resolve gaps",
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -1497,6 +1216,14 @@ def api_resolve_gap_with_voice(request, gap_id):
             gap.resolved_by = request.user
         gap.save()
 
+        # Sync to Firebase Firestore
+        try:
+            from .firebase_utils import sync_gap_to_firestore
+
+            sync_gap_to_firestore(gap)
+        except Exception as fb_err:
+            print(f"Firebase sync warning (non-blocking): {fb_err}")
+
         return Response(
             {
                 "success": True,
@@ -1517,9 +1244,9 @@ def api_resolve_gap_with_voice(request, gap_id):
 
 # Workflow/Complaint API endpoints
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([CanViewAnalytics])
 def api_workflow_complaints(request):
-    """Get list of complaints with optional filtering"""
+    """Get list of complaints with optional filtering (Manager+ only)"""
     try:
         complaints = Complaint.objects.select_related("village", "post_office").all()
 
@@ -1541,7 +1268,7 @@ def api_workflow_complaints(request):
                 {
                     "id": complaint.id,
                     "complaint_id": complaint.complaint_id,
-                    "gap_description": complaint.gap_description,
+                    "complaint_text": complaint.complaint_text,
                     "village_name": (
                         complaint.village.name if complaint.village else "N/A"
                     ),
@@ -1549,11 +1276,7 @@ def api_workflow_complaints(request):
                     "status": complaint.status,
                     "priority_level": complaint.priority_level,
                     "created_at": complaint.created_at.isoformat(),
-                    "assigned_agent": (
-                        complaint.assigned_worker.name
-                        if complaint.assigned_worker
-                        else None
-                    ),
+                    "agent_name": complaint.agent_name or None,
                 }
             )
 
@@ -1567,9 +1290,9 @@ def api_workflow_complaints(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([CanViewAnalytics])
 def api_workflow_stats(request):
-    """Get workflow statistics"""
+    """Get workflow statistics (Manager+ only)"""
     try:
         from django.db.models import Count, Q
 
@@ -1607,22 +1330,20 @@ def api_workflow_stats(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([CanViewAnalytics])
 def api_workflow_agents(request):
-    """Get list of survey agents"""
+    """Get list of survey agents (Manager+ only)"""
     try:
-        agents = SurveyAgent.objects.filter(is_active=True).order_by("name")
+        agents = SurveyAgent.objects.all().order_by("name")
 
         agents_data = []
         for agent in agents:
             agents_data.append(
                 {
                     "id": agent.id,
-                    "username": agent.username,
+                    "employee_id": agent.employee_id,
                     "name": agent.name,
-                    "email": agent.email,
                     "phone": agent.phone_number,
-                    "is_active": agent.is_active,
                 }
             )
 
@@ -1631,5 +1352,521 @@ def api_workflow_agents(request):
     except Exception as e:
         return Response(
             {"error": f"Failed to fetch agents: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+# =============================================================================
+# MOBILE APP SYNC ENDPOINTS
+# =============================================================================
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MobileGapSyncAPIView(APIView):
+    """
+    Sync gap from mobile app to Django database.
+    Mobile app creates in Firestore first, then syncs to Django.
+    POST /api/mobile/gaps/sync/
+    """
+
+    permission_classes = [IsAuthenticated]  # Requires authentication
+    authentication_classes = [TokenAuthentication, SessionAuthentication]
+
+    VALID_GAP_TYPES = [
+        "water", "road", "sanitation", "electricity", "education",
+        "health", "housing", "agriculture", "connectivity", "employment",
+        "community_center", "drainage", "other"
+    ]
+    
+    VALID_SEVERITIES = ["low", "medium", "high"]
+    VALID_INPUT_METHODS = ["image", "voice", "text"]
+
+    def post(self, request):
+        try:
+            # Input validation
+            firestore_id = request.data.get("firestore_id")
+            village_id = request.data.get("village_id")
+            village_name = request.data.get("village_name", "").strip()
+            description = request.data.get("description", "").strip()
+            gap_type = request.data.get("gap_type", "other")
+            severity = request.data.get("severity", "medium")
+            input_method = request.data.get("input_method", "text")
+            recommendations = request.data.get("recommendations", "").strip()
+            latitude = request.data.get("latitude")
+            longitude = request.data.get("longitude")
+            audio_url = request.data.get("audio_url", "").strip()
+            image_url = request.data.get("image_url", "").strip()
+            submitted_by = request.data.get("submitted_by")
+            submitted_by_email = request.data.get("submitted_by_email")
+
+            # Validate required fields
+            if not description:
+                return Response(
+                    {"success": False, "error": "Description is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # ✅ IMPROVED: Validate description length (increased limit)
+            if len(description) > 5000:
+                return Response(
+                    {"success": False, "error": "Description too long (max 5000 characters)"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # ✅ NEW: Validate email format if provided
+            email = data.get("email", "").strip() if data.get("email") else ""
+            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                return Response(
+                    {"success": False, "error": "Invalid email format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # ✅ NEW: Validate phone number format (Indian format) if provided
+            phone = data.get("phone", "").strip() if data.get("phone") else ""
+            if phone and not re.match(r'^[6-9]\d{9}$', phone):
+                return Response(
+                    {"success": False, "error": "Invalid phone number. Please enter 10-digit Indian mobile number starting with 6, 7, 8, or 9"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate gap_type
+            if gap_type not in self.VALID_GAP_TYPES:
+                gap_type = "other"
+
+            # Validate severity
+            if severity not in self.VALID_SEVERITIES:
+                severity = "medium"
+                
+            # Validate input_method
+            if input_method not in self.VALID_INPUT_METHODS:
+                input_method = "text"
+                
+            # Validate coordinates
+            if latitude is not None:
+                try:
+                    lat = float(latitude)
+                    if not (-90 <= lat <= 90):
+                        return Response(
+                            {"success": False, "error": "Invalid latitude (-90 to 90)"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    latitude = lat
+                except (ValueError, TypeError):
+                    return Response(
+                        {"success": False, "error": "Invalid latitude format"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                    
+            if longitude is not None:
+                try:
+                    lng = float(longitude)
+                    if not (-180 <= lng <= 180):
+                        return Response(
+                            {"success": False, "error": "Invalid longitude (-180 to 180)"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    longitude = lng
+                except (ValueError, TypeError):
+                    return Response(
+                        {"success": False, "error": "Invalid longitude format"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            
+            # Validate URLs (prevent XSS)
+            if audio_url and not audio_url.startswith(("http://", "https://")):
+                return Response(
+                    {"success": False, "error": "Invalid audio URL format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
+            if image_url and not image_url.startswith(("http://", "https://")):
+                return Response(
+                    {"success": False, "error": "Invalid image URL format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Find or create village (with atomic operation to prevent race condition)
+            village = None
+            if village_id:
+                try:
+                    village = Village.objects.get(id=village_id)
+                except (Village.DoesNotExist, ValueError):
+                    # Try to find by name
+                    if village_name:
+                        with transaction.atomic():
+                            village, created = Village.objects.get_or_create(
+                                name__iexact=village_name.strip(),
+                                defaults={'name': village_name.strip()}
+                            )
+            elif village_name:
+                with transaction.atomic():
+                    village, created = Village.objects.get_or_create(
+                        name__iexact=village_name.strip(),
+                        defaults={'name': village_name.strip()}
+                    )
+                    
+            if not village:
+                return Response(
+                    {"success": False, "error": "Village is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Create the gap in Django database
+            with transaction.atomic():
+                gap = Gap.objects.create(
+                    village=village,
+                    description=description,
+                    gap_type=gap_type,
+                    severity=severity,
+                    status="open",
+                    input_method=input_method,
+                    recommendations=recommendations,
+                    latitude=latitude if latitude else None,
+                    longitude=longitude if longitude else None,
+                )
+
+                # Create audit log for new gap creation
+                from .models import GapStatusAuditLog
+                GapStatusAuditLog.objects.create(
+                    gap=gap,
+                    old_status=None,
+                    new_status="open",
+                    changed_by=None,  # Mobile user - can be enhanced with Firebase UID lookup
+                    notes=f"Created via mobile app. Firestore ID: {firestore_id or 'N/A'}",
+                    source="mobile_app",
+                )
+
+            # Store Firestore reference in notes/metadata if needed
+            # The firestore_id can be used for lookups later
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Gap synced to database successfully",
+                    "django_id": gap.id,
+                    "firestore_id": firestore_id,
+                    "gap_type": gap.gap_type,
+                    "severity": gap.severity,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def api_mobile_gap_status_sync(request, firestore_id):
+    """
+    Sync gap status update from mobile app.
+    Mobile app updates Firestore first, then syncs status to Django.
+    POST /api/mobile/gaps/<firestore_id>/status/
+    """
+    try:
+        new_status = request.data.get("status")
+        django_id = request.data.get("django_id")
+        resolved_by = request.data.get("resolved_by")
+        resolved_at = request.data.get("resolved_at")
+
+        if not new_status or new_status not in ["open", "in_progress", "resolved"]:
+            return Response(
+                {"success": False, "error": "Invalid status"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Find gap by django_id if provided
+        gap = None
+        if django_id:
+            try:
+                gap = Gap.objects.get(id=django_id)
+            except Gap.DoesNotExist:
+                pass
+
+        if not gap:
+            # Try to find most recent gap - could add firestore_id field later for exact match
+            return Response(
+                {"success": False, "error": "Gap not found in database"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Update status
+        gap.status = new_status
+        if new_status == "resolved" and resolved_at:
+            from django.utils import timezone
+            gap.actual_completion = timezone.now()
+        gap.save()
+
+        # Sync back to Firestore for consistency
+        try:
+            from .firebase_utils import sync_gap_to_firestore
+            sync_gap_to_firestore(gap)
+        except Exception as fb_err:
+            print(f"Firebase sync warning: {fb_err}")
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Gap status updated to {new_status}",
+                "django_id": gap.id,
+                "status": gap.status,
+            }
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response(
+            {"success": False, "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])  # Mobile app sends Firebase token; Django AI endpoint is public for now
+def api_analyze_media(request):
+    """
+    Analyze uploaded image or audio using AI to auto-generate description and categorization
+    POST /api/analyze-media/
+
+    Request body:
+    {
+        "media_url": "https://firebasestorage.googleapis.com/...",
+        "media_type": "image" or "audio",
+        "language": "hi" (optional, for audio transcription)
+    }
+
+    Response:
+    {
+        "success": true,
+        "description": "Pothole on main road causing traffic issues",
+        "gap_type": "road",
+        "severity": "high",
+        "confidence": 0.85
+    }
+    """
+    import google.generativeai as genai
+    import requests
+    import tempfile
+
+    try:
+        # Accept either a direct file upload or a media URL
+        uploaded_file = request.FILES.get("file")
+        media_url = request.data.get("media_url")
+        media_type = request.data.get("media_type", "image")
+        language = request.data.get("language", "hi")
+
+        if not uploaded_file and not media_url:
+            return Response(
+                {"error": "Either 'file' (upload) or 'media_url' is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if GEMINI_API_KEY is configured
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return Response(
+                {"error": "GEMINI_API_KEY not configured on server"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Save file to temp path (from upload or URL download)
+        suffix = ".jpg" if media_type == "image" else ".m4a"
+        tmp_path = None
+
+        if uploaded_file:
+            # Direct file upload from mobile app
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                for chunk in uploaded_file.chunks():
+                    tmp_file.write(chunk)
+                tmp_path = tmp_file.name
+        else:
+            # Download from URL (Cloudinary/Firebase)
+            dl_response = requests.get(media_url, timeout=30)
+            if dl_response.status_code != 200:
+                return Response(
+                    {"error": "Failed to download media from URL"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                tmp_file.write(dl_response.content)
+                tmp_path = tmp_file.name
+
+        # Configure Gemini AI
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        gap_types_list = """
+- water: Water supply issues, pipeline problems, water quality
+- road: Road damage, potholes, road construction needs
+- sanitation: Drainage, sewage, waste management
+- electricity: Power supply, street lights, electrical issues
+- education: School infrastructure, teacher needs
+- health: Medical facilities, healthcare access
+- housing: Housing infrastructure, building issues  
+- agriculture: Irrigation, farming equipment, crop issues
+- connectivity: Internet, mobile network issues
+- employment: Job opportunities, skill training
+- community_center: Community halls, public gathering spaces
+- drainage: Water logging, drainage system issues
+- other: Any other community issues
+"""
+
+        severity_levels = """
+- low: Minor inconvenience, can wait
+- medium: Notable issue, needs attention soon
+- high: Serious problem, urgent action needed
+"""
+
+        if media_type == "image":
+            try:
+                # Upload image to Gemini
+                uploaded_gemini_file = genai.upload_file(tmp_path)
+
+                # Generate analysis prompt
+                prompt = f"""Analyze this image of a community infrastructure problem or gap.
+
+Gap types to choose from:
+{gap_types_list}
+
+Severity levels:
+{severity_levels}
+
+Provide a response in JSON format with:
+1. "description": A clear 1-2 sentence description of the problem in English
+2. "gap_type": The most appropriate category from the list above
+3. "severity": The severity level (low/medium/high)
+4. "confidence": Your confidence in this categorization (0.0 to 1.0)
+
+Response must be valid JSON only, no additional text."""
+
+                # Get AI response
+                ai_response = model.generate_content([prompt, uploaded_gemini_file])
+
+                # Parse JSON from response
+                response_text = ai_response.text.strip()
+                # Remove markdown code blocks if present
+                if response_text.startswith("```json"):
+                    response_text = (
+                        response_text.replace("```json", "").replace("```", "").strip()
+                    )
+                elif response_text.startswith("```"):
+                    response_text = response_text.replace("```", "").strip()
+
+                analysis = json.loads(response_text)
+
+                # Clean up
+                os.unlink(tmp_path)
+
+                return Response(
+                    {
+                        "success": True,
+                        "description": analysis.get("description", ""),
+                        "gap_type": analysis.get("gap_type", "other"),
+                        "severity": analysis.get("severity", "medium"),
+                        "confidence": analysis.get("confidence", 0.7),
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            except Exception as e:
+                # Clean up on error
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                raise e
+
+        elif media_type == "audio":
+            # For audio, use AssemblyAI for transcription + Gemini for analysis
+            from .services import ComplaintProcessor
+
+            try:
+                # Process audio using existing service
+                processor = ComplaintProcessor()
+
+                # Transcribe audio
+                transcription = processor.speech_service.transcribe_audio(
+                    tmp_path, language
+                )
+
+                if not transcription["success"]:
+                    os.unlink(tmp_path)
+                    return Response(
+                        {
+                            "error": f"Transcription failed: {transcription.get('error', 'Unknown error')}"
+                        },
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+                # Analyze transcribed text with Gemini
+                prompt = f"""Analyze this transcribed complaint from a villager:
+
+"{transcription['text']}"
+
+Gap types to choose from:
+{gap_types_list}
+
+Severity levels:
+{severity_levels}
+
+Provide a response in JSON format with:
+1. "description": A clear 1-2 sentence English description of the problem
+2. "gap_type": The most appropriate category from the list above
+3. "severity": The severity level (low/medium/high)
+4. "confidence": Your confidence in this categorization (0.0 to 1.0)
+
+Response must be valid JSON only, no additional text."""
+
+                ai_response = model.generate_content(prompt)
+
+                # Parse JSON from response
+                response_text = ai_response.text.strip()
+                if response_text.startswith("```json"):
+                    response_text = (
+                        response_text.replace("```json", "").replace("```", "").strip()
+                    )
+                elif response_text.startswith("```"):
+                    response_text = response_text.replace("```", "").strip()
+
+                analysis = json.loads(response_text)
+
+                # Clean up
+                os.unlink(tmp_path)
+
+                return Response(
+                    {
+                        "success": True,
+                        "transcription": transcription["text"],
+                        "description": analysis.get("description", ""),
+                        "gap_type": analysis.get("gap_type", "other"),
+                        "severity": analysis.get("severity", "medium"),
+                        "confidence": analysis.get("confidence", 0.7),
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            except Exception as e:
+                # Clean up on error
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                raise e
+        else:
+            return Response(
+                {"error": "media_type must be 'image' or 'audio'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    except json.JSONDecodeError as e:
+        return Response(
+            {"error": f"Failed to parse AI response as JSON: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    except Exception as e:
+        return Response(
+            {"error": f"AI analysis failed: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

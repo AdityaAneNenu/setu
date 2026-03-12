@@ -1,7 +1,15 @@
-# Environment Variables
+# Environment Variables  
 .env
 .env.local
 .env.production
+
+# Security & Credentials (CRITICAL)
+firebase-service-account.json
+*.pem
+*.key
+*.p12
+*.jks
+secrets.json
 
 # Python
 *.py[cod]
@@ -29,6 +37,7 @@ __pycache__/
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 venv.bak/
@@ -41,6 +50,7 @@ db.sqlite3-journal
 media/uploads/
 media/gap_audio/
 media/voice_samples/
+staticfiles/
 *.pot
 
 # IDEs
@@ -86,3 +96,4 @@ htmlcov/
 *.bak
 *.tmp
 *.temp
+firebase-service-account.json

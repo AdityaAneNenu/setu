@@ -25,15 +25,16 @@ urlpatterns = [
     path(
         "api/gaps/upload/", api_views.GapUploadAPIView.as_view(), name="api_gap_upload"
     ),
-    # Budget API
-    path("api/budget/", api_views.api_budget_list, name="api_budget_list"),
+    # Mobile App Sync Endpoints
     path(
-        "api/budget/summary/", api_views.api_budget_summary, name="api_budget_summary"
+        "api/mobile/gaps/sync/",
+        api_views.MobileGapSyncAPIView.as_view(),
+        name="api_mobile_gap_sync",
     ),
     path(
-        "api/budget/<int:gap_id>/update/",
-        api_views.api_budget_update,
-        name="api_budget_update",
+        "api/mobile/gaps/<str:firestore_id>/status/",
+        api_views.api_mobile_gap_status_sync,
+        name="api_mobile_gap_status_sync",
     ),
     # Public Dashboard API
     path(
@@ -54,6 +55,12 @@ urlpatterns = [
         "api/workflow/agents/",
         api_views.api_workflow_agents,
         name="api_workflow_agents",
+    ),
+    # AI Analysis API
+    path(
+        "api/analyze-media/",
+        api_views.api_analyze_media,
+        name="api_analyze_media",
     ),
     # Voice Verification API
     path(

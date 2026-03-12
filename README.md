@@ -9,7 +9,7 @@
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
 - [Installation & Setup](#installation--setup)
-- [User Roles](#user-roles)
+- [User Roles](#user-roles) - **See [ROLES.md](ROLES.md) for complete RBAC documentation**
 - [Core Features](#core-features)
 - [Mobile App](#mobile-app)
 - [API Documentation](#api-documentation)
@@ -32,9 +32,8 @@ SETU provides a complete ecosystem for infrastructure gap management:
 - **AI-Powered Analysis**: Automatic categorization and severity assessment using Google Gemini AI
 - **Voice Biometric Verification**: Prevents fraudulent closures through voice fingerprinting
 - **Offline-First Mobile App**: QR code scanning with photo verification for remote areas
-- **Role-Based Workflows**: Customized dashboards for ground workers, managers, and authorities
+- **Role-Based Workflows**: Customized dashboards for ground workers, managers, and admins
 - **Real-Time Analytics**: Visual dashboards with comprehensive gap statistics
-- **Budget Management**: Track allocations and expenditures per project
 - **Post Office Network Integration**: Leverages India's postal network for last-mile connectivity
 
 ---
@@ -92,13 +91,11 @@ SETU provides a complete ecosystem for infrastructure gap management:
 - Village-wise breakdowns
 - Gap type distribution charts
 - Status tracking and trend analysis
-- Budget utilization reports
 - Public transparency dashboard
 
 ### 7. Role-Based Access Control
 - **Admin**: Full system access and user management
-- **Authority**: View all gaps, approve budgets, handle escalations
-- **Manager**: Assign tasks, track progress, manage budgets
+- **Manager**: Assign tasks, track progress, manage operations
 - **Ground Worker**: Submit gaps, update status, field operations
 
 ---
@@ -127,7 +124,7 @@ SETU provides a complete ecosystem for infrastructure gap management:
 
 ### Infrastructure
 - **Web Server**: Django Development Server (Gunicorn for production)
-- **File Storage**: Local filesystem (AWS S3/Azure Blob for production)
+- **File Storage**: Cloudinary (free tier: 25GB storage + bandwidth/month)
 - **CORS**: django-cors-headers 4.3.1
 - **Environment**: python-dotenv 1.0.0
 
@@ -236,8 +233,7 @@ Access the application at: **http://localhost:8000**
 | Role | Username | Password | Access Level |
 |------|----------|----------|--------------|
 | **Admin** | admin | Admin@123 | Full system access, user management |
-| **Authority** | authority | Authority@123 | View all gaps, approve budgets, handle escalations |
-| **Manager** | manager | Manager@123 | Assign tasks, track progress, manage budgets |
+| **Manager** | manager | Manager@123 | Assign tasks, track progress, manage operations |
 | **Ground** | ground | Ground@123 | Submit gaps, update status, field operations |
 
 ### Role Capabilities
@@ -248,18 +244,15 @@ Access the application at: **http://localhost:8000**
 - Configure system settings
 - Override any action
 - View system logs
-
-#### Authority (Highest Level)
 - View all gaps across all villages
-- Approve/reject budget allocations
 - Escalate critical issues
 - Generate comprehensive reports
 - Access analytics dashboard
+- Resolve gaps
 
 #### Manager
 - Assign gaps to field workers
 - Update gap status
-- Manage budgets (allocate, track spending)
 - View assigned village data
 - Monitor progress timelines
 
@@ -353,30 +346,7 @@ Access the application at: **http://localhost:8000**
 }
 ```
 
-### 5. Budget Management
-
-**Features**:
-- Allocate budget per gap
-- Track spending in real-time
-- Calculate remaining budget
-- Generate utilization reports
-- Flag over-budget projects
-
-**Budget Fields**:
-```python
-Gap:
-  - budget_allocated: Decimal
-  - budget_spent: Decimal
-  - budget_remaining: Calculated Property
-```
-
-**Manager Actions**:
-- Set initial budget allocation
-- Update spent amount as work progresses
-- Approve additional budget requests
-- Generate expenditure reports
-
-### 6. Timeline Tracking
+### 5. Timeline Tracking
 
 **Key Milestones**:
 - **Start Date**: When work begins
@@ -397,7 +367,6 @@ Gap:
 - Village-wise breakdown
 - Severity analysis
 - Resolution rate and average time
-- Budget utilization percentage
 - Trending issues
 
 **Available Filters**:
@@ -552,12 +521,6 @@ POST   /api/qr/submit/                       # Submit QR data (mobile app)
 POST   /api/mobile/sync/                     # Batch sync from mobile
 ```
 
-### Budget Management
-```http
-GET    /budget-management/               # Budget overview
-POST   /update-budget/<gap_id>/          # Update budget allocation
-```
-
 ### Public Access
 ```http
 GET    /public-dashboard/                # Public transparency dashboard
@@ -573,7 +536,7 @@ GET    /                                 # Landing page
 #### UserProfile
 ```python
 user: OneToOne(User)
-role: CharField (ground/manager/authority/admin)
+role: CharField (ground/manager/admin)
 ```
 
 #### Village
@@ -597,8 +560,6 @@ created_at: DateTimeField
 start_date: DateField
 expected_completion: DateField
 actual_completion: DateField
-budget_allocated: DecimalField
-budget_spent: DecimalField
 latitude: DecimalField
 longitude: DecimalField
 ```
@@ -737,11 +698,12 @@ python manage.py collectstatic --noinput
 ```
 
 #### 4. Cloud Storage
-For media files, use AWS S3 or Azure Blob Storage:
+Media files (photos, audio) are stored on Cloudinary (free tier):
 
-```bash
-pip install django-storages boto3
-```
+- **Frontend & Mobile**: Direct uploads to Cloudinary via unsigned preset
+- **Setup**: See `mobile-app/src/services/cloudinaryService.js` and `frontend/src/lib/cloudinary.ts`
+- **Free tier**: 25 GB storage + 25 GB bandwidth/month
+- **Alternative**: For higher usage, configure AWS S3 or Azure Blob Storage with django-storages
 
 #### 5. Web Server
 Use Gunicorn with Nginx:
@@ -894,9 +856,6 @@ python manage.py setup_workflow_data
 
 # Setup all users
 python manage.py setup_all_users
-
-# Estimate budgets
-python manage.py estimate_budgets
 
 # Flag stale gaps
 python manage.py flag_stale_gaps

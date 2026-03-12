@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user owns the resource
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Users: only owner can read/write own profile (privacy protection)
+    match /users/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if false; // Never allow user deletion
+    }
+
+    // Villages: any authenticated user can read, no writes allowed (managed by backend)
+    match /villages/{villageId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Villages managed by Django backend only
+    }
+
+    // Gaps: users can only read/update their own gaps
+    match /gaps/{gapId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(resource.data.submitted_by);
+      allow update: if isAuthenticated() && isOwner(resource.data.submitted_by);
+      allow delete: if false; // Never allow gap deletion for audit purposes
+    }
+
+    // Voice verifications: users can read all but only create their own
+    match /voice_verifications/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(resource.data.verified_by);
+      allow update, delete: if false; // Immutable once created
+    }
+
+    // Complaints: users can only read/create their own complaints
+    match /complaints/{complaintId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(resource.data.submitted_by);
+      allow update: if isAuthenticated() && isOwner(resource.data.submitted_by);
+      allow delete: if false; // Never allow complaint deletion for audit purposes
+    }
+  }
+}

@@ -5,10 +5,11 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { voiceApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar/Navbar';
 import styles from './page.module.css';
 
 interface GapDetail {
-  id: number;
+  id: string | number;
   village_name: string;
   description: string;
   gap_type: string;
@@ -23,9 +24,9 @@ interface GapDetail {
 }
 
 interface VerificationLog {
-  id: number;
+  id: string | number;
   verified_by: string;
-  verified_at: string;
+  verification_date: string;
   is_match: boolean;
   similarity_score: number;
   similarity_percentage: number;
@@ -52,7 +53,7 @@ interface VerificationResult {
 export default function VoiceVerificationPage() {
   const router = useRouter();
   const params = useParams();
-  const { user, canResolveGaps } = useAuth();
+  const { user, isLoading: authLoading, canResolveGaps } = useAuth();
   const [gap, setGap] = useState<GapDetail | null>(null);
   const [verificationLogs, setVerificationLogs] = useState<VerificationLog[]>([]);
   const [logsData, setLogsData] = useState<{has_original_audio: boolean; original_audio_url: string | null} | null>(null);
@@ -71,10 +72,14 @@ export default function VoiceVerificationPage() {
   const id = params.id as string;
 
   useEffect(() => {
-    if (id) {
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+    if (id && user) {
       loadData();
     }
-  }, [id]);
+  }, [id, user, authLoading]);
 
   const loadData = async () => {
     try {
@@ -87,14 +92,24 @@ export default function VoiceVerificationPage() {
       ]);
       
       setGap(gapRes);
-      setVerificationLogs(logsRes.logs || []);
-      setLogsData({
-        has_original_audio: logsRes.has_original_audio,
-        original_audio_url: logsRes.original_audio_url
-      });
+      // logsRes is now { logs, has_original_audio, original_audio_url }
+      if (logsRes && typeof logsRes === 'object' && 'logs' in logsRes) {
+        setVerificationLogs(logsRes.logs || []);
+        setLogsData({
+          has_original_audio: logsRes.has_original_audio,
+          original_audio_url: logsRes.original_audio_url
+        });
+      } else if (Array.isArray(logsRes)) {
+        // Fallback: flat array of logs
+        setVerificationLogs(logsRes);
+        setLogsData({
+          has_original_audio: !!(gapRes as any)?.audio_url,
+          original_audio_url: (gapRes as any)?.audio_url || null
+        });
+      }
     } catch (err: any) {
       console.error('Failed to load data:', err);
-      setError(err.response?.data?.error || 'Failed to load gap data');
+      setError(err?.message || 'Failed to load gap data');
     } finally {
       setIsLoading(false);
     }
@@ -162,7 +177,7 @@ export default function VoiceVerificationPage() {
       
     } catch (err: any) {
       console.error('Failed to submit verification:', err);
-      setError(err.response?.data?.error || 'Failed to submit verification');
+      setError(err?.message || 'Failed to submit verification');
     } finally {
       setIsSubmitting(false);
     }
@@ -183,12 +198,10 @@ export default function VoiceVerificationPage() {
       if (result.success) {
         alert('Gap resolved successfully!');
         router.push('/manage-gaps');
-      } else {
-        setError(result.error || 'Failed to resolve gap');
       }
     } catch (err: any) {
       console.error('Failed to resolve gap:', err);
-      setError(err.response?.data?.error || 'Failed to resolve gap');
+      setError(err?.message || 'Failed to resolve gap');
     } finally {
       setIsResolving(false);
     }
@@ -206,6 +219,15 @@ export default function VoiceVerificationPage() {
         return { class: styles.badgeUnknown, icon: '', label: 'Unknown' };
     }
   };
+
+  if (authLoading || !user) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -242,8 +264,10 @@ export default function VoiceVerificationPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <>
+      <Navbar />
+      <div className={styles.container}>
+        <div className={styles.header}>
         <Link href="/manage-gaps" className={styles.backBtn}>
           ← Back to Gaps
         </Link>
@@ -294,7 +318,7 @@ export default function VoiceVerificationPage() {
             {gap.has_audio && logsData?.original_audio_url && (
               <div className={styles.originalAudio}>
                 <label>Original Recording</label>
-                <audio src={`http://localhost:8000${logsData.original_audio_url}`} controls />
+                <audio src={logsData.original_audio_url} controls />
               </div>
             )}
           </div>
@@ -415,7 +439,7 @@ export default function VoiceVerificationPage() {
                         </>
                       ) : (
                         <p className={styles.noPermission}>
-                          Voice verified successfully! Only Authority or Admin users can resolve gaps.
+                          Voice verified successfully! Only Admin users can resolve gaps.
                         </p>
                       )}
                     </div>
@@ -450,7 +474,7 @@ export default function VoiceVerificationPage() {
                       {log.is_match ? 'Match' : 'No Match'}
                     </span>
                     <span className={styles.historyDate}>
-                      {new Date(log.verified_at).toLocaleString()}
+                      {new Date(log.verification_date).toLocaleString()}
                     </span>
                   </div>
                   <div className={styles.historyDetails}>
@@ -471,5 +495,6 @@ export default function VoiceVerificationPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

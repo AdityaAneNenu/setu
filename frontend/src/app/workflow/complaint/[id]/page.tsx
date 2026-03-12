@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { workflowApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import Navbar from '@/components/Navbar/Navbar';
 import styles from './page.module.css';
 
 interface ComplaintDetail {
@@ -59,8 +60,8 @@ export default function ComplaintDetailPage() {
     try {
       setIsLoading(true);
       const response = await workflowApi.getComplaintDetail(id);
-      setComplaint(response);
-      setResolutionNotes(response.resolution_notes || '');
+      setComplaint(response as any);
+      setResolutionNotes((response as any).resolution_notes || '');
     } catch (err) {
       console.error('Failed to load complaint:', err);
     } finally {
@@ -71,7 +72,7 @@ export default function ComplaintDetailPage() {
   const loadAgents = async () => {
     try {
       const response = await workflowApi.getAgents();
-      setAgents(response);
+      setAgents(response as any);
     } catch (err) {
       console.error('Failed to load agents:', err);
     }
@@ -164,8 +165,10 @@ export default function ComplaintDetailPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <>
+      <Navbar />
+      <div className={styles.container}>
+        <div className={styles.header}>
         <Link href="/workflow" className={styles.backBtn}>
           ← Back to Workflow
         </Link>
@@ -341,5 +344,6 @@ export default function ComplaintDetailPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -1,0 +1,3 @@
+// தமிழ் — Tamil translation for SETU mobile app
+export default {
+  common: { appName: 'SETU', appTagline: 'கிராம வளர்ச்சிக்கான ஸ்மார్ట் மூல्यாயन மற्றुम் कন्काkण्निप्पु கરuvि', ok: 'सरी', cancel: 'रत्तु', save: 'சеமि', delete: 'नीक्कु', retry: 'मीण्डुम् முयल', error: 'पिзаè', success: 'வेत्रि', loading: 'ஏत्रుকिरatu... ', done: 'तयारम्', back: 'pin्न', next: 'अडुत्तु', skip: 'विट्टुविडु', search: 'तेडु', close: 'मूडु', yes: 'आम्', no: 'illaè', na: 'poruन्तатु', unknown: 'teरियाtu', user: 'பயनर्', clear: 'अзि', submit: 'समप्पि', getStarted: 'तोडङ्gold', viewAll: 'अनैत्तायुम् →', seeAll: 'अनैत्तायुम् →' },

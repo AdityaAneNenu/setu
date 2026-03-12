@@ -17,8 +17,6 @@ interface VillageReport {
   in_progress_gaps: number;
   resolved_gaps: number;
   completion_rate: number;
-  total_budget: number;
-  spent_budget: number;
   gaps_by_type: Record<string, number>;
   monthly_progress: Array<{ month: string; resolved: number; new: number }>;
   priority_gaps: any[];
@@ -55,14 +53,6 @@ export default function VillageReportPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
   };
 
   const printReport = () => {
@@ -174,57 +164,6 @@ export default function VillageReportPage() {
           </div>
         </div>
 
-        {/* Budget Overview */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3>Budget Overview</h3>
-          </div>
-          <div className={styles.cardBody}>
-            <div className={styles.budgetStats}>
-              <div className={styles.budgetItem}>
-                <span className={styles.budgetLabel}>Total Allocated</span>
-                <span className={styles.budgetValue}>
-                  {formatCurrency(report.total_budget)}
-                </span>
-              </div>
-              <div className={styles.budgetItem}>
-                <span className={styles.budgetLabel}>Amount Spent</span>
-                <span className={styles.budgetValue}>
-                  {formatCurrency(report.spent_budget)}
-                </span>
-              </div>
-              <div className={styles.budgetItem}>
-                <span className={styles.budgetLabel}>Remaining</span>
-                <span className={styles.budgetValue}>
-                  {formatCurrency((report.total_budget || 0) - (report.spent_budget || 0))}
-                </span>
-              </div>
-            </div>
-            <div className={styles.utilizationProgress}>
-              <div className={styles.utilizationHeader}>
-                <span>Budget Utilization</span>
-                <span>
-                  {report.total_budget > 0
-                    ? ((report.spent_budget / report.total_budget) * 100).toFixed(1)
-                    : 0}%
-                </span>
-              </div>
-              <div className={styles.utilizationBar}>
-                <div
-                  className={styles.utilizationFill}
-                  style={{
-                    width: `${
-                      report.total_budget > 0
-                        ? Math.min((report.spent_budget / report.total_budget) * 100, 100)
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Priority Gaps */}
         <div className={`${styles.card} ${styles.fullWidth}`}>
           <div className={styles.cardHeader}>
@@ -245,7 +184,7 @@ export default function VillageReportPage() {
                 <tbody>
                   {report.priority_gaps.slice(0, 5).map((gap: any) => (
                     <tr key={gap.id}>
-                      <td>#{gap.id}</td>
+                      <td>#{gap.gap_id || String(gap.id).slice(0, 8)}</td>
                       <td>{gap.gap_description?.substring(0, 50)}...</td>
                       <td>{gap.gap_type}</td>
                       <td>

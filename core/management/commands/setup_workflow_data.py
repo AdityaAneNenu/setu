@@ -7,7 +7,6 @@ from core.models import (Village, PostOffice, PMAJAYOffice, Complaint,
                         SurveyAgent, Worker, Gap)
 from decimal import Decimal
 import random
-from datetime import date, datetime, timedelta
 
 class Command(BaseCommand):
     help = 'Create sample data for post office workflow system'
@@ -197,17 +196,6 @@ class Command(BaseCommand):
             complaints.append(complaint)
             if created:
                 self.stdout.write(f"✓ Created complaint: {complaint.complaint_id} from {complaint.villager_name}")
-        
-        # Update requirements.txt
-        requirements_content = """Django==4.2.27
-Pillow==11.0.0
-assemblyai==0.48.1
-httpx==0.28.1
-websockets==15.0.1
-"""
-        
-        with open("requirements.txt", "w") as f:
-            f.write(requirements_content)
         
         self.stdout.write(self.style.SUCCESS("\\n🎉 Sample workflow data created successfully!"))
         self.stdout.write("\\n📊 Summary:")

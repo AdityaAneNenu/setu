@@ -7,8 +7,6 @@ import os
 import librosa
 import numpy as np
 from scipy.spatial.distance import cosine
-from sklearn.preprocessing import StandardScaler
-import soundfile as sf
 import hashlib
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -85,9 +83,11 @@ class VoiceFeatureExtractor:
             return combined_normalized
 
         except Exception as e:
-            print(f"WARNING: MFCC extraction error: {str(e)}")
-            # Return small random values instead of raising (prevents 0% similarity)
-            return np.random.randn(n_mfcc * 2) * 0.01
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"MFCC extraction error: {str(e)}")
+            # Raise exception for corrupted audio instead of false positives
+            raise Exception(f"Voice feature extraction failed: {str(e)}")
 
     @staticmethod
     def extract_spectral_features(audio_path):
@@ -140,7 +140,7 @@ class VoiceFeatureExtractor:
                     features["pitch_mean"] = (
                         np.mean(pitch_values) if pitch_values else 150.0
                     )
-                except:
+                except Exception:
                     features["pitch_mean"] = 150.0  # Default average human pitch
 
             except Exception as e:
@@ -290,7 +290,7 @@ class VoiceFeatureExtractor:
                         similarity = (
                             corr_matrix[0, 1] if corr_matrix.shape == (2, 2) else 0.0
                         )
-                except:
+                except Exception:
                     similarity = 0.0
 
             # Accept if similarity > 70% (lenient for same speaker)
@@ -314,11 +314,11 @@ class VoiceComparator:
     Very lenient to handle recording quality variations and computer voices.
     """
 
-    # ULTRA LENIENT Thresholds for SPEAKER RECOGNITION
-    # Designed to accept same person with different words/recording conditions and AI voices
-    SIMILARITY_THRESHOLD = 0.15  # 15% similarity - ultra lenient for same speaker
-    STRICT_THRESHOLD = 0.50  # 50% for high-confidence match
-    LENIENT_THRESHOLD = 0.10  # 10% for poor quality or computer-generated voices
+    # Thresholds for SPEAKER RECOGNITION
+    # Balanced to prevent false positives while accommodating recording quality variations
+    SIMILARITY_THRESHOLD = 0.55  # 55% similarity - reasonable threshold for same speaker
+    STRICT_THRESHOLD = 0.75  # 75% for high-confidence match
+    LENIENT_THRESHOLD = 0.40  # 40% for poor quality recordings
 
     @staticmethod
     def calculate_similarity(features1, features2):
@@ -379,7 +379,7 @@ class VoiceComparator:
                     )
                     if np.isnan(similarity) or np.isinf(similarity):
                         similarity = 0.5
-                except:
+                except Exception:
                     print("WARNING: Correlation also failed, using neutral score")
                     similarity = 0.5
 
@@ -562,7 +562,7 @@ class VoiceVerificationManager:
         from .models import VoiceVerificationLog
 
         return VoiceVerificationLog.objects.filter(complaint=complaint_obj).order_by(
-            "-created_at"
+            "-verification_date"
         )
 
     @staticmethod
@@ -641,17 +641,14 @@ class VoiceVerificationManager:
                     original_voice_code, verification_voice_code
                 )
 
-            # ULTRA LENIENT: Accept if ANY similarity detected OR code matches
-            # Or if similarity is above 10% (ultra low threshold)
+            # Determine match based on similarity and voice code comparison
             similarity_score = verification_result.get("similarity_score", 0.0)
             similarity_match = verification_result.get("is_match", False)
 
-            # Multiple ways to pass (ultra lenient)
+            # Match if similarity exceeds threshold OR voice codes match
             final_match = (
-                similarity_match  # Similarity above threshold
+                similarity_match  # Similarity above threshold (70%)
                 or codes_match  # Voice codes match
-                or similarity_score >= 0.10  # Ultra low threshold (10%)
-                or similarity_score > 0.0  # ANY non-zero similarity
             )
 
             # Add additional metadata
@@ -684,22 +681,8 @@ class VoiceVerificationManager:
             )
             print(f"{'='*80}\n")
 
-            # Save verification log to database
-            try:
-                from .models import VoiceVerificationLog
-
-                VoiceVerificationLog.objects.create(
-                    gap=gap_obj,
-                    verification_audio_path=verification_path,
-                    similarity_score=similarity_score,
-                    is_match=final_match,
-                    confidence=verification_result.get("confidence", "unknown"),
-                    verification_voice_code=verification_voice_code,
-                    notes=f"Gap #{gap_id} - Voice biometric verification. Codes match: {codes_match}",
-                )
-                print("[OK] Verification log saved to database")
-            except Exception as log_error:
-                print(f"[WARN] Could not save verification log: {log_error}")
+            # Note: Verification log is created by the caller (api_views or voice_views)
+            # to avoid duplicate entries
 
             return verification_result
 
@@ -710,14 +693,14 @@ class VoiceVerificationManager:
 
             traceback.print_exc()
 
-            # FALLBACK: Accept with warning in case of errors
-            print(f"\n[FALLBACK] Accepting due to technical error")
+            # FALLBACK: Reject on error for security
+            print(f"\n[FALLBACK] Rejecting due to technical error")
             return {
-                "is_match": True,  # Accept on error (lenient)
-                "similarity_score": 0.5,  # Neutral score
+                "is_match": False,  # Reject on error (secure)
+                "similarity_score": 0.0,
                 "confidence": "error",
-                "message": f"Verification error (accepted): {str(e)}",
-                "can_proceed": True,  # Allow proceeding
+                "message": f"Verification error: {str(e)}. Please try again.",
+                "can_proceed": False,  # Do not allow proceeding
                 "error": str(e),
                 "verification_audio_path": "",
                 "voice_codes_match": False,

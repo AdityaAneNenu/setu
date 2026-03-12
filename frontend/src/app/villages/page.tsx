@@ -11,16 +11,21 @@ import styles from './page.module.css';
 
 export default function VillagesPage() {
   const router = useRouter();
-  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, canViewAnalytics, user } = useAuth();
   const [villages, setVillages] = useState<Village[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, check role
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (!canViewAnalytics) {
+        setAccessDenied(true);
+      }
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, canViewAnalytics, router]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -31,8 +36,9 @@ export default function VillagesPage() {
   const loadVillages = async () => {
     try {
       setIsLoading(true);
-      const response = await villagesApi.getAll();
-      setVillages(response.villages || response || []);
+      // Pass user role and ID for role-based filtering
+      const response = await villagesApi.getAll(user?.role, user?.id?.toString());
+      setVillages(response as Village[]);
     } catch (err) {
       console.error('Failed to load villages:', err);
     } finally {
@@ -40,9 +46,6 @@ export default function VillagesPage() {
     }
   };
 
-  const getTotalSeverity = (village: Village) => {
-    return (village.high_severity || 0) + (village.medium_severity || 0) + (village.low_severity || 0);
-  };
 
   // Show loading while checking auth
   if (authLoading) {
@@ -61,6 +64,35 @@ export default function VillagesPage() {
   // Don't render if not authenticated
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Access denied for ground workers
+  if (accessDenied) {
+    return (
+      <>
+        <Navbar />
+        <div className="main-wrapper">
+          <div className="container">
+            <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+              <h2>Access Denied</h2>
+              <p style={{ color: 'var(--text-muted)', marginTop: '10px' }}>
+                You need Manager role or higher to view Villages.
+              </p>
+              <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>
+                Your current role: <strong>{user?.role}</strong>
+              </p>
+              <button 
+                onClick={() => router.push('/upload')} 
+                className="btn btn-primary"
+                style={{ marginTop: '30px' }}
+              >
+                Go to Upload Page
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   if (isLoading) {

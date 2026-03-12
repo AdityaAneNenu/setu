@@ -18,8 +18,6 @@ interface PublicData {
   in_progress_gaps: number;
   resolved_gaps: number;
   resolution_rate: number;
-  total_budget: number;
-  spent_budget: number;
   villages: any[];
   gap_types: Record<string, number>;
   recent_gaps: any[];
@@ -76,6 +74,7 @@ export default function PublicDashboardPage() {
 
   const resetFilters = () => {
     setFilters({ village: '', status: '', gap_type: '' });
+    loadData();
   };
 
   return (
@@ -108,7 +107,7 @@ export default function PublicDashboardPage() {
               >
                 <option value="">All Villages</option>
                 {data?.villages?.map((v: any) => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
+                  <option key={v.id} value={v.name}>{v.name}</option>
                 ))}
               </select>
             </div>
@@ -137,6 +136,13 @@ export default function PublicDashboardPage() {
                 <option value="electricity">Electricity</option>
                 <option value="education">Education</option>
                 <option value="health">Health</option>
+                <option value="agriculture">Agriculture</option>
+                <option value="housing">Housing</option>
+                <option value="connectivity">Connectivity</option>
+                <option value="employment">Employment</option>
+                <option value="community_center">Community Center</option>
+                <option value="drainage">Drainage</option>
+                <option value="other">Other</option>
               </select>
             </div>
           </div>
@@ -254,7 +260,7 @@ export default function PublicDashboardPage() {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p>© 2024 SETU - PM Adarsh Gram Yojana | Government of India</p>
+        <p>© {new Date().getFullYear()} SETU - PM Adarsh Gram Yojana | Government of India</p>
       </footer>
     </div>
   );

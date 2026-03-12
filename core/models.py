@@ -12,7 +12,6 @@ class UserProfile(models.Model):
     ROLE_CHOICES = [
         ("ground", "Ground Level"),
         ("manager", "Manager"),
-        ("authority", "Highest Authority"),
         ("admin", "Admin"),
     ]
 
@@ -166,9 +165,6 @@ class QRComplaintDetail(models.Model):
         return f"Details for {self.qr_submission.person_name}"
 
 
-from django.db import models
-
-
 class Gap(models.Model):
     STATUS_CHOICES = [
         ("open", "Open"),
@@ -182,15 +178,38 @@ class Gap(models.Model):
         ("text", "Text Input"),
     ]
 
+    GAP_TYPE_CHOICES = [
+        ("water", "Water Supply"),
+        ("road", "Road Infrastructure"),
+        ("sanitation", "Sanitation"),
+        ("electricity", "Electricity"),
+        ("education", "Education"),
+        ("health", "Healthcare"),
+        ("housing", "Housing"),
+        ("agriculture", "Agriculture"),
+        ("connectivity", "Connectivity"),
+        ("employment", "Employment"),
+        ("community_center", "Community Center"),
+        ("drainage", "Drainage"),
+        ("other", "Other"),
+    ]
+
+    SEVERITY_CHOICES = [
+        ("low", "Low"),
+        ("medium", "Medium"),
+        ("high", "High"),
+    ]
+
     village = models.ForeignKey("Village", on_delete=models.CASCADE)
     description = models.TextField()
-    gap_type = models.CharField(max_length=100)
-    severity = models.CharField(max_length=50, default="low")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
+    gap_type = models.CharField(max_length=100, choices=GAP_TYPE_CHOICES, db_index=True)
+    severity = models.CharField(max_length=50, choices=SEVERITY_CHOICES, default="low", db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open", db_index=True)
     input_method = models.CharField(
         max_length=10,
         choices=INPUT_METHOD_CHOICES,
         default="image",
+        db_index=True,
         help_text="Method used to submit this gap",
     )
     audio_file = models.FileField(
@@ -203,7 +222,7 @@ class Gap(models.Model):
         max_length=64,
         blank=True,
         null=True,
-        db_index=True,
+        unique=True,  # Add unique constraint to prevent duplicates
         help_text="Unique voice fingerprint for voice-based gaps",
     )
     recommendations = models.TextField(blank=True, null=True, default="None")
@@ -216,18 +235,6 @@ class Gap(models.Model):
     )
     actual_completion = models.DateField(
         blank=True, null=True, help_text="Actual completion date"
-    )
-
-    # Budget tracking fields
-    budget_allocated = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="Budget allocated in INR",
-    )
-    budget_spent = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0, help_text="Budget spent in INR"
     )
 
     # Geolocation fields
@@ -246,12 +253,12 @@ class Gap(models.Model):
         help_text="Longitude coordinate",
     )
 
-    # Resolution proof (required for closure by AUTHORITY)
+    # Resolution proof (required for closure by ADMIN)
     resolution_proof = models.FileField(
         upload_to="resolution_proofs/",
         blank=True,
         null=True,
-        help_text="Document/letter proving gap resolution (required for AUTHORITY to close)",
+        help_text="Document/letter proving gap resolution (required for ADMIN to close)",
     )
     resolution_proof_number = models.CharField(
         max_length=100,
@@ -275,50 +282,61 @@ class Gap(models.Model):
         return f"{self.village.name} - {self.gap_type} -{self.created_at}"
 
     @property
-    def budget_remaining(self):
-        """Calculate remaining budget"""
-        if self.budget_allocated and self.budget_spent:
-            return self.budget_allocated - self.budget_spent
-        return self.budget_allocated or 0
-
-    @property
     def is_overdue(self):
         """Check if project is overdue"""
         if self.expected_completion and self.status != "resolved":
-            from django.utils import timezone
-
             return timezone.now().date() > self.expected_completion
         return False
 
 
-# Simple SMS-based tracking for rural areas (NO electricity/internet needed)
-class SMSStatusUpdate(models.Model):
-    """Track status updates via simple SMS commands"""
-
-    STATUS_COMMANDS = [
-        ("START", "Work Started"),
-        ("PROGRESS", "Work in Progress"),
-        ("DONE", "Work Completed"),
-        ("PROBLEM", "Issue/Delay"),
-        ("CHECKED", "Villager Checked Work"),
-        ("SATISFIED", "Villager Satisfied"),
-        ("UNSATISFIED", "Villager Not Satisfied"),
-    ]
-
-    gap = models.ForeignKey(Gap, on_delete=models.CASCADE, related_name="sms_updates")
-    sender_phone = models.CharField(
-        max_length=15, help_text="Phone number that sent SMS"
+class GapStatusAuditLog(models.Model):
+    """Audit log for tracking gap status changes"""
+    
+    gap = models.ForeignKey(
+        Gap,
+        on_delete=models.CASCADE,
+        related_name="status_audit_logs",
+        help_text="The gap whose status changed",
     )
-    sms_command = models.CharField(max_length=20, choices=STATUS_COMMANDS)
-    raw_sms_text = models.TextField(help_text="Original SMS received")
-    timestamp = models.DateTimeField(auto_now_add=True)
+    old_status = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="Previous status (null for newly created gaps)",
+    )
+    new_status = models.CharField(
+        max_length=20,
+        help_text="New status after the change",
+    )
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="gap_status_changes",
+        help_text="User who made the change",
+    )
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp of the status change",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Optional notes about the status change",
+    )
+    source = models.CharField(
+        max_length=50,
+        default="web",
+        help_text="Source of the change (web, mobile, api, etc.)",
+    )
 
-    # Auto-response sent back
-    response_sent = models.TextField(blank=True, null=True)
-    response_sent_at = models.DateTimeField(null=True, blank=True)
+    class Meta:
+        ordering = ["-changed_at"]
+        verbose_name = "Gap Status Audit Log"
+        verbose_name_plural = "Gap Status Audit Logs"
 
     def __str__(self):
-        return f"PM{self.gap.id} - {self.sms_command} from {self.sender_phone}"
+        return f"Gap #{self.gap_id}: {self.old_status or 'NEW'} → {self.new_status} at {self.changed_at}"
 
 
 # Post Office Workflow System Models
@@ -373,14 +391,14 @@ class Complaint(models.Model):
         ("villager_satisfied", "Villager Confirmed Satisfied"),
         ("villager_unsatisfied", "Villager Reported Unsatisfied"),
         ("case_closed", "Case Closed"),
-        ("escalated", "Escalated to Higher Authority"),
+        ("escalated", "Escalated to Admin"),
     ]
 
     # Basic details
     complaint_id = models.CharField(max_length=20, unique=True)  # PMC2024001 format
     villager_name = models.CharField(max_length=100)
     village = models.ForeignKey(Village, on_delete=models.CASCADE)
-    post_office = models.ForeignKey(PostOffice, on_delete=models.CASCADE)
+    post_office = models.ForeignKey(PostOffice, on_delete=models.CASCADE, null=True, blank=True)
     pmajay_office = models.ForeignKey(
         PMAJAYOffice, on_delete=models.CASCADE, null=True, blank=True
     )
@@ -436,6 +454,42 @@ class Complaint(models.Model):
     def __str__(self):
         return f"{self.complaint_id} - {self.villager_name}"
 
+    def save(self, *args, **kwargs):
+        if not self.complaint_id:
+            # Auto-generate complaint_id in PMC{year}{seq} format
+            # Use atomic transaction with proper unique constraint check
+            import datetime
+            from django.db import IntegrityError
+            year = datetime.datetime.now().year
+            
+            max_retries = 10
+            for attempt in range(max_retries):
+                try:
+                    with transaction.atomic():
+                        # Get the highest existing sequence number for this year
+                        last_complaint = Complaint.objects.filter(
+                            complaint_id__startswith=f"PMC{year}"
+                        ).order_by('-complaint_id').first()
+                        
+                        if last_complaint:
+                            # Extract sequence number from existing ID
+                            seq_str = last_complaint.complaint_id[7:]  # Remove "PMC2024" prefix
+                            seq = int(seq_str) + 1
+                        else:
+                            seq = 1
+                            
+                        self.complaint_id = f"PMC{year}{seq:04d}"
+                        super().save(*args, **kwargs)
+                        return  # Success, exit retry loop
+                        
+                except IntegrityError:
+                    # Another process created a complaint with this ID, retry
+                    if attempt == max_retries - 1:
+                        raise  # Give up after max retries
+                    continue
+        else:
+            super().save(*args, **kwargs)
+
 
 class WorkflowLog(models.Model):
     """Track every step in the complaint workflow"""
@@ -458,6 +512,8 @@ class WorkflowLog(models.Model):
             ("feedback_received", "Villager Feedback"),
             ("case_closed", "Case Closed"),
             ("escalated", "Case Escalated"),
+            ("status_update", "Status Update"),
+            ("sms_update", "SMS Update"),
         ],
     )
     notes = models.TextField(blank=True)
@@ -511,122 +567,6 @@ class SurveyVisit(models.Model):
 
     def __str__(self):
         return f"{self.agent.name} - {self.village.name} - {self.visit_date}"
-
-
-class VillagerContact(models.Model):
-    """Store villager contact info for SMS notifications"""
-
-    gap = models.OneToOneField(Gap, on_delete=models.CASCADE)
-    villager_name = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
-    complaint_number = models.CharField(max_length=10, unique=True)  # PM1234 format
-
-    # Simple tracking
-    last_sms_sent = models.DateTimeField(null=True, blank=True)
-    villager_satisfied = models.BooleanField(default=False)
-    case_closed = models.BooleanField(default=False)
-
-    def generate_complaint_number(self):
-        """Generate simple complaint number like PM1234"""
-        return f"PM{self.gap.id:04d}"
-
-    def save(self, *args, **kwargs):
-        if not self.complaint_number:
-            self.complaint_number = self.generate_complaint_number()
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.complaint_number} - {self.villager_name}"
-
-
-class WorkerContact(models.Model):
-    """Store worker contact info for SMS communication"""
-
-    name = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=15)
-    worker_type = models.CharField(
-        max_length=50, help_text="Electrician, Plumber, etc."
-    )
-    village_area = models.ForeignKey(Village, on_delete=models.CASCADE)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.worker_type}) - {self.village_area.name}"
-
-
-class SimpleWorkflowTracker(models.Model):
-    """Track the manual workflow with SMS automation"""
-
-    WORKFLOW_STAGES = [
-        ("complaint_received", "Complaint Received"),
-        ("sent_to_pm_ajay", "Sent to PM-AJAY Office"),
-        ("worker_assigned", "Worker Assigned"),
-        ("work_started", "Work Started"),
-        ("work_in_progress", "Work in Progress"),
-        ("work_completed", "Work Completed"),
-        ("sent_to_villager", "Report Sent to Villager"),
-        ("villager_satisfied", "Villager Satisfied"),
-        ("villager_unsatisfied", "Villager Not Satisfied - Reopened"),
-        ("case_closed", "Case Closed"),
-    ]
-
-    gap = models.OneToOneField(Gap, on_delete=models.CASCADE)
-    villager_contact = models.OneToOneField(VillagerContact, on_delete=models.CASCADE)
-    assigned_worker = models.ForeignKey(
-        WorkerContact, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    current_stage = models.CharField(
-        max_length=30, choices=WORKFLOW_STAGES, default="complaint_received"
-    )
-    stage_updated_at = models.DateTimeField(auto_now=True)
-
-    # SMS tracking
-    total_sms_sent = models.IntegerField(default=0)
-    last_sms_to_villager = models.DateTimeField(null=True, blank=True)
-    last_sms_to_worker = models.DateTimeField(null=True, blank=True)
-
-    def update_stage(self, new_stage, send_sms=True):
-        """Update workflow stage and send SMS notifications"""
-        old_stage = self.current_stage
-        self.current_stage = new_stage
-        self.save()
-
-        if send_sms:
-            self.send_status_sms()
-
-        # Log the stage change
-        WorkflowLog.objects.create(
-            workflow=self, from_stage=old_stage, to_stage=new_stage
-        )
-
-    def send_status_sms(self):
-        """Send SMS to villager about current status"""
-        if not self.villager_contact.phone_number:
-            return
-
-        messages = {
-            "worker_assigned": f"Work assigned for {self.villager_contact.complaint_number}. Worker will contact you soon.",
-            "work_started": f"Work started on {self.villager_contact.complaint_number}. We will update you on progress.",
-            "work_completed": f"Work completed for {self.villager_contact.complaint_number}. Postman will visit you for verification.",
-            "case_closed": f"Case {self.villager_contact.complaint_number} closed successfully. Thank you!",
-        }
-
-        message = messages.get(
-            self.current_stage,
-            f"Status update for {self.villager_contact.complaint_number}",
-        )
-
-        # Here you would integrate with SMS gateway
-        # For now, we'll just log it
-        print(f"SMS to {self.villager_contact.phone_number}: {message}")
-
-        self.last_sms_to_villager = timezone.now()
-        self.total_sms_sent += 1
-        self.save()
-
-    def __str__(self):
-        return f"{self.villager_contact.complaint_number} - {self.current_stage}"
 
 
 # Enhanced models for automated PM-AJAY workflow tracking
