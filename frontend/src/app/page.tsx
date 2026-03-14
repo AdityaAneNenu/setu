@@ -2,6 +2,50 @@ import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function Home() {
+  const focusAreas = [
+    { icon: '🎓', title: 'Education' },
+    { icon: '🏥', title: 'Healthcare' },
+    { icon: '🚿', title: 'Sanitation' },
+    { icon: '⚡', title: 'Electricity' },
+    { icon: '📡', title: 'Connectivity' },
+    { icon: '💧', title: 'Water Supply' },
+    { icon: '🛠️', title: 'Skill Development' },
+    { icon: '💼', title: 'Livelihood' },
+  ];
+
+  const keyFeatures = [
+    {
+      icon: '📱',
+      title: 'Mobile Friendly',
+      description: 'Access from any device: desktop, tablet, or mobile phone.',
+    },
+    {
+      icon: '🎤',
+      title: 'Voice Input',
+      description: 'Submit complaints using voice in Hindi and other regional languages.',
+    },
+    {
+      icon: '🔐',
+      title: 'Secure System',
+      description: 'Role-based access control with voice verification for authenticity.',
+    },
+    {
+      icon: '📈',
+      title: 'Real-time Analytics',
+      description: 'Track development progress with interactive charts and reports.',
+    },
+    {
+      icon: '🌐',
+      title: 'Multi-language',
+      description: 'Available in English, Hindi, and other regional languages.',
+    },
+    {
+      icon: '✉️',
+      title: 'Email Notifications',
+      description: 'Get updates on complaint status and resolution progress.',
+    },
+  ];
+
   return (
     <main className={styles.main}>
       {/* Hero Section */}
@@ -15,7 +59,7 @@ export default function Home() {
           </h1>
           
           <p className={styles.heroSubtitle}>
-            Supporting PM-AJAY's mission to holistically develop Scheduled Caste majority villages through data-driven gap identification and systematic infrastructure development.
+            Supporting PM-AJAY&apos;s mission to holistically develop Scheduled Caste majority villages through data-driven gap identification and systematic infrastructure development.
           </p>
           
           <div className={styles.badge}>
@@ -39,6 +83,29 @@ export default function Home() {
         </div>
       </section>
 
+      <section className={styles.impactStrip}>
+        <div className={styles.container}>
+          <div className={styles.impactGrid}>
+            <div className={styles.impactItem}>
+              <span className={styles.impactNumber}>500+</span>
+              <span className={styles.impactLabel}>Villages Covered</span>
+            </div>
+            <div className={styles.impactItem}>
+              <span className={styles.impactNumber}>2,500+</span>
+              <span className={styles.impactLabel}>Gaps Reported</span>
+            </div>
+            <div className={styles.impactItem}>
+              <span className={styles.impactNumber}>1,200+</span>
+              <span className={styles.impactLabel}>Resolved Projects</span>
+            </div>
+            <div className={styles.impactItem}>
+              <span className={styles.impactNumber}>85%</span>
+              <span className={styles.impactLabel}>Satisfaction Score</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* About Section */}
       <section className={styles.section}>
         <div className={styles.container}>
@@ -53,18 +120,10 @@ export default function Home() {
           </div>
           
           <div className={styles.grid4}>
-            {[
-              'Education',
-              'Healthcare',
-              'Sanitation',
-              'Electricity',
-              'Connectivity',
-              'Water Supply',
-              'Skill Development',
-              'Livelihood',
-            ].map((title, idx) => (
+            {focusAreas.map((area, idx) => (
               <div key={idx} className={styles.focusCard}>
-                <div className={styles.focusTitle}>{title}</div>
+                <div className={styles.focusIcon}>{area.icon}</div>
+                <div className={styles.focusTitle}>{area.title}</div>
               </div>
             ))}
           </div>
@@ -116,33 +175,9 @@ export default function Home() {
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Key Features</h2>
           <div className={styles.grid3}>
-            {[
-              {
-                title: 'Mobile Friendly',
-                description: 'Access from any device - desktop, tablet, or mobile phone',
-              },
-              {
-                title: 'Voice Input',
-                description: 'Submit complaints using voice in Hindi and other regional languages',
-              },
-              {
-                title: 'Secure System',
-                description: 'Role-based access control with voice verification for authenticity',
-              },
-              {
-                title: 'Real-time Analytics',
-                description: 'Track development progress with interactive charts and reports',
-              },
-              {
-                title: 'Multi-language',
-                description: 'Available in English, Hindi, and other regional languages',
-              },
-              {
-                title: 'Email Notifications',
-                description: 'Get updates on complaint status and resolution progress',
-              },
-            ].map((item, idx) => (
+            {keyFeatures.map((item, idx) => (
               <div key={idx} className={styles.featureCard}>
+                <div className={styles.featureIcon}>{item.icon}</div>
                 <h3 className={styles.featureTitle}>{item.title}</h3>
                 <p className={styles.featureDescription}>{item.description}</p>
               </div>

@@ -126,7 +126,7 @@ class GapAdmin(admin.ModelAdmin):
 @admin.register(GapStatusAuditLog)
 class GapStatusAuditLogAdmin(admin.ModelAdmin):
     """Admin for viewing gap status change audit logs"""
-    
+
     list_display = (
         "gap",
         "old_status",

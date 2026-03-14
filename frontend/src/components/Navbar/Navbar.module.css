@@ -51,13 +51,14 @@
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  display: none;
+  margin: 0;
 }
 
 .navBrandText p {
   font-size: 0.7rem;
   color: var(--text-muted);
-  display: none;
+  margin: 0;
+  line-height: 1;
 }
 
 .menuToggle {
@@ -197,6 +198,100 @@
 
 .loginBtn {
   background: var(--primary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .navContainer {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navContainer {
+    padding: 0 1rem;
+  }
+  
+  .menuToggle {
+    display: block;
+  }
+  
+  .navMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    flex-direction: column;
+    gap: 0;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .navMenu.open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .navItem {
+    width: 100%;
+  }
+  
+  .navItem a {
+    display: block;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .navItem:last-child a {
+    border-bottom: none;
+  }
+  
+  .userDetails {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .navContainer {
+    height: 60px;
+  }
+  
+  .navBrandText h1 {
+    font-size: 1.125rem;
+  }
+  
+  .navBrandText p {
+    font-size: 0.65rem;
+  }
+  
+  .navLogo {
+    height: 35px;
+  }
+  
+  .navUser {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navBrandText h1,
+  .navBrandText p {
+    display: none;
+  }
+  
+  .themeToggle,
+  .userAvatar {
+    width: 32px;
+    height: 32px;
+  }
+}
   color: white;
   text-decoration: none;
   border-radius: 6px;

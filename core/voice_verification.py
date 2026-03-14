@@ -84,6 +84,7 @@ class VoiceFeatureExtractor:
 
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"MFCC extraction error: {str(e)}")
             # Raise exception for corrupted audio instead of false positives
@@ -316,7 +317,9 @@ class VoiceComparator:
 
     # Thresholds for SPEAKER RECOGNITION
     # Balanced to prevent false positives while accommodating recording quality variations
-    SIMILARITY_THRESHOLD = 0.55  # 55% similarity - reasonable threshold for same speaker
+    SIMILARITY_THRESHOLD = (
+        0.55  # 55% similarity - reasonable threshold for same speaker
+    )
     STRICT_THRESHOLD = 0.75  # 75% for high-confidence match
     LENIENT_THRESHOLD = 0.40  # 40% for poor quality recordings
 

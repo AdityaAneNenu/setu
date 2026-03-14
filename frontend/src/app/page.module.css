@@ -125,6 +125,43 @@
   }
 }
 
+.impactStrip {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0.03) 100%);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.impactGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1.25rem 0;
+}
+
+.impactItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.75rem;
+}
+
+.impactNumber {
+  font-size: clamp(1.25rem, 2.8vw, 1.875rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.impactLabel {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* Sections */
 .section {
   padding: 5rem 2rem;
@@ -279,6 +316,12 @@
   line-height: 1.4;
 }
 
+.focusIcon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.625rem;
+}
+
 /* Step Cards */
 .stepCard {
   background: var(--bg-card);
@@ -357,6 +400,18 @@
   margin-bottom: 0.75rem;
 }
 
+.featureIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.12);
+  font-size: 1.15rem;
+  margin-bottom: 0.875rem;
+}
+
 .featureDescription {
   font-size: 0.9375rem;
   color: var(--text-secondary);
@@ -415,6 +470,10 @@
   .ctaTitle {
     font-size: 1.75rem;
   }
+
+  .impactGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
@@ -424,5 +483,13 @@
   
   .sectionTitle {
     font-size: 1.5rem;
+  }
+
+  .impactGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .impactItem {
+    padding: 0.5rem;
   }
 }

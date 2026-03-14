@@ -116,7 +116,10 @@ class LogoutAPIView(APIView):
         except Exception as e:
             # Log the exception but don't fail the logout
             import logging
-            logging.getLogger(__name__).error(f"Error deleting token during logout: {e}")
+
+            logging.getLogger(__name__).error(
+                f"Error deleting token during logout: {e}"
+            )
         return Response({"success": True, "message": "Logged out successfully"})
 
 
@@ -150,13 +153,13 @@ def get_user_profile(request):
 def api_villages_list(request):
     """JSON API endpoint to list all villages with gap statistics (Manager+ only)"""
     villages = Village.objects.annotate(
-        total_gaps=Count('gap'),
-        open_gaps=Count('gap', filter=Q(gap__status='open')),
-        in_progress_gaps=Count('gap', filter=Q(gap__status='in_progress')),
-        resolved_gaps=Count('gap', filter=Q(gap__status='resolved')),
-        high_severity=Count('gap', filter=Q(gap__severity='high')),
-        medium_severity=Count('gap', filter=Q(gap__severity='medium')),
-        low_severity=Count('gap', filter=Q(gap__severity='low')),
+        total_gaps=Count("gap"),
+        open_gaps=Count("gap", filter=Q(gap__status="open")),
+        in_progress_gaps=Count("gap", filter=Q(gap__status="in_progress")),
+        resolved_gaps=Count("gap", filter=Q(gap__status="resolved")),
+        high_severity=Count("gap", filter=Q(gap__severity="high")),
+        medium_severity=Count("gap", filter=Q(gap__severity="medium")),
+        low_severity=Count("gap", filter=Q(gap__severity="low")),
     )
 
     villages_data = [
@@ -187,9 +190,19 @@ def api_gaps_list(request):
     VALID_STATUSES = ["open", "in_progress", "resolved"]
     VALID_SEVERITIES = ["low", "medium", "high"]
     VALID_GAP_TYPES = [
-        "water", "road", "sanitation", "electricity", "education",
-        "health", "housing", "agriculture", "connectivity", "employment",
-        "community_center", "drainage", "other"
+        "water",
+        "road",
+        "sanitation",
+        "electricity",
+        "education",
+        "health",
+        "housing",
+        "agriculture",
+        "connectivity",
+        "employment",
+        "community_center",
+        "drainage",
+        "other",
     ]
 
     # Apply filters with validation
@@ -246,15 +259,17 @@ def api_gaps_list(request):
             }
         )
 
-    return Response({
-        "gaps": gaps_data,
-        "pagination": {
-            "page": page,
-            "limit": limit,
-            "total": total_count,
-            "total_pages": (total_count + limit - 1) // limit,
+    return Response(
+        {
+            "gaps": gaps_data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total_count,
+                "total_pages": (total_count + limit - 1) // limit,
+            },
         }
-    })
+    )
 
 
 @api_view(["GET"])
@@ -334,29 +349,35 @@ def api_update_gap_status(request, gap_id):
             # Sync to Firebase Firestore with retry logic
             try:
                 from .firebase_utils import sync_gap_to_firestore
+
                 sync_gap_to_firestore(gap)
             except Exception as fb_err:
                 # ✅ IMPROVED: Enhanced Firebase sync with retry mechanism
                 import logging
                 from django.core.cache import cache
+
                 logger = logging.getLogger(__name__)
                 logger.error(f"Firebase sync failed for gap {gap.id}: {fb_err}")
-                
+
                 # Add to retry queue in cache (expires in 24 hours)
                 retry_key = f"firebase_retry_gap_{gap.id}_{int(time.time())}"
-                cache.set(retry_key, {
-                    'gap_id': gap.id,
-                    'action': 'update_status',
-                    'attempts': 1,
-                    'error': str(fb_err),
-                    'timestamp': time.time()
-                }, 86400)  # 24 hours
-                
+                cache.set(
+                    retry_key,
+                    {
+                        "gap_id": gap.id,
+                        "action": "update_status",
+                        "attempts": 1,
+                        "error": str(fb_err),
+                        "timestamp": time.time(),
+                    },
+                    86400,
+                )  # 24 hours
+
                 # Maintain retry index for easier cleanup
-                retry_index = cache.get('firebase_retry_index', set())
+                retry_index = cache.get("firebase_retry_index", set())
                 retry_index.add(retry_key)
-                cache.set('firebase_retry_index', retry_index, 86400)
-                
+                cache.set("firebase_retry_index", retry_index, 86400)
+
                 logger.info(f"Added gap {gap.id} to Firebase retry queue: {retry_key}")
 
             return Response(
@@ -502,12 +523,15 @@ class GapUploadAPIView(APIView):
             if "audio_file" in request.FILES:
                 input_method = "voice"
                 audio_file = request.FILES["audio_file"]
-                
+
                 # ✅ SECURITY: Validate audio file size (max 50MB)
                 MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
                 if audio_file.size > MAX_AUDIO_SIZE:
                     return Response(
-                        {"success": False, "error": "Audio file too large. Maximum size is 50MB."},
+                        {
+                            "success": False,
+                            "error": "Audio file too large. Maximum size is 50MB.",
+                        },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
@@ -612,12 +636,15 @@ class GapUploadAPIView(APIView):
             elif "image" in request.FILES:
                 input_method = "image"
                 image_file = request.FILES["image"]
-                
+
                 # ✅ SECURITY: Validate image file size (max 10MB)
                 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
                 if image_file.size > MAX_IMAGE_SIZE:
                     return Response(
-                        {"success": False, "error": "Image file too large. Maximum size is 10MB."},
+                        {
+                            "success": False,
+                            "error": "Image file too large. Maximum size is 10MB.",
+                        },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
@@ -702,7 +729,10 @@ class GapUploadAPIView(APIView):
                     MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
                     if audio_file.size > MAX_AUDIO_SIZE:
                         return Response(
-                            {"success": False, "error": "Audio file too large. Maximum size is 50MB."},
+                            {
+                                "success": False,
+                                "error": "Audio file too large. Maximum size is 50MB.",
+                            },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
                     gap.audio_file = audio_file
@@ -780,10 +810,10 @@ def api_dashboard_stats(request):
             "resolved_gaps": v.resolved_gaps,
         }
         for v in Village.objects.annotate(
-            total_gaps=Count('gap'),
-            open_gaps=Count('gap', filter=Q(gap__status='open')),
-            in_progress_gaps=Count('gap', filter=Q(gap__status='in_progress')),
-            resolved_gaps=Count('gap', filter=Q(gap__status='resolved')),
+            total_gaps=Count("gap"),
+            open_gaps=Count("gap", filter=Q(gap__status="open")),
+            in_progress_gaps=Count("gap", filter=Q(gap__status="in_progress")),
+            resolved_gaps=Count("gap", filter=Q(gap__status="resolved")),
         )
     ]
 
@@ -836,10 +866,10 @@ def api_analytics(request):
             "resolved": v.resolved,
         }
         for v in Village.objects.annotate(
-            total=Count('gap'),
-            open=Count('gap', filter=Q(gap__status='open')),
-            in_progress=Count('gap', filter=Q(gap__status='in_progress')),
-            resolved=Count('gap', filter=Q(gap__status='resolved')),
+            total=Count("gap"),
+            open=Count("gap", filter=Q(gap__status="open")),
+            in_progress=Count("gap", filter=Q(gap__status="in_progress")),
+            resolved=Count("gap", filter=Q(gap__status="resolved")),
         )
     ]
 
@@ -902,10 +932,10 @@ def api_public_dashboard(request):
 
     # Village-wise data (single annotated query instead of N+1)
     village_annotations = Village.objects.annotate(
-        total_gaps=Count('gap', filter=Q(gap__in=gaps)),
-        resolved=Count('gap', filter=Q(gap__status='resolved', gap__in=gaps)),
-        pending=Count('gap', filter=Q(gap__status='open', gap__in=gaps)),
-        in_progress=Count('gap', filter=Q(gap__status='in_progress', gap__in=gaps)),
+        total_gaps=Count("gap", filter=Q(gap__in=gaps)),
+        resolved=Count("gap", filter=Q(gap__status="resolved", gap__in=gaps)),
+        pending=Count("gap", filter=Q(gap__status="open", gap__in=gaps)),
+        in_progress=Count("gap", filter=Q(gap__status="in_progress", gap__in=gaps)),
     ).filter(total_gaps__gt=0)
 
     village_data = [
@@ -1077,15 +1107,18 @@ class VoiceVerificationSubmitAPIView(APIView):
                 )
 
             verification_audio = request.FILES["audio_file"]
-            
+
             # ✅ SECURITY: Validate verification audio file size
             MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
             if verification_audio.size > MAX_AUDIO_SIZE:
                 return Response(
-                    {"success": False, "error": "Verification audio file too large. Maximum size is 50MB."},
+                    {
+                        "success": False,
+                        "error": "Verification audio file too large. Maximum size is 50MB.",
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             verified_by = request.data.get("verified_by", "Unknown")
             notes = request.data.get("notes", "")
 
@@ -1373,11 +1406,21 @@ class MobileGapSyncAPIView(APIView):
     authentication_classes = [TokenAuthentication, SessionAuthentication]
 
     VALID_GAP_TYPES = [
-        "water", "road", "sanitation", "electricity", "education",
-        "health", "housing", "agriculture", "connectivity", "employment",
-        "community_center", "drainage", "other"
+        "water",
+        "road",
+        "sanitation",
+        "electricity",
+        "education",
+        "health",
+        "housing",
+        "agriculture",
+        "connectivity",
+        "employment",
+        "community_center",
+        "drainage",
+        "other",
     ]
-    
+
     VALID_SEVERITIES = ["low", "medium", "high"]
     VALID_INPUT_METHODS = ["image", "voice", "text"]
 
@@ -1405,27 +1448,35 @@ class MobileGapSyncAPIView(APIView):
                     {"success": False, "error": "Description is required"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # ✅ IMPROVED: Validate description length (increased limit)
             if len(description) > 5000:
                 return Response(
-                    {"success": False, "error": "Description too long (max 5000 characters)"},
+                    {
+                        "success": False,
+                        "error": "Description too long (max 5000 characters)",
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # ✅ NEW: Validate email format if provided
             email = data.get("email", "").strip() if data.get("email") else ""
-            if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            if email and not re.match(
+                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email
+            ):
                 return Response(
                     {"success": False, "error": "Invalid email format"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             # ✅ NEW: Validate phone number format (Indian format) if provided
             phone = data.get("phone", "").strip() if data.get("phone") else ""
-            if phone and not re.match(r'^[6-9]\d{9}$', phone):
+            if phone and not re.match(r"^[6-9]\d{9}$", phone):
                 return Response(
-                    {"success": False, "error": "Invalid phone number. Please enter 10-digit Indian mobile number starting with 6, 7, 8, or 9"},
+                    {
+                        "success": False,
+                        "error": "Invalid phone number. Please enter 10-digit Indian mobile number starting with 6, 7, 8, or 9",
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -1436,11 +1487,11 @@ class MobileGapSyncAPIView(APIView):
             # Validate severity
             if severity not in self.VALID_SEVERITIES:
                 severity = "medium"
-                
+
             # Validate input_method
             if input_method not in self.VALID_INPUT_METHODS:
                 input_method = "text"
-                
+
             # Validate coordinates
             if latitude is not None:
                 try:
@@ -1456,13 +1507,16 @@ class MobileGapSyncAPIView(APIView):
                         {"success": False, "error": "Invalid latitude format"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                    
+
             if longitude is not None:
                 try:
                     lng = float(longitude)
                     if not (-180 <= lng <= 180):
                         return Response(
-                            {"success": False, "error": "Invalid longitude (-180 to 180)"},
+                            {
+                                "success": False,
+                                "error": "Invalid longitude (-180 to 180)",
+                            },
                             status=status.HTTP_400_BAD_REQUEST,
                         )
                     longitude = lng
@@ -1471,14 +1525,14 @@ class MobileGapSyncAPIView(APIView):
                         {"success": False, "error": "Invalid longitude format"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-            
+
             # Validate URLs (prevent XSS)
             if audio_url and not audio_url.startswith(("http://", "https://")):
                 return Response(
                     {"success": False, "error": "Invalid audio URL format"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-                
+
             if image_url and not image_url.startswith(("http://", "https://")):
                 return Response(
                     {"success": False, "error": "Invalid image URL format"},
@@ -1496,15 +1550,15 @@ class MobileGapSyncAPIView(APIView):
                         with transaction.atomic():
                             village, created = Village.objects.get_or_create(
                                 name__iexact=village_name.strip(),
-                                defaults={'name': village_name.strip()}
+                                defaults={"name": village_name.strip()},
                             )
             elif village_name:
                 with transaction.atomic():
                     village, created = Village.objects.get_or_create(
                         name__iexact=village_name.strip(),
-                        defaults={'name': village_name.strip()}
+                        defaults={"name": village_name.strip()},
                     )
-                    
+
             if not village:
                 return Response(
                     {"success": False, "error": "Village is required"},
@@ -1527,6 +1581,7 @@ class MobileGapSyncAPIView(APIView):
 
                 # Create audit log for new gap creation
                 from .models import GapStatusAuditLog
+
                 GapStatusAuditLog.objects.create(
                     gap=gap,
                     old_status=None,
@@ -1553,6 +1608,7 @@ class MobileGapSyncAPIView(APIView):
 
         except Exception as e:
             import traceback
+
             traceback.print_exc()
             return Response(
                 {"success": False, "error": str(e)},
@@ -1599,12 +1655,14 @@ def api_mobile_gap_status_sync(request, firestore_id):
         gap.status = new_status
         if new_status == "resolved" and resolved_at:
             from django.utils import timezone
+
             gap.actual_completion = timezone.now()
         gap.save()
 
         # Sync back to Firestore for consistency
         try:
             from .firebase_utils import sync_gap_to_firestore
+
             sync_gap_to_firestore(gap)
         except Exception as fb_err:
             print(f"Firebase sync warning: {fb_err}")
@@ -1620,6 +1678,7 @@ def api_mobile_gap_status_sync(request, firestore_id):
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return Response(
             {"success": False, "error": str(e)},
@@ -1628,7 +1687,9 @@ def api_mobile_gap_status_sync(request, firestore_id):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])  # Mobile app sends Firebase token; Django AI endpoint is public for now
+@permission_classes(
+    [AllowAny]
+)  # Mobile app sends Firebase token; Django AI endpoint is public for now
 def api_analyze_media(request):
     """
     Analyze uploaded image or audio using AI to auto-generate description and categorization

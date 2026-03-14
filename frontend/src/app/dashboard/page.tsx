@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
@@ -11,14 +11,11 @@ import styles from './page.module.css';
 
 interface RecentGap {
   id: string | number;
-  gap_id?: string;
   village_name: string;
   gap_type: string;
-  severity: string;
   status: string;
   created_at: string;
   description: string;
-  audio_url?: string | null;
 }
 
 interface DashboardData {
@@ -33,66 +30,65 @@ interface DashboardData {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, isAuthenticated, canViewAnalytics } = useAuth();
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // Redirect to login if not authenticated, check role
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        router.push('/login');
-      } else if (!canViewAnalytics) {
-        // Ground workers don't have dashboard access - redirect to upload
-        setAccessDenied(true);
-      }
+    if (authLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
+    if (!canViewAnalytics) {
+      setAccessDenied(true);
     }
   }, [authLoading, isAuthenticated, canViewAnalytics, router]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadDashboard();
-    }
-  }, [isAuthenticated]);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Pass user role and ID for role-based filtering
+      setError('');
       const response = await dashboardApi.getStats(user?.role, user?.id?.toString());
       setData(response);
-    } catch (err: any) {
-      setError('Failed to load dashboard data');
+    } catch (err) {
+      setError('Failed to load dashboard data. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, user?.role]);
 
-  const getSeverityBadgeClass = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'badge-danger';
-      case 'medium': return 'badge-warning';
-      default: return 'badge-info';
+  useEffect(() => {
+    if (isAuthenticated && canViewAnalytics) {
+      loadDashboard();
     }
-  };
+  }, [isAuthenticated, canViewAnalytics, loadDashboard]);
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'resolved': return 'badge-success';
-      case 'in_progress': return 'badge-warning';
-      default: return 'badge-info';
+      case 'resolved':
+        return 'resolved';
+      case 'in_progress':
+        return 'inProgress';
+      default:
+        return 'pending';
     }
   };
 
-  // Show loading while checking auth
   if (authLoading) {
     return (
-      <div className="main-wrapper">
-        <div className="container">
+      <div className={styles.container}>
+        <Navbar />
+        <div className={styles.mainWrapper}>
           <div className={styles.loadingContainer}>
-            <div className="spinner"></div>
+            <div className={styles.spinner}></div>
             <p>Checking authentication...</p>
           </div>
         </div>
@@ -100,221 +96,165 @@ export default function DashboardPage() {
     );
   }
 
-  // Don't render if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
   }
 
-  // Access denied for ground workers
   if (accessDenied) {
     return (
-      <>
+      <div className={styles.container}>
         <Navbar />
-        <div className="main-wrapper">
-          <div className="container">
-            <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-              <h2>Access Denied</h2>
-              <p style={{ color: 'var(--text-muted)', marginTop: '10px' }}>
-                You need Manager role or higher to view the Dashboard.
-              </p>
-              <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>
-                Your current role: <strong>{user?.role}</strong>
-              </p>
-              <button 
-                onClick={() => router.push('/upload')} 
-                className="btn btn-primary"
-                style={{ marginTop: '30px' }}
-              >
-                Go to Upload Page
-              </button>
-            </div>
+        <div className={styles.mainWrapper}>
+          <div className={styles.accessDenied}>
+            <h2>Access Restricted</h2>
+            <p>Dashboard access is limited to Managers and Administrators.</p>
+            <Link href="/upload" className="btn btn-primary">
+              Go to Upload
+            </Link>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <>
+      <div className={styles.container}>
         <Navbar />
-        <div className="main-wrapper">
-          <div className="container">
-            <div className={styles.loadingContainer}>
-              <div className="spinner"></div>
-              <p>Loading dashboard...</p>
-            </div>
+        <div className={styles.mainWrapper}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <p>Loading dashboard data...</p>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <>
+      <div className={styles.container}>
         <Navbar />
-        <div className="main-wrapper">
-          <div className="container">
-            <div className={styles.errorContainer}>
-              <p>{error}</p>
-              <button className="btn btn-primary" onClick={loadDashboard}>
-                Retry
-              </button>
-            </div>
+        <div className={styles.mainWrapper}>
+          <div className={styles.errorContainer}>
+            <h3>Dashboard Error</h3>
+            <p>{error}</p>
+            <button onClick={loadDashboard} className={styles.retryButton}>
+              Retry
+            </button>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className={styles.container}>
       <Navbar />
-      <div className="main-wrapper">
-        <div className="container">
-          <div className="page-header">
-            <h1>Dashboard</h1>
-            <p>Overview of village development gaps and progress tracking</p>
+      <div className={styles.mainWrapper}>
+        <div className={styles.pageHeader}>
+          <h1>Dashboard</h1>
+          <p className={styles.pageSubtitle}>
+            Welcome back, {user?.username}! Here is an overview of your infrastructure gaps.
+          </p>
+        </div>
+
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statHeader}>
+              <span className={styles.statTitle}>Total Gaps</span>
+              <div className={styles.statIcon}>📊</div>
+            </div>
+            <div className={styles.statValue}>{data?.total_gaps || 0}</div>
           </div>
 
-          {/* Statistics Cards */}
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-label">Total Gaps</div>
-              <div className="stat-value">{data?.total_gaps || 0}</div>
-              <p className="stat-subtitle">Across all villages</p>
+          <div className={styles.statCard}>
+            <div className={styles.statHeader}>
+              <span className={styles.statTitle}>Open Issues</span>
+              <div className={styles.statIcon}>⚠️</div>
             </div>
-
-            <div className="stat-card">
-              <div className="stat-label">Open</div>
-              <div className="stat-value">{data?.open_gaps || 0}</div>
-              <p className="stat-subtitle">Awaiting action</p>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-label">In Progress</div>
-              <div className="stat-value">{data?.in_progress_gaps || 0}</div>
-              <p className="stat-subtitle">Currently working</p>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-label">Resolved</div>
-              <div className="stat-value">{data?.resolved_gaps || 0}</div>
-              <p className="stat-subtitle">Successfully completed</p>
-            </div>
+            <div className={styles.statValue}>{data?.open_gaps || 0}</div>
           </div>
 
-          {/* Recent Gaps */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Recent Gaps</h2>
-              <Link href="/manage-gaps" className="btn btn-secondary btn-sm">
+          <div className={styles.statCard}>
+            <div className={styles.statHeader}>
+              <span className={styles.statTitle}>In Progress</span>
+              <div className={styles.statIcon}>🔄</div>
+            </div>
+            <div className={styles.statValue}>{data?.in_progress_gaps || 0}</div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={styles.statHeader}>
+              <span className={styles.statTitle}>Resolved</span>
+              <div className={styles.statIcon}>✅</div>
+            </div>
+            <div className={styles.statValue}>{data?.resolved_gaps || 0}</div>
+          </div>
+        </div>
+
+        <div className={styles.contentGrid}>
+          <div className={styles.recentActivity}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Recent Activity</h2>
+              <Link href="/manage-gaps" className={styles.viewAllLink}>
                 View All
               </Link>
             </div>
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Village</th>
-                    <th>Type</th>
-                    <th>Severity</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.recent_gaps && data.recent_gaps.length > 0 ? (
-                    data.recent_gaps.map((gap) => (
-                      <tr key={gap.id}>
-                        <td><strong>#{gap.gap_id || String(gap.id).slice(0, 8)}</strong></td>
-                        <td>{gap.village_name || 'N/A'}</td>
-                        <td style={{ textTransform: 'capitalize' }}>{gap.gap_type}</td>
-                        <td>
-                          <span className={`badge ${getSeverityBadgeClass(gap.severity)}`}>
-                            {gap.severity}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${getStatusBadgeClass(gap.status)}`}>
-                            {gap.status.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td>{new Date(gap.created_at).toLocaleDateString()}</td>
-                        <td>
-                          <Link href="/manage-gaps" className="btn btn-secondary btn-sm">
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="empty-state">
-                        No gaps found. Upload data to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+
+            <div className={styles.activityList}>
+              {data?.recent_gaps?.length ? (
+                data.recent_gaps.slice(0, 5).map((gap) => (
+                  <div key={gap.id} className={styles.activityItem}>
+                    <div className={styles.activityHeader}>
+                      <span className={styles.activityTitle}>
+                        {gap.gap_type.charAt(0).toUpperCase() + gap.gap_type.slice(1)} - {gap.village_name}
+                      </span>
+                      <span className={`${styles.statusBadge} ${styles[getStatusBadgeClass(gap.status)]}`}>
+                        {gap.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className={styles.activityMeta}>
+                      {gap.description.length > 60 ? `${gap.description.substring(0, 60)}...` : gap.description}
+                    </p>
+                    <p className={styles.activityMeta}>{new Date(gap.created_at).toLocaleDateString()}</p>
+                  </div>
+                ))
+              ) : (
+                <p className={styles.activityMeta}>No recent activity</p>
+              )}
             </div>
           </div>
 
-          {/* Villages Overview */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Villages</h2>
-              <Link href="/villages" className="btn btn-secondary btn-sm">
-                View All
-              </Link>
+          <div className={styles.quickActions}>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>Quick Actions</h3>
             </div>
-            <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Village Name</th>
-                    <th>Total Gaps</th>
-                    <th>Open</th>
-                    <th>In Progress</th>
-                    <th>Resolved</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data?.villages && data.villages.length > 0 ? (
-                    data.villages.map((village) => (
-                      <tr key={village.id}>
-                        <td><strong>{village.name}</strong></td>
-                        <td>{village.total_gaps || 0}</td>
-                        <td>{village.open_gaps || 0}</td>
-                        <td>{village.in_progress_gaps || 0}</td>
-                        <td>{village.resolved_gaps || 0}</td>
-                        <td>
-                          <Link 
-                            href={`/villages/${village.id}`} 
-                            className="btn btn-secondary btn-sm"
-                          >
-                            Details
-                          </Link>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="empty-state">
-                        No villages found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+
+            <div className={styles.quickActionsList}>
+              <Link href="/upload" className={styles.actionButton}>
+                <span className={styles.actionIcon}>⬆️</span>
+                Upload New Gap
+              </Link>
+
+              <Link href="/manage-gaps" className={styles.actionButton}>
+                <span className={styles.actionIcon}>📋</span>
+                Manage Gaps
+              </Link>
+
+              <Link href="/analytics" className={styles.actionButton}>
+                <span className={styles.actionIcon}>📈</span>
+                View Analytics
+              </Link>
+
+              <Link href="/villages" className={styles.actionButton}>
+                <span className={styles.actionIcon}>🏘️</span>
+                Browse Villages
+              </Link>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

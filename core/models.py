@@ -203,8 +203,12 @@ class Gap(models.Model):
     village = models.ForeignKey("Village", on_delete=models.CASCADE)
     description = models.TextField()
     gap_type = models.CharField(max_length=100, choices=GAP_TYPE_CHOICES, db_index=True)
-    severity = models.CharField(max_length=50, choices=SEVERITY_CHOICES, default="low", db_index=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open", db_index=True)
+    severity = models.CharField(
+        max_length=50, choices=SEVERITY_CHOICES, default="low", db_index=True
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="open", db_index=True
+    )
     input_method = models.CharField(
         max_length=10,
         choices=INPUT_METHOD_CHOICES,
@@ -291,7 +295,7 @@ class Gap(models.Model):
 
 class GapStatusAuditLog(models.Model):
     """Audit log for tracking gap status changes"""
-    
+
     gap = models.ForeignKey(
         Gap,
         on_delete=models.CASCADE,
@@ -398,7 +402,9 @@ class Complaint(models.Model):
     complaint_id = models.CharField(max_length=20, unique=True)  # PMC2024001 format
     villager_name = models.CharField(max_length=100)
     village = models.ForeignKey(Village, on_delete=models.CASCADE)
-    post_office = models.ForeignKey(PostOffice, on_delete=models.CASCADE, null=True, blank=True)
+    post_office = models.ForeignKey(
+        PostOffice, on_delete=models.CASCADE, null=True, blank=True
+    )
     pmajay_office = models.ForeignKey(
         PMAJAYOffice, on_delete=models.CASCADE, null=True, blank=True
     )
@@ -460,28 +466,35 @@ class Complaint(models.Model):
             # Use atomic transaction with proper unique constraint check
             import datetime
             from django.db import IntegrityError
+
             year = datetime.datetime.now().year
-            
+
             max_retries = 10
             for attempt in range(max_retries):
                 try:
                     with transaction.atomic():
                         # Get the highest existing sequence number for this year
-                        last_complaint = Complaint.objects.filter(
-                            complaint_id__startswith=f"PMC{year}"
-                        ).order_by('-complaint_id').first()
-                        
+                        last_complaint = (
+                            Complaint.objects.filter(
+                                complaint_id__startswith=f"PMC{year}"
+                            )
+                            .order_by("-complaint_id")
+                            .first()
+                        )
+
                         if last_complaint:
                             # Extract sequence number from existing ID
-                            seq_str = last_complaint.complaint_id[7:]  # Remove "PMC2024" prefix
+                            seq_str = last_complaint.complaint_id[
+                                7:
+                            ]  # Remove "PMC2024" prefix
                             seq = int(seq_str) + 1
                         else:
                             seq = 1
-                            
+
                         self.complaint_id = f"PMC{year}{seq:04d}"
                         super().save(*args, **kwargs)
                         return  # Success, exit retry loop
-                        
+
                 except IntegrityError:
                     # Another process created a complaint with this ID, retry
                     if attempt == max_retries - 1:
