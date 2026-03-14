@@ -18,6 +18,8 @@ from django.utils.decorators import method_decorator
 import os
 import json
 import logging
+import re
+import time
 
 from .models import Complaint, Village, QRSubmission, Gap, SurveyAgent
 from .serializers import QRSubmissionSerializer
@@ -722,19 +724,10 @@ class GapUploadAPIView(APIView):
                     longitude=longitude if longitude else None,
                 )
 
-                # Save audio file to gap
+                # Save audio file to gap (size already validated above)
                 if "audio_file" in request.FILES:
                     audio_file = request.FILES["audio_file"]
-                    # ✅ SECURITY: Validate audio file size
-                    MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
-                    if audio_file.size > MAX_AUDIO_SIZE:
-                        return Response(
-                            {
-                                "success": False,
-                                "error": "Audio file too large. Maximum size is 50MB.",
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+                    audio_file.seek(0)  # Reset file pointer after earlier processing
                     gap.audio_file = audio_file
                     gap.save()
 
@@ -1460,7 +1453,7 @@ class MobileGapSyncAPIView(APIView):
                 )
 
             # ✅ NEW: Validate email format if provided
-            email = data.get("email", "").strip() if data.get("email") else ""
+            email = request.data.get("email", "").strip() if request.data.get("email") else ""
             if email and not re.match(
                 r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email
             ):
@@ -1470,7 +1463,7 @@ class MobileGapSyncAPIView(APIView):
                 )
 
             # ✅ NEW: Validate phone number format (Indian format) if provided
-            phone = data.get("phone", "").strip() if data.get("phone") else ""
+            phone = request.data.get("phone", "").strip() if request.data.get("phone") else ""
             if phone and not re.match(r"^[6-9]\d{9}$", phone):
                 return Response(
                     {
@@ -1617,7 +1610,7 @@ class MobileGapSyncAPIView(APIView):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_mobile_gap_status_sync(request, firestore_id):
     """
     Sync gap status update from mobile app.
