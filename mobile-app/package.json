@@ -28,6 +28,7 @@
     "expo-linear-gradient": "~15.0.8",
     "expo-location": "~19.0.8",
     "expo-module-scripts": "^55.0.2",
+    "expo-network": "~8.0.8",
     "expo-speech": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
     "firebase": "^12.9.0",

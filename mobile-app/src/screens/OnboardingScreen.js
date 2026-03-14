@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 16,
     fontFamily: fonts.medium,
-    color: colors.textLight,
+    color: '#888888',
   },
   slide: {
     width: width,

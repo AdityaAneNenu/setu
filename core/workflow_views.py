@@ -358,7 +358,24 @@ def api_update_via_sms(request):
         sms_command = data.get("command")
         sender_phone = data.get("phone")
 
+        # Validate required fields
+        if not complaint_id or not sms_command or not sender_phone:
+            return JsonResponse(
+                {"error": "complaint_id, command, and phone are required"}, status=400
+            )
+
         complaint = Complaint.objects.get(complaint_id=complaint_id)
+
+        # Verify the sender phone matches a known agent or the complaint's village contact
+        from .models import SurveyAgent
+
+        is_authorized = SurveyAgent.objects.filter(
+            phone_number=sender_phone
+        ).exists()
+        if not is_authorized:
+            return JsonResponse(
+                {"error": "Unauthorized phone number"}, status=403
+            )
 
         # Map SMS commands to status updates
         command_mapping = {

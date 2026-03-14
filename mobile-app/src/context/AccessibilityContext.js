@@ -44,7 +44,7 @@ export function AccessibilityProvider({ children }) {
           setHapticEnabled(prefs.hapticFeedback ?? true);
           setReduceMotion(prefs.reduceMotion ?? false);
         }
-      } catch (e) {
+      } catch (_e) {
         // Fallback to defaults — non-critical
       } finally {
         setIsLoaded(true);
@@ -76,7 +76,7 @@ export function AccessibilityProvider({ children }) {
     };
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-    } catch (e) {
+    } catch (_e) {
       // Non-critical
     }
   }, [largeText, hapticEnabled, reduceMotion]);

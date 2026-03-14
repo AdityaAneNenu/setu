@@ -252,13 +252,13 @@ const styles = StyleSheet.create({
   previewLabel: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 8,
   },
   sectionLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.textLight,
+    color: '#888888',
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
   },
   divider: {
     height: 1,

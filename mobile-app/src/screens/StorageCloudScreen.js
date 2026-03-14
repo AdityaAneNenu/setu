@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.textLight,
+    color: '#888888',
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginRight: 4,
   },
   divider: {
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   storageSubtitle: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
   },
   progressBarBg: {
     height: 6,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: 6,
-    backgroundColor: colors.accent,
+    backgroundColor: '#FA4A0C',
     borderRadius: 3,
   },
   storageBreakdown: {
@@ -333,6 +333,6 @@ const styles = StyleSheet.create({
   breakdownText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
   },
 });

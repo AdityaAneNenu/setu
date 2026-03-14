@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.textLight,
+    color: '#888888',
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 28,
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   nativeText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
   },
   divider: {
     height: 1,

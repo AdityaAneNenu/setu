@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
@@ -33,23 +33,23 @@ export default function AgentsDashboardPage() {
     }
   }, [authLoading, user, router]);
 
-  useEffect(() => {
-    if (user) {
-      loadAgents();
-    }
-  }, [user]);
-
-  const loadAgents = async () => {
+  const loadAgents = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await workflowApi.getAgents();
-      setAgents(response as Agent[]);
+      setAgents(response as unknown as Agent[]);
     } catch (err) {
       console.error('Failed to load agents:', err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadAgents();
+    }
+  }, [user, loadAgents]);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredAgents = agents.filter((agent) => {

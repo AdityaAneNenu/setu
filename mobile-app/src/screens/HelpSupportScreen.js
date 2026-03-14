@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.textLight,
+    color: '#888888',
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 2,
   },
   divider: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   faqAnswer: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     lineHeight: 20,
     paddingBottom: 12,
   },

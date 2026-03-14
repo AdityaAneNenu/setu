@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: colors.textLight,
+    color: '#888888',
     letterSpacing: 0.5,
     marginBottom: 12,
     marginLeft: 4,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 2,
   },
   valueContainer: {
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginRight: 4,
   },
   divider: {
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   speedText: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.textLight,
+    color: '#888888',
   },
   speedTextActive: {
     color: '#FFFFFF',

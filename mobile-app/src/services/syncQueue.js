@@ -3,7 +3,7 @@
 // Handles failed sync operations with exponential backoff retry
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
+import * as Network from 'expo-network';
 import { API_CONFIG } from '../config/api';
 
 const SYNC_QUEUE_KEY = '@pending_django_syncs';
@@ -134,7 +134,7 @@ const performSync = async (syncItem) => {
  */
 export const processSyncQueue = async () => {
   // Check network connectivity first
-  const netState = await NetInfo.fetch();
+  const netState = await Network.getNetworkStateAsync();
   if (!netState.isConnected) {
     console.log('No network - skipping sync queue processing');
     return { processed: 0, failed: 0 };

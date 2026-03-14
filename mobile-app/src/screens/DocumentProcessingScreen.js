@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 12,
   },
   toolsContainer: {
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   toolLabel: {
     fontSize: 12,
     fontFamily: fonts.medium,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 8,
   },
   bottomSection: {

@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 13,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 10,
     textAlign: 'center',
   },
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   processingText: {
     fontSize: 15,
     fontFamily: fonts.regular,
-    color: colors.textLight,
+    color: '#888888',
   },
   bottomSection: {
     paddingHorizontal: 50,

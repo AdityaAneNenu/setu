@@ -18,6 +18,8 @@ from django.utils.decorators import method_decorator
 import os
 import json
 import logging
+import re
+import time
 
 from .models import Complaint, Village, QRSubmission, Gap, SurveyAgent
 from .serializers import QRSubmissionSerializer
@@ -794,6 +796,7 @@ def api_dashboard_stats(request):
             "gap_type": gap.gap_type,
             "severity": gap.severity,
             "status": gap.status,
+            "description": gap.description or "",
             "created_at": gap.created_at.isoformat() if gap.created_at else None,
         }
         for gap in Gap.objects.select_related("village").order_by("-created_at")[:5]
@@ -1367,16 +1370,36 @@ def api_workflow_stats(request):
 def api_workflow_agents(request):
     """Get list of survey agents (Manager+ only)"""
     try:
-        agents = SurveyAgent.objects.all().order_by("name")
+        agents = SurveyAgent.objects.prefetch_related(
+            "assigned_villages"
+        ).all().order_by("name")
 
         agents_data = []
         for agent in agents:
+            # Count active/resolved complaints from survey visits
+            active_complaints = Complaint.objects.filter(
+                surveyvisit__agent=agent
+            ).exclude(
+                status__in=["villager_satisfied", "case_closed"]
+            ).distinct().count()
+            resolved_complaints = Complaint.objects.filter(
+                surveyvisit__agent=agent,
+                status__in=["villager_satisfied", "case_closed"],
+            ).distinct().count()
+
             agents_data.append(
                 {
                     "id": agent.id,
-                    "employee_id": agent.employee_id,
-                    "name": agent.name,
+                    "username": agent.employee_id,
+                    "full_name": agent.name,
+                    "email": "",
                     "phone": agent.phone_number,
+                    "assigned_villages": [
+                        v.name for v in agent.assigned_villages.all()
+                    ],
+                    "active_complaints": active_complaints,
+                    "resolved_complaints": resolved_complaints,
+                    "is_active": True,
                 }
             )
 
@@ -1460,7 +1483,7 @@ class MobileGapSyncAPIView(APIView):
                 )
 
             # ✅ NEW: Validate email format if provided
-            email = data.get("email", "").strip() if data.get("email") else ""
+            email = request.data.get("email", "").strip() if request.data.get("email") else ""
             if email and not re.match(
                 r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email
             ):
@@ -1470,7 +1493,7 @@ class MobileGapSyncAPIView(APIView):
                 )
 
             # ✅ NEW: Validate phone number format (Indian format) if provided
-            phone = data.get("phone", "").strip() if data.get("phone") else ""
+            phone = request.data.get("phone", "").strip() if request.data.get("phone") else ""
             if phone and not re.match(r"^[6-9]\d{9}$", phone):
                 return Response(
                     {
@@ -1617,7 +1640,7 @@ class MobileGapSyncAPIView(APIView):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_mobile_gap_status_sync(request, firestore_id):
     """
     Sync gap status update from mobile app.

@@ -5,14 +5,17 @@ import { lightColors, darkColors } from '../theme';
 
 const STORAGE_KEY = '@theme_preference';
 
-const ThemeContext = createContext({
+// Default context value with real colors as fallback
+const defaultContextValue = {
   isDark: false,
   colors: lightColors,
-  themeMode: 'system', // 'light' | 'dark' | 'system'
+  themeMode: 'system',
   setThemeMode: () => {},
   toggleTheme: () => {},
   isLoaded: false,
-});
+};
+
+const ThemeContext = createContext(defaultContextValue);
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
@@ -26,7 +29,7 @@ export function ThemeProvider({ children }) {
         if (saved && ['light', 'dark', 'system'].includes(saved)) {
           setThemeModeState(saved);
         }
-      } catch {
+      } catch (e) {
         // fallback to system
       } finally {
         setIsLoaded(true);
@@ -38,30 +41,38 @@ export function ThemeProvider({ children }) {
     setThemeModeState(mode);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, mode);
-    } catch {
+    } catch (e) {
       // non-critical
     }
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    const next = isDark ? 'light' : 'dark';
-    setThemeMode(next);
-  }, [themeMode, systemScheme]);
-
+  // Compute isDark and colors BEFORE toggleTheme to avoid TDZ
   const isDark =
     themeMode === 'dark' || (themeMode === 'system' && systemScheme === 'dark');
 
   const colors = isDark ? darkColors : lightColors;
 
+  const toggleTheme = useCallback(() => {
+    const next = isDark ? 'light' : 'dark';
+    setThemeMode(next);
+  }, [isDark, setThemeMode]);
+
+  const value = { isDark, colors, themeMode, setThemeMode, toggleTheme, isLoaded };
+
   return (
-    <ThemeContext.Provider value={{ isDark, colors, themeMode, setThemeMode, toggleTheme, isLoaded }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
-  return useContext(ThemeContext);
+  const context = useContext(ThemeContext);
+  // Defensive: if context is somehow undefined, return defaults
+  if (!context || !context.colors) {
+    return defaultContextValue;
+  }
+  return context;
 }
 
 export default ThemeContext;
