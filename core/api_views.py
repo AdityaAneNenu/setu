@@ -724,19 +724,10 @@ class GapUploadAPIView(APIView):
                     longitude=longitude if longitude else None,
                 )
 
-                # Save audio file to gap
+                # Save audio file to gap (size already validated above)
                 if "audio_file" in request.FILES:
                     audio_file = request.FILES["audio_file"]
-                    # ✅ SECURITY: Validate audio file size
-                    MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
-                    if audio_file.size > MAX_AUDIO_SIZE:
-                        return Response(
-                            {
-                                "success": False,
-                                "error": "Audio file too large. Maximum size is 50MB.",
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+                    audio_file.seek(0)  # Reset file pointer after earlier processing
                     gap.audio_file = audio_file
                     gap.save()
 
