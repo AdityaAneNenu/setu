@@ -1,0 +1,11 @@
+{
+  // Recommended VS Code extensions for Django development
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "batisteo.vscode-django",
+    "wholroyd.jinja",
+    "ms-python.debugpy"
+  ]
+}

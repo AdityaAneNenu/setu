@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 // CONFIGURATION: Set your computer's LAN IP here for physical devices
 // Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux) to find it.
 // ======================================================================
-const DEV_MACHINE_IP = '192.168.1.6';
+const DEV_MACHINE_IP = '192.168.1.114';
 const DEV_PORT = '8000';
 
 // For production, set PRODUCTION_API_URL in app.json extra or eas.json
