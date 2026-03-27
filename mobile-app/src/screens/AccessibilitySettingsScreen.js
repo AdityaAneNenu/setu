@@ -77,7 +77,7 @@ export default function AccessibilitySettingsScreen({ navigation }) {
                 triggerHaptic('selection');
               }}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
           <View style={styles.divider} />
@@ -94,7 +94,7 @@ export default function AccessibilitySettingsScreen({ navigation }) {
                 triggerHaptic('selection');
               }}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
         </View>
@@ -118,7 +118,7 @@ export default function AccessibilitySettingsScreen({ navigation }) {
                 }
               }}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
         </View>

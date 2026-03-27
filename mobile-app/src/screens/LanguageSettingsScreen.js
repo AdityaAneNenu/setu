@@ -17,7 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 
 
 // Horizontal pill scroller component
-const LangScroller = ({ languages, selectedId, onSelect }) => (
+const LangScroller = ({ languages, selectedId, onSelect, colors, isDark }) => (
   <ScrollView
     horizontal
     showsHorizontalScrollIndicator={false}
@@ -28,14 +28,18 @@ const LangScroller = ({ languages, selectedId, onSelect }) => (
       return (
         <TouchableOpacity
           key={lang.id}
-          style={[styles.langPill, isSelected && styles.langPillSelected]}
+          style={[
+            styles.langPill,
+            { backgroundColor: isDark ? colors.surface : colors.white },
+            isSelected && { backgroundColor: colors.buttonPrimaryBg, borderColor: colors.buttonPrimaryBg },
+          ]}
           onPress={() => onSelect(lang.id)}
           activeOpacity={0.7}
         >
-          <Text style={[styles.langPillNative, isSelected && styles.langPillNativeSelected]}>
+          <Text style={[styles.langPillNative, { color: colors.text }, isSelected && { color: colors.buttonPrimaryText }]}>
             {lang.native}
           </Text>
-          <Text style={[styles.langPillLabel, isSelected && styles.langPillLabelSelected]}>
+          <Text style={[styles.langPillLabel, { color: colors.textLight }, isSelected && { color: colors.buttonPrimaryText, opacity: 0.85 }]}>
             {lang.label}
           </Text>
         </TouchableOpacity>
@@ -113,14 +117,14 @@ export default function LanguageSettingsScreen({ navigation }) {
               value={autoDetect}
               onValueChange={handleAutoDetect}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
         </View>
 
         {/* App Language */}
         <Text style={[styles.sectionLabel, { color: colors.text }]}>{t('language.appLanguage')}</Text>
-        <LangScroller languages={languages} selectedId={currentLanguage} onSelect={handleAppLang} />
+        <LangScroller languages={languages} selectedId={currentLanguage} onSelect={handleAppLang} colors={colors} isDark={isDark} />
 
         {/* Scan Language */}
         <Text style={[styles.sectionLabel, { marginTop: 24, color: colors.text }]}>{t('language.scanLanguage')}</Text>
@@ -135,7 +139,7 @@ export default function LanguageSettingsScreen({ navigation }) {
             </Text>
           </View>
         </View>
-        <LangScroller languages={languages} selectedId={scanLang} onSelect={handleScanLang} />
+        <LangScroller languages={languages} selectedId={scanLang} onSelect={handleScanLang} colors={colors} isDark={isDark} />
 
         {/* Audio Language */}
         <Text style={[styles.sectionLabel, { marginTop: 24, color: colors.text }]}>{t('language.audioLanguage')}</Text>
@@ -150,7 +154,7 @@ export default function LanguageSettingsScreen({ navigation }) {
             </Text>
           </View>
         </View>
-        <LangScroller languages={languages} selectedId={audioLang} onSelect={handleAudioLang} />
+        <LangScroller languages={languages} selectedId={audioLang} onSelect={handleAudioLang} colors={colors} isDark={isDark} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -249,6 +253,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   langPillSelected: {
     backgroundColor: '#000000',

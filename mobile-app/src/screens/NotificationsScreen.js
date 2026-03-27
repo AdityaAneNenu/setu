@@ -98,7 +98,7 @@ export default function NotificationsScreen({ navigation }) {
               value={pushEnabled}
               onValueChange={(v) => toggle('pushEnabled', setPushEnabled, v)}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
 
@@ -113,7 +113,7 @@ export default function NotificationsScreen({ navigation }) {
               value={emailEnabled}
               onValueChange={(v) => toggle('emailEnabled', setEmailEnabled, v)}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
 
@@ -128,7 +128,7 @@ export default function NotificationsScreen({ navigation }) {
               value={smsEnabled}
               onValueChange={(v) => toggle('smsEnabled', setSmsEnabled, v)}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
         </View>
@@ -145,7 +145,7 @@ export default function NotificationsScreen({ navigation }) {
               value={gapAlerts}
               onValueChange={(v) => toggle('gapAlerts', setGapAlerts, v)}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
 
@@ -160,7 +160,7 @@ export default function NotificationsScreen({ navigation }) {
               value={complaintUpdates}
               onValueChange={(v) => toggle('complaintUpdates', setComplaintUpdates, v)}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
 
@@ -175,7 +175,7 @@ export default function NotificationsScreen({ navigation }) {
               value={weeklyReport}
               onValueChange={(v) => toggle('weeklyReport', setWeeklyReport, v)}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
         </View>

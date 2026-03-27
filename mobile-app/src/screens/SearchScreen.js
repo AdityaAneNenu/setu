@@ -123,7 +123,7 @@ export default function SearchScreen({ navigation }) {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /></View>
       ) : query.length === 0 ? (
         <View style={styles.quickSection}>
-          <Text style={styles.sectionLabel}>{t('search.quickSearches')}</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textLight }]}>{t('search.quickSearches')}</Text>
           <View style={styles.chipContainer}>
             {quickSearches.map((item) => (
               <TouchableOpacity key={item.value} style={[styles.chip, { backgroundColor: colors.card }]} onPress={() => handleSearch(item.value)}>
@@ -132,22 +132,22 @@ export default function SearchScreen({ navigation }) {
             ))}
           </View>
 
-          <Text style={[styles.sectionLabel, { marginTop: 24 }]}>{t('search.summary')}</Text>
+          <Text style={[styles.sectionLabel, { marginTop: 24, color: colors.textLight }]}>{t('search.summary')}</Text>
           <View style={[styles.summaryCard, { backgroundColor: colors.card }]}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('search.totalGaps')}</Text>
-              <Text style={styles.summaryValue}>{allGaps.length}</Text>
+            <View style={[styles.summaryRow, { borderBottomColor: colors.divider }]}>
+              <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('search.totalGaps')}</Text>
+              <Text style={[styles.summaryValue, { color: colors.text }]}>{allGaps.length}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('search.villagesCovered')}</Text>
-              <Text style={styles.summaryValue}>{villages.length}</Text>
+            <View style={[styles.summaryRow, { borderBottomColor: colors.divider }]}>
+              <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('search.villagesCovered')}</Text>
+              <Text style={[styles.summaryValue, { color: colors.text }]}>{villages.length}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('search.openIssues')}</Text>
+            <View style={[styles.summaryRow, { borderBottomColor: colors.divider }]}>
+              <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('search.openIssues')}</Text>
               <Text style={[styles.summaryValue, { color: '#F44336' }]}>{allGaps.filter(g => g.status === 'open').length}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('search.resolved')}</Text>
+            <View style={[styles.summaryRow, { borderBottomColor: 'transparent' }]}>
+              <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('search.resolved')}</Text>
               <Text style={[styles.summaryValue, { color: '#4CAF50' }]}>{allGaps.filter(g => g.status === 'resolved').length}</Text>
             </View>
           </View>
@@ -160,12 +160,12 @@ export default function SearchScreen({ navigation }) {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <Text style={styles.resultCount}>{results.length} {t('search.results')}</Text>
+            <Text style={[styles.resultCount, { color: colors.textLight }]}>{results.length} {t('search.results')}</Text>
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={48} color={colors.textLight} />
-              <Text style={styles.emptyText}>{t('search.noResults')}</Text>
+              <Text style={[styles.emptyText, { color: colors.textLight }]}>{t('search.noResults')}</Text>
             </View>
           }
         />

@@ -158,8 +158,8 @@ export default function HistoryScreen({ route, navigation }) {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="folder-open-outline" size={48} color={colors.textLight} />
-              <Text style={styles.emptyText}>{t('history.noGapsFound')}</Text>
-              <Text style={styles.emptySubText}>{t('history.submitFirst')}</Text>
+              <Text style={[styles.emptyText, { color: colors.textLight }]}>{t('history.noGapsFound')}</Text>
+              <Text style={[styles.emptySubText, { color: colors.textMuted }]}>{t('history.submitFirst')}</Text>
             </View>
           }
         />

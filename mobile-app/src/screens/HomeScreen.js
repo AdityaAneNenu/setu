@@ -235,7 +235,20 @@ export default function HomeScreen({ navigation }) {
           <>
             {/* ── Pending Sync Banner ────────────────────── */}
             <TouchableOpacity
-              style={[styles.syncBanner, pendingCount > 0 ? styles.syncBannerPending : styles.syncBannerOk]}
+              style={[
+                styles.syncBanner,
+                pendingCount > 0
+                  ? {
+                    backgroundColor: isDark ? '#3A2A12' : '#FFF8E1',
+                    borderWidth: 1,
+                    borderColor: isDark ? '#6E4B1A' : '#FFE0B2',
+                  }
+                  : {
+                    backgroundColor: isDark ? '#163321' : '#F1F8E9',
+                    borderWidth: 1,
+                    borderColor: isDark ? '#2A5A3D' : '#DCEDC8',
+                  },
+              ]}
               activeOpacity={0.8}
               onPress={() => pendingCount > 0 && navigation.navigate('History')}
             >

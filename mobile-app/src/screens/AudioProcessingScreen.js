@@ -153,7 +153,7 @@ export default function AudioProcessingScreen({ navigation, route }) {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Language Selector */}
         <View style={styles.langSection}>
-          <Text style={styles.langSectionTitle}>{t('audioProcessing.processingLanguage')}</Text>
+          <Text style={[styles.langSectionTitle, { color: colors.text }]}>{t('audioProcessing.processingLanguage')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -164,14 +164,18 @@ export default function AudioProcessingScreen({ navigation, route }) {
               return (
                 <TouchableOpacity
                   key={lang.id}
-                  style={[styles.langPill, isSelected && styles.langPillSelected]}
+                  style={[
+                    styles.langPill,
+                    { backgroundColor: isDark ? colors.surface : colors.white },
+                    isSelected && { backgroundColor: colors.buttonPrimaryBg, borderColor: colors.buttonPrimaryBg },
+                  ]}
                   onPress={() => setSelectedLanguage(lang.id)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.langPillNative, isSelected && styles.langPillNativeSelected]}>
+                  <Text style={[styles.langPillNative, { color: colors.text }, isSelected && { color: colors.buttonPrimaryText }]}>
                     {lang.native}
                   </Text>
-                  <Text style={[styles.langPillLabel, isSelected && styles.langPillLabelSelected]}>
+                  <Text style={[styles.langPillLabel, { color: colors.textLight }, isSelected && { color: colors.buttonPrimaryText, opacity: 0.85 }]}>
                     {lang.label}
                   </Text>
                 </TouchableOpacity>
@@ -188,51 +192,51 @@ export default function AudioProcessingScreen({ navigation, route }) {
                 key={i}
                 style={[
                   styles.waveformBar,
-                  { height: h },
+                  { height: h, backgroundColor: colors.waveformBar },
                   i < progress && { backgroundColor: colors.accent },
                 ]}
               />
             ))}
           </View>
-          <Text style={styles.timeText}>
+          <Text style={[styles.timeText, { color: colors.textLight }]}>
             {formatTime(positionMs)} / {formatTime(durationMs)}
           </Text>
         </View>
 
         {/* Audio Title */}
-        <Text style={styles.audioTitle}>{t('audioProcessing.audio')}</Text>
-        <Text style={styles.audioSubtitle}>
+        <Text style={[styles.audioTitle, { color: colors.text }]}>{t('audioProcessing.audio')}</Text>
+        <Text style={[styles.audioSubtitle, { color: colors.textLight }]}>
           {LANGUAGES.find(l => l.id === selectedLanguage)?.label || t('audioProcessing.hindi')} · {formatTime(durationMs)}
         </Text>
 
         {/* Playback Controls */}
         <View style={styles.controlsRow}>
           <TouchableOpacity onPress={() => handleSkip(-10000)}>
-            <Ionicons name="play-skip-back" size={24} color="#000000" />
+            <Ionicons name="play-skip-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.playButton}
+            style={[styles.playButton, { backgroundColor: colors.buttonPrimaryBg }]}
             onPress={handlePlayPause}
           >
-            <Ionicons name={isPlaying ? 'pause' : 'play'} size={28} color="#FFFFFF" />
+            <Ionicons name={isPlaying ? 'pause' : 'play'} size={28} color={colors.buttonPrimaryText} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleSkip(10000)}>
-            <Ionicons name="play-skip-forward" size={24} color="#000000" />
+            <Ionicons name="play-skip-forward" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 
         {/* Transcription */}
         {(transcription || processing) && (
           <View style={styles.transcriptionSection}>
-            <Text style={styles.sectionTitle}>{t('audioProcessing.transcription')}</Text>
-            <View style={styles.transcriptionCard}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('audioProcessing.transcription')}</Text>
+            <View style={[styles.transcriptionCard, { backgroundColor: colors.card, shadowColor: colors.shadowCard }]}>
               {processing ? (
                 <View style={styles.processingRow}>
                   <ActivityIndicator size="small" color={colors.accent} />
-                  <Text style={styles.processingText}>{t('audioProcessing.analyzingAudio')}</Text>
+                  <Text style={[styles.processingText, { color: colors.textLight }]}>{t('audioProcessing.analyzingAudio')}</Text>
                 </View>
               ) : (
-                <Text style={styles.transcriptionText}>{transcription}</Text>
+                <Text style={[styles.transcriptionText, { color: colors.text }]}>{transcription}</Text>
               )}
             </View>
           </View>
@@ -241,9 +245,9 @@ export default function AudioProcessingScreen({ navigation, route }) {
         {/* AI Result Details */}
         {aiResult && aiResult.success && (
           <View style={styles.transcriptionSection}>
-            <Text style={styles.sectionTitle}>{t('audioProcessing.aiAnalysis')}</Text>
-            <View style={styles.transcriptionCard}>
-              <Text style={styles.transcriptionText}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('audioProcessing.aiAnalysis')}</Text>
+            <View style={[styles.transcriptionCard, { backgroundColor: colors.card, shadowColor: colors.shadowCard }]}>
+              <Text style={[styles.transcriptionText, { color: colors.text }]}>
                 {t('audioProcessing.category')}: {aiResult.gap_type}{'\n'}
                 {t('audioProcessing.severity')}: {aiResult.severity}{'\n'}
                 {t('audioProcessing.confidence')}: {Math.round(aiResult.confidence * 100)}%
@@ -256,19 +260,19 @@ export default function AudioProcessingScreen({ navigation, route }) {
       {/* Bottom Section */}
       <View style={styles.bottomSection}>
         <TouchableOpacity
-          style={[styles.processButton, processing && { opacity: 0.6 }]}
+          style={[styles.processButton, { backgroundColor: colors.buttonPrimaryBg }, processing && { opacity: 0.6 }]}
           onPress={handleProcess}
           disabled={processing}
         >
           {processing ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.buttonPrimaryText} />
           ) : (
-            <Text style={styles.processButtonText}>{t('audioProcessing.title')}</Text>
+            <Text style={[styles.processButtonText, { color: colors.buttonPrimaryText }]}>{t('audioProcessing.title')}</Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.secondaryText}>{t('audioProcessing.goBack')}</Text>
+          <Text style={[styles.secondaryText, { color: colors.text }]}>{t('audioProcessing.goBack')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -330,6 +334,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   langPillSelected: {
     backgroundColor: '#000000',

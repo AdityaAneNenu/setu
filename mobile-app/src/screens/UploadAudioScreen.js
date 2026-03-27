@@ -45,9 +45,9 @@ const LANGUAGES = [
 ];
 
 // Horizontal Scrollable Language Selector
-const LanguageSelector = ({ selectedLanguage, onSelect, t }) => (
+const LanguageSelector = ({ selectedLanguage, onSelect, t, colors, isDark }) => (
   <View style={styles.languageSelectorContainer}>
-    <Text style={styles.sectionTitle}>{t('uploadAudio.chooseLanguage')}</Text>
+    <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('uploadAudio.chooseLanguage')}</Text>
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -58,14 +58,18 @@ const LanguageSelector = ({ selectedLanguage, onSelect, t }) => (
         return (
           <TouchableOpacity
             key={lang.id}
-            style={[styles.languagePill, isSelected && styles.languagePillSelected]}
+            style={[
+              styles.languagePill,
+              { backgroundColor: isDark ? colors.surface : colors.white },
+              isSelected && { backgroundColor: colors.buttonPrimaryBg, borderColor: colors.buttonPrimaryBg },
+            ]}
             onPress={() => onSelect(lang.id)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.languagePillNative, isSelected && styles.languagePillTextSelected]}>
+            <Text style={[styles.languagePillNative, { color: colors.text }, isSelected && { color: colors.buttonPrimaryText }]}>
               {lang.native}
             </Text>
-            <Text style={[styles.languagePillLabel, isSelected && styles.languagePillLabelSelected]}>
+            <Text style={[styles.languagePillLabel, { color: colors.textLight }, isSelected && { color: colors.buttonPrimaryText, opacity: 0.85 }]}>
               {lang.label}
             </Text>
           </TouchableOpacity>
@@ -76,7 +80,7 @@ const LanguageSelector = ({ selectedLanguage, onSelect, t }) => (
 );
 
 // Audio Waveform with real metering
-const AudioWaveform = ({ isRecording, levels }) => {
+const AudioWaveform = ({ isRecording, levels, colors }) => {
   const bars = useMemo(() => {
     if (levels && levels.length > 0) {
       const padded = [...Array(Math.max(0, 60 - levels.length)).fill(-160), ...levels].slice(-60);
@@ -103,7 +107,7 @@ const AudioWaveform = ({ isRecording, levels }) => {
             key={i}
             style={[
               styles.waveformBar,
-              { height: h },
+              { height: h, backgroundColor: colors.waveformBar },
               isRecording && { backgroundColor: '#FA4A0C' },
             ]}
           />
@@ -114,7 +118,7 @@ const AudioWaveform = ({ isRecording, levels }) => {
 };
 
 // Processing Spinner
-const AudioProcessingSpinner = ({ message }) => {
+const AudioProcessingSpinner = ({ message, colors }) => {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -142,16 +146,16 @@ const AudioProcessingSpinner = ({ message }) => {
       </Animated.View>
       <View style={{ marginTop: 20 }}>
         <Animated.View style={{ transform: [{ rotate: spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
-          <View style={styles.spinnerRing} />
+          <View style={[styles.spinnerRing, { borderColor: colors.border, borderTopColor: colors.accent, borderRightColor: colors.accent }]} />
         </Animated.View>
       </View>
-      <Text style={styles.processingText}>{message}</Text>
+      <Text style={[styles.processingText, { color: colors.text }]}>{message}</Text>
     </View>
   );
 };
 
 // Success State
-const AudioSuccessState = ({ fileName, fileSize, duration, language, onViewProcess, onRecordAnother, t }) => {
+const AudioSuccessState = ({ fileName, fileSize, duration, language, onViewProcess, onRecordAnother, t, colors, isDark }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -179,14 +183,14 @@ const AudioSuccessState = ({ fileName, fileSize, duration, language, onViewProce
           <Ionicons name="checkmark" size={44} color="#FFFFFF" />
         </View>
       </Animated.View>
-      <Text style={styles.successTitle}>{t('uploadAudio.recordedSuccess')}</Text>
-      <Animated.View style={[styles.audioFileCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.audioIconCircle}>
+      <Text style={[styles.successTitle, { color: colors.text }]}>{t('uploadAudio.recordedSuccess')}</Text>
+      <Animated.View style={[styles.audioFileCard, { backgroundColor: colors.card, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <View style={[styles.audioIconCircle, { backgroundColor: isDark ? '#3D2800' : '#FFF3E0' }]}>
           <Ionicons name="musical-notes" size={28} color="#FA4A0C" />
         </View>
         <View style={styles.audioFileInfo}>
-          <Text style={styles.audioFileName} numberOfLines={1}>{fileName}</Text>
-          <Text style={styles.audioFileSize}>{fileSize}{duration ? ` \u2022 ${fmt(duration)}` : ''} \u2022 {language}</Text>
+          <Text style={[styles.audioFileName, { color: colors.text }]} numberOfLines={1}>{fileName}</Text>
+          <Text style={[styles.audioFileSize, { color: colors.textLight }]}>{fileSize}{duration ? ` \u2022 ${fmt(duration)}` : ''} \u2022 {language}</Text>
           <View style={styles.audioStatusRow}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>Ready</Text>
@@ -195,13 +199,13 @@ const AudioSuccessState = ({ fileName, fileSize, duration, language, onViewProce
         <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
       </Animated.View>
       <Animated.View style={[styles.successActions, { opacity: fadeAnim }]}>
-        <TouchableOpacity style={styles.processAudioButton} onPress={onViewProcess}>
-          <Ionicons name="headset-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-          <Text style={styles.processAudioButtonText}>{t('uploadAudio.viewProcess')}</Text>
+        <TouchableOpacity style={[styles.processAudioButton, { backgroundColor: colors.buttonPrimaryBg }]} onPress={onViewProcess}>
+          <Ionicons name="headset-outline" size={20} color={colors.buttonPrimaryText} style={{ marginRight: 8 }} />
+          <Text style={[styles.processAudioButtonText, { color: colors.buttonPrimaryText }]}>{t('uploadAudio.viewProcess')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.recordAnotherButton} onPress={onRecordAnother}>
-          <Ionicons name="mic-outline" size={20} color="#000000" style={{ marginRight: 8 }} />
-          <Text style={styles.recordAnotherText}>{t('uploadAudio.recordAnother')}</Text>
+        <TouchableOpacity style={[styles.recordAnotherButton, { backgroundColor: colors.buttonSecondaryBg, borderColor: colors.buttonSecondaryBorder }]} onPress={onRecordAnother}>
+          <Ionicons name="mic-outline" size={20} color={colors.buttonSecondaryText} style={{ marginRight: 8 }} />
+          <Text style={[styles.recordAnotherText, { color: colors.buttonSecondaryText }]}>{t('uploadAudio.recordAnother')}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -385,8 +389,8 @@ export default function UploadAudioScreen({ navigation }) {
       {screenState === 'idle' && (
         <>
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            <LanguageSelector selectedLanguage={selectedLanguage} onSelect={handleLanguageSelect} t={t} />
-            <AudioWaveform isRecording={isRecording} levels={meterLevels} />
+            <LanguageSelector selectedLanguage={selectedLanguage} onSelect={handleLanguageSelect} t={t} colors={colors} isDark={isDark} />
+            <AudioWaveform isRecording={isRecording} levels={meterLevels} colors={colors} />
             {isRecording ? (
               <>
                 <Text style={[styles.audioTitle, { color: colors.text }]}>{t('uploadAudio.recording')}</Text>
@@ -401,11 +405,15 @@ export default function UploadAudioScreen({ navigation }) {
           </ScrollView>
           <View style={styles.bottomSection}>
             <TouchableOpacity
-              style={[styles.recordButton, isRecording && styles.recordButtonActive]}
+              style={[
+                styles.recordButton,
+                { backgroundColor: isRecording ? '#FA4A0C' : colors.buttonPrimaryBg },
+                isRecording && styles.recordButtonActive,
+              ]}
               onPress={handleStartRecording}
             >
               {isRecording && <View style={styles.recordingDot} />}
-              <Text style={[styles.recordButtonText, isRecording && styles.recordButtonTextActive]}>
+              <Text style={[styles.recordButtonText, { color: colors.buttonPrimaryText }, isRecording && styles.recordButtonTextActive]}>
                 {isRecording ? t('uploadAudio.stopRecording') : t('uploadAudio.startRecording')}
               </Text>
             </TouchableOpacity>
@@ -420,7 +428,7 @@ export default function UploadAudioScreen({ navigation }) {
 
       {screenState === 'processing' && (
         <View style={styles.processingWrapper}>
-          <AudioProcessingSpinner message={t('uploadAudio.processingAudio')} />
+          <AudioProcessingSpinner message={t('uploadAudio.processingAudio')} colors={colors} />
         </View>
       )}
 
@@ -433,6 +441,8 @@ export default function UploadAudioScreen({ navigation }) {
           onViewProcess={handleViewProcess}
           onRecordAnother={resetScreen}
           t={t}
+          colors={colors}
+          isDark={isDark}
         />
       )}
     </SafeAreaView>
@@ -449,7 +459,7 @@ const styles = StyleSheet.create({
   languageSelectorContainer: { paddingHorizontal: 20, marginTop: 10 },
   sectionTitle: { fontSize: 17, fontFamily: fonts.semiBold, color: '#000000', marginBottom: 12, paddingHorizontal: 21 },
   languageScrollContent: { paddingHorizontal: 0, paddingBottom: 4, gap: 10 },
-  languagePill: { backgroundColor: '#FFFFFF', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', minWidth: 80, elevation: 2, shadowColor: 'rgba(0,0,0,0.05)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 },
+  languagePill: { backgroundColor: '#FFFFFF', borderRadius: 20, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', minWidth: 80, elevation: 2, shadowColor: 'rgba(0,0,0,0.05)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, borderWidth: 1, borderColor: 'transparent' },
   languagePillSelected: { backgroundColor: '#000000' },
   languagePillNative: { fontSize: 15, fontFamily: fonts.semiBold, color: '#000000', marginBottom: 2 },
   languagePillTextSelected: { color: '#FFFFFF' },

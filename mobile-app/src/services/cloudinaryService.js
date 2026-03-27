@@ -14,13 +14,19 @@
 
 import Constants from 'expo-constants';
 
-// ⚠️ SECURITY: Credentials now loaded from environment variables
-const CLOUD_NAME = Constants.expoConfig?.extra?.cloudinaryCloudName || (__DEV__ ? 'djbelxket' : undefined);
-const UPLOAD_PRESET = Constants.expoConfig?.extra?.cloudinaryUploadPreset || (__DEV__ ? 'setu_unsigned' : undefined);
+// Resolve extra values across Expo Go / dev build / EAS build runtimes.
+const resolvedExtra =
+  Constants.expoConfig?.extra ||
+  Constants.manifest?.extra ||
+  Constants.manifest2?.extra ||
+  {};
 
-if (!CLOUD_NAME || !UPLOAD_PRESET) {
-  throw new Error('Cloudinary configuration missing. Please set environment variables for production.');
-}
+// These are upload preset identifiers (not secrets). Keep defaults to avoid startup crashes.
+const DEFAULT_CLOUD_NAME = 'djbelxket';
+const DEFAULT_UPLOAD_PRESET = 'setu_unsigned';
+
+const CLOUD_NAME = resolvedExtra.cloudinaryCloudName || DEFAULT_CLOUD_NAME;
+const UPLOAD_PRESET = resolvedExtra.cloudinaryUploadPreset || DEFAULT_UPLOAD_PRESET;
 
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}`;
 
@@ -32,6 +38,10 @@ const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}`;
  * @returns {Promise<{url: string, publicId: string}>}
  */
 export const uploadToCloudinary = async (fileUri, resourceType = 'auto', folder = 'setu-gaps') => {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    throw new Error('Cloudinary configuration missing. Set cloudinaryCloudName and cloudinaryUploadPreset in app config extra.');
+  }
+
   const filename = fileUri.split('/').pop() || `file_${Date.now()}`;
 
   // Determine content type

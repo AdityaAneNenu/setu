@@ -95,9 +95,9 @@ export default function SecurityScreen({ navigation }) {
 
         <TouchableOpacity style={[styles.optionItem, { borderBottomColor: colors.border }]} onPress={handleDeleteAccount}>
           <View style={styles.optionLeft}>
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+            <Ionicons name="trash-outline" size={24} color={colors.accentAlt} />
             <View style={styles.optionTextContainer}>
-              <Text style={[styles.optionTitle, { color: '#FF3B30' }]}>{t('security.deleteAccount')}</Text>
+              <Text style={[styles.optionTitle, { color: colors.accentAlt }]}>{t('security.deleteAccount')}</Text>
               <Text style={[styles.optionDescription, { color: colors.textLight }]}>{t('security.deleteAccountDesc')}</Text>
             </View>
           </View>

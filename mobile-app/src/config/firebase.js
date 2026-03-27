@@ -17,21 +17,40 @@ import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// ✅ SECURITY: All credentials loaded from environment variables only
-// Configure in EAS Build secrets for production
+// Resolve Expo config across Expo Go / dev builds / EAS builds.
+const resolvedExtra =
+  Constants.expoConfig?.extra ||
+  Constants.manifest?.extra ||
+  Constants.manifest2?.extra ||
+  {};
+
+// Fallback values keep dev/client builds from crashing if Expo resolves fallback app config.
+// These are non-secret Firebase client identifiers and match app.json values.
+const fallbackFirebase = {
+  firebaseApiKey: 'AIzaSyB9-QbV4n5eJWBXuQUvXenbAegT2NlF5Ps',
+  firebaseAuthDomain: 'setu-pm.firebaseapp.com',
+  firebaseProjectId: 'setu-pm',
+  firebaseStorageBucket: 'setu-pm.firebasestorage.app',
+  firebaseMessagingSenderId: '144967126794',
+  firebaseAppId: '1:144967126794:web:96553929a14b125e12b4f3',
+  firebaseMeasurementId: 'G-LVK997NFHH',
+};
+
+const cfg = { ...fallbackFirebase, ...resolvedExtra };
+
 const firebaseConfig = {
-  apiKey: Constants.expoConfig?.extra?.firebaseApiKey,
-  authDomain: Constants.expoConfig?.extra?.firebaseAuthDomain,
-  projectId: Constants.expoConfig?.extra?.firebaseProjectId,
-  storageBucket: Constants.expoConfig?.extra?.firebaseStorageBucket,
-  messagingSenderId: Constants.expoConfig?.extra?.firebaseMessagingSenderId,
-  appId: Constants.expoConfig?.extra?.firebaseAppId,
-  measurementId: Constants.expoConfig?.extra?.firebaseMeasurementId,
+  apiKey: cfg.firebaseApiKey,
+  authDomain: cfg.firebaseAuthDomain,
+  projectId: cfg.firebaseProjectId,
+  storageBucket: cfg.firebaseStorageBucket,
+  messagingSenderId: cfg.firebaseMessagingSenderId,
+  appId: cfg.firebaseAppId,
+  measurementId: cfg.firebaseMeasurementId,
 };
 
 // Validate configuration
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error('Firebase configuration missing. Please set environment variables for production.');
+  throw new Error('Firebase configuration missing. Check app config and EAS extra values.');
 }
 
 // Initialize Firebase

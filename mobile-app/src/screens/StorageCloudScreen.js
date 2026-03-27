@@ -156,7 +156,7 @@ export default function StorageCloudScreen({ navigation }) {
               value={autoBackup}
               onValueChange={handleAutoBackup}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
           <View style={styles.divider} />
@@ -170,7 +170,7 @@ export default function StorageCloudScreen({ navigation }) {
               value={wifiOnly}
               onValueChange={handleWifiOnly}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
           <View style={styles.divider} />

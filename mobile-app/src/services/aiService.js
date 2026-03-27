@@ -5,6 +5,107 @@
 import { API_CONFIG } from '../config/api';
 import { auth } from '../config/firebase';
 
+const SUPPORTED_AUDIO_LANGUAGES = new Set([
+  'hi', 'en', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'or', 'pa', 'as',
+]);
+
+const AUDIO_MIME_BY_EXT = {
+  m4a: 'audio/mp4',
+  mp4: 'audio/mp4',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  webm: 'audio/webm',
+  ogg: 'audio/ogg',
+  aac: 'audio/aac',
+};
+
+const getFileExtension = (uri = '', fallback = 'bin') => {
+  const cleanUri = uri.split('?')[0] || '';
+  const filePart = cleanUri.split('/').pop() || '';
+  const ext = filePart.includes('.') ? filePart.split('.').pop().toLowerCase() : '';
+  return ext || fallback;
+};
+
+const inferUploadMeta = (fileUri, mediaType) => {
+  if (mediaType === 'audio') {
+    const ext = getFileExtension(fileUri, 'm4a');
+    const mimeType = AUDIO_MIME_BY_EXT[ext] || 'audio/mp4';
+    return {
+      fileName: `recording_${Date.now()}.${ext}`,
+      mimeType,
+    };
+  }
+
+  const ext = getFileExtension(fileUri, 'jpg');
+  const imageMime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  return {
+    fileName: `photo_${Date.now()}.${ext}`,
+    mimeType: imageMime,
+  };
+};
+
+const normalizeLanguage = (language) => {
+  const lang = (language || 'hi').toLowerCase().trim();
+  return SUPPORTED_AUDIO_LANGUAGES.has(lang) ? lang : 'hi';
+};
+
+const parseResponseBody = async (response) => {
+  const raw = await response.text();
+  if (!raw) return { data: null, rawText: '' };
+
+  try {
+    return { data: JSON.parse(raw), rawText: raw };
+  } catch {
+    return { data: null, rawText: raw };
+  }
+};
+
+const runAnalyzeRequest = async ({ fileUri, mediaType, language, idToken }) => {
+  const url = `${API_CONFIG.DJANGO_URL}${API_CONFIG.AI_ANALYZE_ENDPOINT}`;
+  const formData = new FormData();
+  const { fileName, mimeType } = inferUploadMeta(fileUri, mediaType);
+
+  formData.append('file', {
+    uri: fileUri,
+    name: fileName,
+    type: mimeType,
+  });
+  formData.append('media_type', mediaType);
+  formData.append('language', language);
+
+  // Audio transcription + LLM analysis can take longer than images.
+  const timeoutMs = mediaType === 'audio' ? 180000 : 90000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...(idToken && { Authorization: `Bearer ${idToken}` }),
+      },
+      body: formData,
+      signal: controller.signal,
+    });
+
+    const { data, rawText } = await parseResponseBody(response);
+
+    if (!response.ok) {
+      const serverError =
+        data?.error ||
+        data?.detail ||
+        data?.message ||
+        (rawText && rawText.slice(0, 240)) ||
+        `AI analysis failed with HTTP ${response.status}`;
+      throw new Error(serverError);
+    }
+
+    return data || {};
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
 /**
  * Analyze media (image or audio) by uploading file directly to Django backend
  * @param {string} fileUri - Local file URI (e.g., file:///...)
@@ -17,50 +118,31 @@ export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
     // Get Firebase Auth token for authenticated request
     const user = auth.currentUser;
     const idToken = user ? await user.getIdToken() : null;
-    
-    const url = `${API_CONFIG.DJANGO_URL}${API_CONFIG.AI_ANALYZE_ENDPOINT}`;
 
-    // Build multipart form data — upload file directly to Django
-    const formData = new FormData();
-    
-    // Determine file extension and MIME type
-    let fileName, mimeType;
-    if (mediaType === 'audio') {
-      fileName = `recording_${Date.now()}.m4a`;
-      mimeType = 'audio/mp4';
-    } else {
-      fileName = `photo_${Date.now()}.jpg`;
-      mimeType = 'image/jpeg';
+    const preferredLanguage = normalizeLanguage(language);
+    const languageAttempts = mediaType === 'audio'
+      ? Array.from(new Set([preferredLanguage, 'hi', 'en']))
+      : [preferredLanguage];
+
+    let data = null;
+    let lastError = null;
+
+    for (const lang of languageAttempts) {
+      try {
+        data = await runAnalyzeRequest({ fileUri, mediaType, language: lang, idToken });
+        break;
+      } catch (attemptError) {
+        lastError = attemptError;
+        // Retry audio transcription with a safe fallback language.
+        if (mediaType === 'audio' && lang !== languageAttempts[languageAttempts.length - 1]) {
+          console.warn(`AI analysis retry with fallback language. Previous language: ${lang}`);
+          continue;
+        }
+      }
     }
-    
-    formData.append('file', {
-      uri: fileUri,
-      name: fileName,
-      type: mimeType,
-    });
-    formData.append('media_type', mediaType);
-    formData.append('language', language);
 
-    // AbortController for timeout (60 seconds for file upload + AI processing)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        // Do NOT set Content-Type — fetch sets it automatically with boundary for FormData
-        ...(idToken && { 'Authorization': `Bearer ${idToken}` }),
-      },
-      body: formData,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'AI analysis failed');
+    if (!data) {
+      throw lastError || new Error('AI analysis failed');
     }
 
     return {

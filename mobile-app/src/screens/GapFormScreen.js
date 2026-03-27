@@ -80,6 +80,11 @@ export default function GapFormScreen({ route, navigation }) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  const safeLabel = (key, fallback) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
+
   useEffect(() => {
     loadVillages();
     captureGPS();
@@ -319,13 +324,13 @@ export default function GapFormScreen({ route, navigation }) {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* AI Processing Banner */}
         {processingAI && (
-          <View style={[styles.mediaBanner, { backgroundColor: '#FFF8E1' }]}>
+          <View style={[styles.mediaBanner, { backgroundColor: isDark ? '#3A2A12' : '#FFF8E1', borderColor: isDark ? '#6E4B1A' : '#FFE0B2' }]}>
             <ActivityIndicator color="#FA4A0C" size="small" />
             <View style={styles.mediaInfo}>
-              <Text style={styles.mediaTitle}>
+              <Text style={[styles.mediaTitle, { color: colors.text }]}>
                 {t('gapForm.aiProcessing')}
               </Text>
-              <Text style={styles.mediaSubtitle}>
+              <Text style={[styles.mediaSubtitle, { color: colors.textLight }]}>
                 {t('gapForm.analysingMedia', { mediaType })}
               </Text>
             </View>
@@ -334,15 +339,15 @@ export default function GapFormScreen({ route, navigation }) {
         
         {/* AI Success Banner */}
         {aiProcessed && aiSuggestion?.success && (
-          <View style={[styles.mediaBanner, { backgroundColor: '#E8F5E9' }]}>
+          <View style={[styles.mediaBanner, { backgroundColor: isDark ? '#163321' : '#E8F5E9', borderColor: isDark ? '#2A5A3D' : '#C8E6C9' }]}>
             <View style={styles.mediaIconCircle}>
               <Ionicons name="sparkles" size={24} color="#4CAF50" />
             </View>
             <View style={styles.mediaInfo}>
-              <Text style={styles.mediaTitle}>
+              <Text style={[styles.mediaTitle, { color: colors.text }]}>
                 {t('gapForm.aiAnalysisComplete')}
               </Text>
-              <Text style={styles.mediaSubtitle}>
+              <Text style={[styles.mediaSubtitle, { color: colors.textLight }]}>
                 {t('gapForm.formAutoFilled')}
               </Text>
             </View>
@@ -352,8 +357,8 @@ export default function GapFormScreen({ route, navigation }) {
         
         {/* Media Info Banner */}
         {mediaUri && (
-          <View style={styles.mediaBanner}>
-            <View style={styles.mediaIconCircle}>
+          <View style={[styles.mediaBanner, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+            <View style={[styles.mediaIconCircle, { backgroundColor: isDark ? '#3D2800' : '#FFF3E0' }]}>
               <Ionicons
                 name={mediaType === 'audio' ? 'musical-notes' : 'image'}
                 size={24}
@@ -361,10 +366,10 @@ export default function GapFormScreen({ route, navigation }) {
               />
             </View>
             <View style={styles.mediaInfo}>
-              <Text style={styles.mediaTitle}>
+              <Text style={[styles.mediaTitle, { color: colors.text }]}>
                 {t('gapForm.mediaAttached', { mediaType: mediaType === 'audio' ? t('gapForm.audioRecording') : t('gapForm.photoAttached') })}
               </Text>
-              <Text style={styles.mediaSubtitle}>
+              <Text style={[styles.mediaSubtitle, { color: colors.textLight }]}>
                 {mediaType === 'audio' && language ? t('gapForm.langLabel', { language }) : t('gapForm.readyForSubmission')}
               </Text>
             </View>
@@ -386,6 +391,7 @@ export default function GapFormScreen({ route, navigation }) {
                   key={village.id}
                   style={[
                     styles.villageChip,
+                    { backgroundColor: colors.card, borderColor: colors.border },
                     selectedVillage === village.id && styles.villageChipSelected,
                   ]}
                   onPress={() => setSelectedVillage(village.id)}
@@ -393,6 +399,7 @@ export default function GapFormScreen({ route, navigation }) {
                   <Text
                     style={[
                       styles.villageChipText,
+                      { color: colors.text },
                       selectedVillage === village.id && styles.villageChipTextSelected,
                     ]}
                   >
@@ -415,6 +422,7 @@ export default function GapFormScreen({ route, navigation }) {
                 key={type.id}
                 style={[
                   styles.gapTypeCard,
+                  { backgroundColor: colors.card, borderColor: colors.border },
                   selectedGapType === type.id && styles.gapTypeCardSelected,
                 ]}
                 onPress={() => setSelectedGapType(type.id)}
@@ -422,6 +430,7 @@ export default function GapFormScreen({ route, navigation }) {
                 <View
                   style={[
                     styles.gapTypeIconCircle,
+                    { backgroundColor: isDark ? colors.surface : '#F5F5F8' },
                     selectedGapType === type.id && styles.gapTypeIconCircleSelected,
                   ]}
                 >
@@ -434,6 +443,7 @@ export default function GapFormScreen({ route, navigation }) {
                 <Text
                   style={[
                     styles.gapTypeLabel,
+                    { color: colors.textLight },
                     selectedGapType === type.id && styles.gapTypeLabelSelected,
                   ]}
                   numberOfLines={2}
@@ -456,6 +466,7 @@ export default function GapFormScreen({ route, navigation }) {
                 key={level.id}
                 style={[
                   styles.severityCard,
+                  { backgroundColor: colors.card, borderColor: colors.border },
                   selectedSeverity === level.id && {
                     borderColor: level.color,
                     backgroundColor: `${level.color}10`,
@@ -477,7 +488,7 @@ export default function GapFormScreen({ route, navigation }) {
                   >
                     {level.label}
                   </Text>
-                  <Text style={styles.severityDesc}>{level.description}</Text>
+                  <Text style={[styles.severityDesc, { color: colors.textLight }]}>{level.description}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -505,16 +516,16 @@ export default function GapFormScreen({ route, navigation }) {
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, (loading || processingAI) && styles.submitButtonDisabled]}
+          style={[styles.submitButton, { backgroundColor: colors.buttonPrimaryBg }, (loading || processingAI) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={loading || processingAI}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.buttonPrimaryText} />
           ) : (
             <>
-              <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.submitButtonText}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.buttonPrimaryText} style={{ marginRight: 8 }} />
+              <Text style={[styles.submitButtonText, { color: colors.buttonPrimaryText }]}> 
                 {processingAI ? t('gapForm.processingWithAI') : t('gapForm.submitReport')}
               </Text>
             </>
@@ -535,7 +546,7 @@ export default function GapFormScreen({ route, navigation }) {
         }}
       >
         <View style={styles.successModalOverlay}>
-          <View style={[styles.successModalContent, { backgroundColor: colors.cardBg }]}>
+          <View style={[styles.successModalContent, { backgroundColor: colors.card }]}>
             {/* Animated Success Checkmark */}
             <Animated.View style={[styles.successCircle, { transform: [{ scale: scaleAnim }] }]}>
               <View style={styles.successInnerCircle}>
@@ -547,11 +558,11 @@ export default function GapFormScreen({ route, navigation }) {
             <Text style={[styles.successMessage, { color: colors.textLight }]}>{t('gapForm.successMsg')}</Text>
 
             {/* Gap Summary Card */}
-            <Animated.View style={[styles.successSummaryCard, { opacity: fadeAnim, backgroundColor: isDark ? colors.cardBg : '#F8F9FA' }]}>
+            <Animated.View style={[styles.successSummaryCard, { opacity: fadeAnim, backgroundColor: isDark ? colors.surface : '#F8F9FA' }]}>
               {successData?.gap_type && (
                 <View style={styles.summaryRow}>
                   <Ionicons name="layers-outline" size={18} color="#FA4A0C" />
-                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('gapForm.type')}:</Text>
+                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{safeLabel('gapForm.type', 'Type')}:</Text>
                   <Text style={[styles.summaryValue, { color: colors.text }]}>
                     {GAP_TYPES.find(g => g.id === successData.gap_type)?.label || successData.gap_type}
                   </Text>
@@ -563,7 +574,7 @@ export default function GapFormScreen({ route, navigation }) {
                     successData.severity === 'high' ? '#F44336' : 
                     successData.severity === 'medium' ? '#FF9800' : '#4CAF50'
                   } />
-                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('gapForm.severity')}:</Text>
+                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{safeLabel('gapForm.severity', 'Severity')}:</Text>
                   <Text style={[styles.summaryValue, { color: colors.text }]}>
                     {SEVERITY_LEVELS.find(s => s.id === successData.severity)?.label || successData.severity}
                   </Text>
@@ -572,7 +583,7 @@ export default function GapFormScreen({ route, navigation }) {
               {successData?.village_name && (
                 <View style={styles.summaryRow}>
                   <Ionicons name="location-outline" size={18} color="#4CAF50" />
-                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{t('gapForm.village')}:</Text>
+                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{safeLabel('gapForm.village', 'Village')}:</Text>
                   <Text style={[styles.summaryValue, { color: colors.text }]}>{successData.village_name}</Text>
                 </View>
               )}
@@ -580,14 +591,14 @@ export default function GapFormScreen({ route, navigation }) {
 
             {/* Action Button */}
             <TouchableOpacity
-              style={styles.successButton}
+              style={[styles.successButton, { backgroundColor: colors.buttonPrimaryBg }]}
               onPress={() => {
                 setShowSuccess(false);
                 navigation.navigate('Home');
               }}
             >
-              <Ionicons name="home-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.successButtonText}>{t('common.backToHome')}</Text>
+              <Ionicons name="home-outline" size={20} color={colors.buttonPrimaryText} style={{ marginRight: 8 }} />
+              <Text style={[styles.successButtonText, { color: colors.buttonPrimaryText }]}>{t('common.backToHome')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -627,6 +638,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     marginHorizontal: 24,
     marginTop: 8,
     padding: 16,

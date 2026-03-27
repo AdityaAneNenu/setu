@@ -103,7 +103,7 @@ export default function TTSSettingsScreen({ navigation }) {
               value={ttsEnabled}
               onValueChange={(v) => { setTtsEnabled(v); savePrefs({ ttsEnabled: v }); }}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
           <View style={styles.divider} />
@@ -117,7 +117,7 @@ export default function TTSSettingsScreen({ navigation }) {
               value={autoRead}
               onValueChange={(v) => { setAutoRead(v); savePrefs({ autoRead: v }); }}
               trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.white}
             />
           </View>
         </View>

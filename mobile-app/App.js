@@ -1,7 +1,9 @@
 import React, { useCallback } from 'react';
+import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   useFonts,
@@ -147,14 +149,22 @@ function AppContent() {
 // Main App - wraps everything in AuthProvider
 export default function App() {
   return (
-    <AccessibilityProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </ThemeProvider>
-      </LanguageProvider>
-    </AccessibilityProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <AccessibilityProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </AccessibilityProvider>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

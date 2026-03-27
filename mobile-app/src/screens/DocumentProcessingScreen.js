@@ -104,7 +104,7 @@ export default function DocumentProcessingScreen({ navigation, route }) {
             <Image source={{ uri: currentUri }} style={styles.previewImage} resizeMode="contain" />
           ) : (
             <View style={styles.placeholderPreview}>
-              <Ionicons name="document-outline" size={80} color="#CCCCCC" />
+              <Ionicons name="document-outline" size={80} color={colors.emptyIconColor} />
               <Text style={styles.placeholderText}>{t('docProcessing.documentPreview')}</Text>
             </View>
           )}
@@ -115,28 +115,28 @@ export default function DocumentProcessingScreen({ navigation, route }) {
       <View style={styles.toolsContainer}>
         <TouchableOpacity style={styles.toolButton} onPress={handleRotate} disabled={toolBusy}>
           <View style={[styles.toolIconBg, toolBusy && { opacity: 0.5 }]}>
-            <Ionicons name="refresh-outline" size={22} color="#000000" />
+            <Ionicons name="refresh-outline" size={22} color={colors.iconDefault} />
           </View>
           <Text style={styles.toolLabel}>{t('docProcessing.rotate')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.toolButton} onPress={handleFlipH} disabled={toolBusy}>
           <View style={[styles.toolIconBg, toolBusy && { opacity: 0.5 }]}>
-            <Ionicons name="swap-horizontal-outline" size={22} color="#000000" />
+            <Ionicons name="swap-horizontal-outline" size={22} color={colors.iconDefault} />
           </View>
           <Text style={styles.toolLabel}>{t('docProcessing.flipH')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.toolButton} onPress={handleFlipV} disabled={toolBusy}>
           <View style={[styles.toolIconBg, toolBusy && { opacity: 0.5 }]}>
-            <Ionicons name="swap-vertical-outline" size={22} color="#000000" />
+            <Ionicons name="swap-vertical-outline" size={22} color={colors.iconDefault} />
           </View>
           <Text style={styles.toolLabel}>{t('docProcessing.flipV')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.toolButton} onPress={handleReset} disabled={toolBusy}>
           <View style={[styles.toolIconBg, toolBusy && { opacity: 0.5 }]}>
-            <Ionicons name="arrow-undo-outline" size={22} color="#000000" />
+            <Ionicons name="arrow-undo-outline" size={22} color={colors.iconDefault} />
           </View>
           <Text style={styles.toolLabel}>{t('docProcessing.reset')}</Text>
         </TouchableOpacity>

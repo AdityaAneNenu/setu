@@ -24,7 +24,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
@@ -72,7 +72,7 @@ export default function LoginScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* Header with rounded bottom - matches Figma node 7:298 */}
-        <View style={[styles.headerArea, { backgroundColor: colors.card }]}>
+        <View style={[styles.headerArea, { backgroundColor: colors.card, shadowColor: colors.shadowDark }]}>
           {/* SETU Logo - light-mode style per Figma */}
           <View style={styles.logoContainer}>
             <Text style={[styles.setuText, { color: colors.text }]}>S  E  T  U</Text>
@@ -100,9 +100,9 @@ export default function LoginScreen({ navigation }) {
               keyboardType="email-address"
               autoCapitalize="none"
               placeholder=""
-              placeholderTextColor="#999999"
+              placeholderTextColor={colors.textLight}
             />
-            <View style={styles.inputLine} />
+            <View style={[styles.inputLine, { backgroundColor: colors.divider }]} />
           </View>
 
           {/* Password Field */}
@@ -114,9 +114,9 @@ export default function LoginScreen({ navigation }) {
               onChangeText={setPassword}
               secureTextEntry
               placeholder={t('login.passwordMask')}
-              placeholderTextColor="#000000"
+              placeholderTextColor={colors.textPlaceholder}
             />
-            <View style={styles.inputLine} />
+            <View style={[styles.inputLine, { backgroundColor: colors.divider }]} />
           </View>
 
           {/* Forgot Passcode - matches Figma node 6:17 with orange color */}
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   inputLine: {
     height: 1,
     backgroundColor: '#000000',
-    opacity: 0.1,
+    opacity: 1,
     marginTop: 18,
   },
   forgotContainer: {

@@ -1,0 +1,72 @@
+{
+  "expo": {
+    "name": "SETU",
+    "slug": "setu-mobile-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/setu_logo.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/setu_logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.setu.mobileapp"
+    },
+    "android": {
+      "icon": "./assets/setu_logo.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/setu_logo.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.setu.mobileapp",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow SETU to access your camera for document scanning.",
+          "microphonePermission": "Allow SETU to access your microphone for audio recording."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow SETU to use your location for geo-tagging submissions."
+        }
+      ],
+      "expo-font",
+      "expo-audio",
+      "expo-asset"
+    ],
+    "extra": {
+      "PRODUCTION_API_URL": "https://setu-pm-django-production.up.railway.app",
+      "firebaseApiKey": "AIzaSyB9-QbV4n5eJWBXuQUvXenbAegT2NlF5Ps",
+      "firebaseAuthDomain": "setu-pm.firebaseapp.com",
+      "firebaseProjectId": "setu-pm",
+      "firebaseStorageBucket": "setu-pm.firebasestorage.app",
+      "firebaseMessagingSenderId": "144967126794",
+      "firebaseAppId": "1:144967126794:web:96553929a14b125e12b4f3",
+      "firebaseMeasurementId": "G-LVK997NFHH",
+      "eas": {
+        "projectId": "123b4d80-7812-4153-8e33-17f213538739"
+      }
+    }
+  }
+}

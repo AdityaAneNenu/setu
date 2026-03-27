@@ -153,16 +153,16 @@ export default function AudioViewerScreen({ navigation, route }) {
         {/* Playback Controls */}
         <View style={styles.controlsRow}>
           <TouchableOpacity onPress={() => handleSkip(-10000)}>
-            <Ionicons name="play-skip-back" size={24} color="#000000" />
+            <Ionicons name="play-skip-back" size={24} color={colors.iconDefault} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.playButton}
             onPress={handlePlayPause}
           >
-            <Ionicons name={isPlaying ? 'pause' : 'play'} size={28} color="#FFFFFF" />
+            <Ionicons name={isPlaying ? 'pause' : 'play'} size={28} color={colors.buttonPrimaryText} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleSkip(10000)}>
-            <Ionicons name="play-skip-forward" size={24} color="#000000" />
+            <Ionicons name="play-skip-forward" size={24} color={colors.iconDefault} />
           </TouchableOpacity>
         </View>
 
@@ -171,19 +171,19 @@ export default function AudioViewerScreen({ navigation, route }) {
           <Text style={styles.sectionLabel}>{t('audioViewer.details')}</Text>
           <View style={styles.card}>
             <View style={styles.optionRow}>
-              <Ionicons name="calendar-outline" size={22} color="#000000" />
+              <Ionicons name="calendar-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.date')}</Text>
               <Text style={styles.valueText}>{audio?.date || audio?.created_at || t('common.na')}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.optionRow}>
-              <Ionicons name="server-outline" size={22} color="#000000" />
+              <Ionicons name="server-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.size')}</Text>
               <Text style={styles.valueText}>{audio?.size || t('common.na')}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.optionRow}>
-              <Ionicons name="language-outline" size={22} color="#000000" />
+              <Ionicons name="language-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.language')}</Text>
               <Text style={styles.valueText}>{audio?.language || t('audioViewer.hindi')}</Text>
             </View>
@@ -195,7 +195,7 @@ export default function AudioViewerScreen({ navigation, route }) {
               style={styles.optionRow}
               onPress={() => setExpandTranscription(!expandTranscription)}
             >
-              <Ionicons name="text-outline" size={22} color="#000000" />
+              <Ionicons name="text-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.transcribedContent')}</Text>
               <Ionicons
                 name={expandTranscription ? 'chevron-up' : 'chevron-down'}
@@ -220,19 +220,19 @@ export default function AudioViewerScreen({ navigation, route }) {
               if (url) Linking.openURL(url);
               else Alert.alert(t('audioViewer.download'), t('audioViewer.noDownloadUrl'));
             }}>
-              <Ionicons name="download-outline" size={22} color="#000000" />
+              <Ionicons name="download-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.download')}</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
             </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.optionRow} onPress={handleShare}>
-              <Ionicons name="share-outline" size={22} color="#000000" />
+              <Ionicons name="share-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.share')}</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
             </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.optionRow} onPress={handleDelete}>
-              <Ionicons name="trash-outline" size={22} color="#000000" />
+              <Ionicons name="trash-outline" size={22} color={colors.iconDefault} />
               <Text style={styles.optionTitle}>{t('audioViewer.delete')}</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
             </TouchableOpacity>

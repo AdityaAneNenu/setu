@@ -39,7 +39,7 @@ export default function WelcomeScreen({ navigation }) {
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" />
       
       {/* Main content wrapper */}
       <View style={styles.contentWrapper}>

@@ -1,6 +1,6 @@
 # --- Existing local overrides ---
-app.json
 frontend/.env.local
+!mobile-app/app.json
 
 # --- Python ---
 __pycache__/

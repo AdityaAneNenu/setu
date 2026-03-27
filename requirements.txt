@@ -17,6 +17,7 @@ assemblyai==0.48.1
 
 # Image Processing
 Pillow==11.0.0
+qrcode==8.2
 
 # HTTP
 requests>=2.31.0

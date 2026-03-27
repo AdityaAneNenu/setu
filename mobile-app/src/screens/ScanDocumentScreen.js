@@ -45,7 +45,7 @@ const CameraIllustration = () => (
 );
 
 // Processing Spinner Component
-const ProcessingSpinner = ({ message }) => {
+const ProcessingSpinner = ({ message, colors }) => {
   const spinAnim = useRef(new Animated.Value(0)).current;
   const dotAnims = [
     useRef(new Animated.Value(0)).current,
@@ -89,9 +89,9 @@ const ProcessingSpinner = ({ message }) => {
   return (
     <View style={styles.processingCenter}>
       <Animated.View style={{ transform: [{ rotate: spinInterpolation }] }}>
-        <View style={styles.spinnerRing} />
+        <View style={[styles.spinnerRing, { borderColor: colors.border, borderTopColor: colors.accent, borderRightColor: colors.accent }]} />
       </Animated.View>
-      <Text style={styles.processingText}>{message}</Text>
+      <Text style={[styles.processingText, { color: colors.text }]}>{message}</Text>
       <View style={styles.dotsRow}>
         {dotAnims.map((anim, i) => (
           <Animated.View
@@ -105,7 +105,7 @@ const ProcessingSpinner = ({ message }) => {
 };
 
 // Success State Component
-const SuccessState = ({ imageUri, fileName, fileSize, onViewDocument, onScanAnother, t }) => {
+const SuccessState = ({ imageUri, fileName, fileSize, onViewDocument, onScanAnother, t, colors, isDark }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
@@ -134,20 +134,20 @@ const SuccessState = ({ imageUri, fileName, fileSize, onViewDocument, onScanAnot
         </View>
       </Animated.View>
 
-      <Text style={styles.successTitle}>{t('scanDocument.capturedSuccess')}</Text>
+      <Text style={[styles.successTitle, { color: colors.text }]}>{t('scanDocument.capturedSuccess')}</Text>
 
       {/* Document Preview Card */}
-      <Animated.View style={[styles.docPreviewCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Animated.View style={[styles.docPreviewCard, { backgroundColor: colors.card, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.docThumbnail} resizeMode="cover" />
         ) : (
-          <View style={styles.docThumbnailPlaceholder}>
+          <View style={[styles.docThumbnailPlaceholder, { backgroundColor: isDark ? '#3D2800' : '#FFF3E0' }]}>
             <Ionicons name="document-text" size={40} color="#FA4A0C" />
           </View>
         )}
         <View style={styles.docInfo}>
-          <Text style={styles.docName} numberOfLines={1}>{fileName}</Text>
-          <Text style={styles.docSize}>{fileSize}</Text>
+          <Text style={[styles.docName, { color: colors.text }]} numberOfLines={1}>{fileName}</Text>
+          <Text style={[styles.docSize, { color: colors.textLight }]}>{fileSize}</Text>
           <View style={styles.docStatusRow}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>Ready</Text>
@@ -158,14 +158,14 @@ const SuccessState = ({ imageUri, fileName, fileSize, onViewDocument, onScanAnot
 
       {/* Action Buttons */}
       <Animated.View style={[styles.successActions, { opacity: fadeAnim }]}>
-        <TouchableOpacity style={styles.processDocButton} onPress={onViewDocument}>
-          <Ionicons name="eye-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-          <Text style={styles.processDocButtonText}>{t('scanDocument.viewProcess')}</Text>
+        <TouchableOpacity style={[styles.processDocButton, { backgroundColor: colors.buttonPrimaryBg }]} onPress={onViewDocument}>
+          <Ionicons name="eye-outline" size={20} color={colors.buttonPrimaryText} style={{ marginRight: 8 }} />
+          <Text style={[styles.processDocButtonText, { color: colors.buttonPrimaryText }]}>{t('scanDocument.viewProcess')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.scanAnotherButton} onPress={onScanAnother}>
-          <Ionicons name="camera-outline" size={20} color="#000000" style={{ marginRight: 8 }} />
-          <Text style={styles.scanAnotherText}>{t('scanDocument.scanAnother')}</Text>
+        <TouchableOpacity style={[styles.scanAnotherButton, { backgroundColor: colors.buttonSecondaryBg, borderColor: colors.buttonSecondaryBorder }]} onPress={onScanAnother}>
+          <Ionicons name="camera-outline" size={20} color={colors.buttonSecondaryText} style={{ marginRight: 8 }} />
+          <Text style={[styles.scanAnotherText, { color: colors.buttonSecondaryText }]}>{t('scanDocument.scanAnother')}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -293,10 +293,10 @@ export default function ScanDocumentScreen({ navigation }) {
 
           <View style={styles.bottomSection}>
             <TouchableOpacity
-              style={styles.captureButton}
+              style={[styles.captureButton, { backgroundColor: colors.buttonPrimaryBg }]}
               onPress={handleCaptureDocument}
             >
-              <Text style={styles.captureButtonText}>{t('scanDocument.captureDoc')}</Text>
+              <Text style={[styles.captureButtonText, { color: colors.buttonPrimaryText }]}>{t('scanDocument.captureDoc')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleUploadDocument}>
@@ -320,7 +320,8 @@ export default function ScanDocumentScreen({ navigation }) {
               <View style={styles.processingOverlay} />
             </View>
           )}
-          <ProcessingSpinner message={t('scanDocument.processing')} />
+          <ProcessingSpinner message={t('scanDocument.processing')} colors={colors} />
+          
         </View>
       )}
 
@@ -333,6 +334,8 @@ export default function ScanDocumentScreen({ navigation }) {
           onViewDocument={handleViewDocument}
           onScanAnother={resetScreen}
           t={t}
+          colors={colors}
+          isDark={isDark}
         />
       )}
     </SafeAreaView>

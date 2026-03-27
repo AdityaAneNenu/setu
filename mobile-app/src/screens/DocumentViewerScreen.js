@@ -102,7 +102,7 @@ export default function DocumentViewerScreen({ navigation, route }) {
             <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
           ) : (
             <View style={styles.previewPlaceholder}>
-              <Ionicons name="document-text" size={64} color="#CCCCCC" />
+              <Ionicons name="document-text" size={64} color={colors.emptyIconColor} />
               <Text style={styles.previewLabel}>{t('docViewer.noPreview')}</Text>
             </View>
           )}
@@ -112,25 +112,25 @@ export default function DocumentViewerScreen({ navigation, route }) {
         <Text style={styles.sectionLabel}>{t('docViewer.details')}</Text>
         <View style={styles.card}>
           <View style={styles.optionRow}>
-            <Ionicons name="document-text-outline" size={22} color="#000000" />
+            <Ionicons name="document-text-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.titleLabel')}</Text>
             <Text style={styles.valueText}>{document?.title || t('docViewer.untitled')}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.optionRow}>
-            <Ionicons name="calendar-outline" size={22} color="#000000" />
+            <Ionicons name="calendar-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.date')}</Text>
             <Text style={styles.valueText}>{document?.date || t('common.na')}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.optionRow}>
-            <Ionicons name="server-outline" size={22} color="#000000" />
+            <Ionicons name="server-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.size')}</Text>
             <Text style={styles.valueText}>{document?.size || t('common.na')}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.optionRow}>
-            <Ionicons name="language-outline" size={22} color="#000000" />
+            <Ionicons name="language-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.language')}</Text>
             <Text style={styles.valueText}>{document?.language || t('docViewer.english')}</Text>
           </View>
@@ -143,7 +143,7 @@ export default function DocumentViewerScreen({ navigation, route }) {
             style={styles.optionRow}
             onPress={() => setExpandText(!expandText)}
           >
-            <Ionicons name="text-outline" size={22} color="#000000" />
+            <Ionicons name="text-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.extractedContent')}</Text>
             <Ionicons
               name={expandText ? 'chevron-up' : 'chevron-down'}
@@ -165,19 +165,19 @@ export default function DocumentViewerScreen({ navigation, route }) {
         <Text style={styles.sectionLabel}>{t('docViewer.actions')}</Text>
         <View style={styles.card}>
           <TouchableOpacity style={styles.optionRow} onPress={handleReadAloud}>
-            <Ionicons name={isSpeaking ? 'stop-circle-outline' : 'volume-medium-outline'} size={22} color="#000000" />
+            <Ionicons name={isSpeaking ? 'stop-circle-outline' : 'volume-medium-outline'} size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{isSpeaking ? t('docViewer.stopReading') : t('docViewer.readAloud')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.optionRow} onPress={handleDownload}>
-            <Ionicons name="download-outline" size={22} color="#000000" />
+            <Ionicons name="download-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.download')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.optionRow} onPress={handleShare}>
-            <Ionicons name="share-outline" size={22} color="#000000" />
+            <Ionicons name="share-outline" size={22} color={colors.iconDefault} />
             <Text style={styles.optionTitle}>{t('docViewer.share')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>

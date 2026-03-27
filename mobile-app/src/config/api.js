@@ -14,15 +14,16 @@ const DEV_PORT = '8000';
 // For production, set PRODUCTION_API_URL in app.json extra or eas.json
 // e.g. 'https://api.setu-app.in'
 const PRODUCTION_URL = Constants.expoConfig?.extra?.PRODUCTION_API_URL || null;
+const USE_PRODUCTION_IN_DEV = Constants.expoConfig?.extra?.USE_PRODUCTION_IN_DEV === true;
 
 const getDjangoUrl = () => {
-  // Use production URL if set
-  if (PRODUCTION_URL) {
-    return PRODUCTION_URL;
-  }
-
   // Development mode detection
   if (__DEV__) {
+    // In development, default to local backend unless explicitly overridden.
+    if (USE_PRODUCTION_IN_DEV && PRODUCTION_URL) {
+      return PRODUCTION_URL;
+    }
+
     const isEmulator = !Constants.isDevice;
 
     if (Platform.OS === 'android') {
@@ -40,6 +41,11 @@ const getDjangoUrl = () => {
     }
 
     return `http://localhost:${DEV_PORT}`;
+  }
+
+  // Non-dev builds use production URL when configured.
+  if (PRODUCTION_URL) {
+    return PRODUCTION_URL;
   }
 
   // Production fallback - must be configured
