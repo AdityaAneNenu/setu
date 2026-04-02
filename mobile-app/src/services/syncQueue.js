@@ -5,10 +5,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
 import { API_CONFIG } from '../config/api';
+import { getCurrentUser } from './authService';
 
 const SYNC_QUEUE_KEY = '@pending_django_syncs';
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000; // 1 second
+
+// Helper to get Firebase auth headers
+const getFirebaseAuthHeaders = async () => {
+  try {
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      const token = await currentUser.getIdToken();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Firebase ${token}`,
+      };
+    }
+  } catch (error) {
+    console.warn('Could not get Firebase token:', error.message);
+  }
+  return { 'Content-Type': 'application/json' };
+};
 
 /**
  * Add a failed sync operation to the retry queue
@@ -94,6 +112,7 @@ const performSync = async (syncItem) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
+    const headers = await getFirebaseAuthHeaders();
     
     let url, method, body;
     
@@ -112,7 +131,7 @@ const performSync = async (syncItem) => {
     
     const response = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body,
       signal: controller.signal,
     });
@@ -122,7 +141,8 @@ const performSync = async (syncItem) => {
       const result = await response.json();
       return { success: result.success, data: result };
     } else {
-      return { success: false, error: `HTTP ${response.status}` };
+      const errorText = await response.text().catch(() => '');
+      return { success: false, error: `HTTP ${response.status}: ${errorText}` };
     }
   } catch (error) {
     return { success: false, error: error.message };

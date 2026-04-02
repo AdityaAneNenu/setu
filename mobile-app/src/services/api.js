@@ -13,6 +13,23 @@ import { loginUser, logoutUser, getCurrentUser, onAuthStateChange } from './auth
 import { API_CONFIG } from '../config/api';
 import { addToSyncQueue, processSyncQueue, getSyncQueueStatus } from './syncQueue';
 
+// Helper to get Firebase auth token for Django API calls
+const getFirebaseAuthHeaders = async () => {
+  try {
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      const token = await currentUser.getIdToken();
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Firebase ${token}`,
+      };
+    }
+  } catch (error) {
+    console.warn('Could not get Firebase token:', error.message);
+  }
+  return { 'Content-Type': 'application/json' };
+};
+
 // ============================================
 // VILLAGE API
 // ============================================
@@ -70,7 +87,7 @@ export const gapsApi = {
     // Step 2: Sync to Django/Railway PostgreSQL (secondary storage)
     // This ensures data is in the main database for analytics and web dashboard
     let djangoId = null;
-    const currentUser = await getCurrentUser();
+    const currentUser = getCurrentUser();
     const syncPayload = {
       firestore_id: firestoreId,
       ...gapPayload,
@@ -81,14 +98,13 @@ export const gapsApi = {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
+      const headers = await getFirebaseAuthHeaders();
 
       const response = await fetch(
         `${API_CONFIG.DJANGO_URL}/api/mobile/gaps/sync/`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify(syncPayload),
           signal: controller.signal,
         }
@@ -102,12 +118,14 @@ export const gapsApi = {
           console.log(`Gap synced to Django: ID ${djangoId}`);
         }
       } else {
+        // Log response status for debugging
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.warn(`Django sync failed (${response.status}): ${errorText}`);
         // Server responded with error - add to retry queue
         await addToSyncQueue({
           type: 'gap_create',
           payload: syncPayload,
         });
-        console.warn('Django sync failed, added to retry queue');
       }
     } catch (syncError) {
       // Network error or timeout - add to retry queue
@@ -143,14 +161,13 @@ export const gapsApi = {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
+        const headers = await getFirebaseAuthHeaders();
 
         const response = await fetch(
           `${API_CONFIG.DJANGO_URL}/api/mobile/gaps/${id}/status/`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify({
               status,
               django_id: djangoId,

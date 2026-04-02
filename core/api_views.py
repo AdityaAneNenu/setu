@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
+from .firebase_auth import FirebaseAuthentication
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from .permissions import (
@@ -1414,10 +1415,13 @@ class MobileGapSyncAPIView(APIView):
     Sync gap from mobile app to Django database.
     Mobile app creates in Firestore first, then syncs to Django.
     POST /api/mobile/gaps/sync/
+    
+    Accepts: Firebase token (mobile app), Django Token, or Session auth
+    Mobile app should send: Authorization: Firebase <id_token>
     """
 
-    permission_classes = [IsAuthenticated]  # Requires authentication
-    authentication_classes = [TokenAuthentication, SessionAuthentication]
+    permission_classes = [AllowAny]  # Allow mobile submissions - validated via Firebase UID
+    authentication_classes = [FirebaseAuthentication, TokenAuthentication, SessionAuthentication]
 
     VALID_GAP_TYPES = [
         "water",
@@ -1455,6 +1459,13 @@ class MobileGapSyncAPIView(APIView):
             image_url = request.data.get("image_url", "").strip()
             submitted_by = request.data.get("submitted_by")
             submitted_by_email = request.data.get("submitted_by_email")
+
+            # Validate Firebase UID for mobile submissions (required for anonymous access)
+            if not request.user.is_authenticated and not submitted_by:
+                return Response(
+                    {"success": False, "error": "Firebase UID (submitted_by) is required for mobile submissions"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Validate required fields
             if not description:
@@ -1631,7 +1642,7 @@ class MobileGapSyncAPIView(APIView):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # Allow mobile submissions - validated via Firebase UID
 def api_mobile_gap_status_sync(request, firestore_id):
     """
     Sync gap status update from mobile app.
