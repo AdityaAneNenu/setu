@@ -1362,22 +1362,29 @@ def api_workflow_stats(request):
 def api_workflow_agents(request):
     """Get list of survey agents (Manager+ only)"""
     try:
-        agents = SurveyAgent.objects.prefetch_related(
-            "assigned_villages"
-        ).all().order_by("name")
+        agents = (
+            SurveyAgent.objects.prefetch_related("assigned_villages")
+            .all()
+            .order_by("name")
+        )
 
         agents_data = []
         for agent in agents:
             # Count active/resolved complaints from survey visits
-            active_complaints = Complaint.objects.filter(
-                surveyvisit__agent=agent
-            ).exclude(
-                status__in=["villager_satisfied", "case_closed"]
-            ).distinct().count()
-            resolved_complaints = Complaint.objects.filter(
-                surveyvisit__agent=agent,
-                status__in=["villager_satisfied", "case_closed"],
-            ).distinct().count()
+            active_complaints = (
+                Complaint.objects.filter(surveyvisit__agent=agent)
+                .exclude(status__in=["villager_satisfied", "case_closed"])
+                .distinct()
+                .count()
+            )
+            resolved_complaints = (
+                Complaint.objects.filter(
+                    surveyvisit__agent=agent,
+                    status__in=["villager_satisfied", "case_closed"],
+                )
+                .distinct()
+                .count()
+            )
 
             agents_data.append(
                 {
@@ -1415,13 +1422,19 @@ class MobileGapSyncAPIView(APIView):
     Sync gap from mobile app to Django database.
     Mobile app creates in Firestore first, then syncs to Django.
     POST /api/mobile/gaps/sync/
-    
+
     Accepts: Firebase token (mobile app), Django Token, or Session auth
     Mobile app should send: Authorization: Firebase <id_token>
     """
 
-    permission_classes = [AllowAny]  # Allow mobile submissions - validated via Firebase UID
-    authentication_classes = [FirebaseAuthentication, TokenAuthentication, SessionAuthentication]
+    permission_classes = [
+        AllowAny
+    ]  # Allow mobile submissions - validated via Firebase UID
+    authentication_classes = [
+        FirebaseAuthentication,
+        TokenAuthentication,
+        SessionAuthentication,
+    ]
 
     VALID_GAP_TYPES = [
         "water",
@@ -1444,26 +1457,29 @@ class MobileGapSyncAPIView(APIView):
 
     def post(self, request):
         try:
-            # Input validation
+            # Input validation - handle None values safely
             firestore_id = request.data.get("firestore_id")
             village_id = request.data.get("village_id")
-            village_name = request.data.get("village_name", "").strip()
-            description = request.data.get("description", "").strip()
-            gap_type = request.data.get("gap_type", "other")
-            severity = request.data.get("severity", "medium")
-            input_method = request.data.get("input_method", "text")
-            recommendations = request.data.get("recommendations", "").strip()
+            village_name = (request.data.get("village_name") or "").strip()
+            description = (request.data.get("description") or "").strip()
+            gap_type = request.data.get("gap_type") or "other"
+            severity = request.data.get("severity") or "medium"
+            input_method = request.data.get("input_method") or "text"
+            recommendations = (request.data.get("recommendations") or "").strip()
             latitude = request.data.get("latitude")
             longitude = request.data.get("longitude")
-            audio_url = request.data.get("audio_url", "").strip()
-            image_url = request.data.get("image_url", "").strip()
+            audio_url = (request.data.get("audio_url") or "").strip()
+            image_url = (request.data.get("image_url") or "").strip()
             submitted_by = request.data.get("submitted_by")
             submitted_by_email = request.data.get("submitted_by_email")
 
             # Validate Firebase UID for mobile submissions (required for anonymous access)
             if not request.user.is_authenticated and not submitted_by:
                 return Response(
-                    {"success": False, "error": "Firebase UID (submitted_by) is required for mobile submissions"},
+                    {
+                        "success": False,
+                        "error": "Firebase UID (submitted_by) is required for mobile submissions",
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -1485,7 +1501,11 @@ class MobileGapSyncAPIView(APIView):
                 )
 
             # ✅ NEW: Validate email format if provided
-            email = request.data.get("email", "").strip() if request.data.get("email") else ""
+            email = (
+                request.data.get("email", "").strip()
+                if request.data.get("email")
+                else ""
+            )
             if email and not re.match(
                 r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email
             ):
@@ -1495,7 +1515,11 @@ class MobileGapSyncAPIView(APIView):
                 )
 
             # ✅ NEW: Validate phone number format (Indian format) if provided
-            phone = request.data.get("phone", "").strip() if request.data.get("phone") else ""
+            phone = (
+                request.data.get("phone", "").strip()
+                if request.data.get("phone")
+                else ""
+            )
             if phone and not re.match(r"^[6-9]\d{9}$", phone):
                 return Response(
                     {
