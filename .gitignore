@@ -52,6 +52,10 @@ frontend/dist/
 mobile-app/.expo/
 mobile-app/.expo-shared/
 
+# --- Markdown docs (keep root README tracked) ---
+*.md
+!README.md
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db

@@ -29,6 +29,12 @@ SETU provides a complete ecosystem for infrastructure gap management with **95% 
 
 ## 🔥 Recent Security Overhaul (March 2026)
 
+## 🛡️ April 2026 Maintenance Update
+
+- Updated repository ignore rules to avoid accidental commits of non-essential Markdown files.
+- Retained `README.md` as the primary tracked project documentation file.
+- Reinforced secure commit practice to prevent credential material from being pushed.
+
 **All critical vulnerabilities eliminated:**
 - ✅ **Firebase credentials secured** (removed from source code)
 - ✅ **Firestore privacy rules fixed** (owner-only access)  
