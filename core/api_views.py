@@ -1626,7 +1626,67 @@ class MobileGapSyncAPIView(APIView):
                     recommendations=recommendations,
                     latitude=latitude if latitude else None,
                     longitude=longitude if longitude else None,
+                    audio_url=audio_url if audio_url else None,
                 )
+
+                # Download and save audio file from Cloudinary URL
+                if audio_url and audio_url.startswith(("http://", "https://")):
+                    try:
+                        import requests
+                        from django.core.files.base import ContentFile
+                        import os
+
+                        print(f"Downloading audio from: {audio_url}")
+                        response = requests.get(audio_url, timeout=60)
+                        if response.status_code == 200:
+                            # Get file extension from URL or default to m4a
+                            url_path = audio_url.split("?")[0]  # Remove query params
+                            ext = os.path.splitext(url_path)[1] or ".m4a"
+                            filename = f"gap_{gap.id}_audio{ext}"
+
+                            # Save the audio file
+                            gap.audio_file.save(
+                                filename, ContentFile(response.content), save=False
+                            )
+                            print(f"Audio saved as: {gap.audio_file.name}")
+
+                            # Generate voice code for voice verification
+                            if input_method == "voice":
+                                try:
+                                    from .voice_verification import (
+                                        VoiceFeatureExtractor,
+                                    )
+
+                                    voice_code = (
+                                        VoiceFeatureExtractor.generate_voice_code(
+                                            gap.audio_file.path
+                                        )
+                                    )
+                                    if voice_code and voice_code != "error":
+                                        # Check uniqueness before saving
+                                        if (
+                                            not Gap.objects.filter(
+                                                voice_code=voice_code
+                                            )
+                                            .exclude(id=gap.id)
+                                            .exists()
+                                        ):
+                                            gap.voice_code = voice_code
+                                            print(
+                                                f"Voice code generated: {voice_code[:16]}..."
+                                            )
+                                        else:
+                                            print("Voice code collision - skipping")
+                                except Exception as vc_err:
+                                    print(f"Voice code generation failed: {vc_err}")
+
+                            gap.save()
+                        else:
+                            print(
+                                f"Failed to download audio: HTTP {response.status_code}"
+                            )
+                    except Exception as dl_err:
+                        print(f"Audio download error: {dl_err}")
 
                 # Create audit log for new gap creation
                 from .models import GapStatusAuditLog
@@ -1651,6 +1711,8 @@ class MobileGapSyncAPIView(APIView):
                     "firestore_id": firestore_id,
                     "gap_type": gap.gap_type,
                     "severity": gap.severity,
+                    "has_audio": bool(gap.audio_file),
+                    "has_voice_code": bool(gap.voice_code),
                 },
                 status=status.HTTP_201_CREATED,
             )

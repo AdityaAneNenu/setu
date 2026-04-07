@@ -292,6 +292,7 @@
     height: 32px;
   }
 }
+.loginBtn {
   color: white;
   text-decoration: none;
   border-radius: 6px;

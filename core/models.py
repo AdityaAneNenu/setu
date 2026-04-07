@@ -222,6 +222,12 @@ class Gap(models.Model):
         null=True,
         help_text="Audio file if submitted via voice",
     )
+    audio_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="External audio URL (Cloudinary) - will be downloaded to audio_file",
+    )
     voice_code = models.CharField(
         max_length=64,
         blank=True,
