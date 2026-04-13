@@ -53,7 +53,6 @@ const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 // Drawer Navigator - for all authenticated users
-// Ground workers see only their gaps, others see all gaps (role-based filtering applied in screens)
 function DrawerNavigator() {
   const { colors } = useTheme();
   return (

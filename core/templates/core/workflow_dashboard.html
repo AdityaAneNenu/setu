@@ -1,411 +1,713 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PM-AJAY Workflow Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Workflow Dashboard - SETU</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary-color: #000000;
-            --secondary-color: #333333;
-            --accent-color: #666666;
-            --text-color: #ffffff;
-            --bg-color: #000000;
-            --card-bg: #1a1a1a;
-            --border-color: #333333;
-        }
-        
-        body {
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
         
         .stat-card {
-            background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-color) 100%);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 16px;
+            padding: 1.75rem;
             text-align: center;
-            transition: transform 0.3s ease;
+            transition: all 0.2s ease;
         }
         
         .stat-card:hover {
+            border-color: var(--border-hover);
             transform: translateY(-2px);
-            border-color: var(--accent-color);
         }
         
         .stat-icon {
-            font-size: 2.5rem;
-            color: var(--text-color);
-            margin-bottom: 1rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
         }
         
+        .stat-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke-width: 2;
+        }
+        
+        .stat-icon.purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+        .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+        
         .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--text-color);
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 0.5rem;
         }
         
         .stat-label {
-            color: var(--accent-color);
-            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
         }
         
-        .table-dark {
-            --bs-table-bg: var(--card-bg);
-            --bs-table-border-color: var(--border-color);
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
         
-        .btn-primary {
-            background: var(--primary-color);
-            border-color: var(--border-color);
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
         }
         
-        .btn-primary:hover {
-            background: var(--secondary-color);
-            border-color: var(--accent-color);
+        .chart-card h3 {
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
-        .badge {
-            font-size: 0.75rem;
+        .chart-card h3 svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-purple);
         }
         
-        .status-received_post { background-color: #6c757d; }
-        .status-sent_to_office { background-color: #0dcaf0; }
-        .status-under_analysis { background-color: #fd7e14; }
-        .status-assigned_worker { background-color: #20c997; }
-        .status-work_in_progress { background-color: #0d6efd; }
-        .status-work_completed { background-color: #198754; }
-        .status-villager_satisfied { background-color: #28a745; }
-        .status-case_closed { background-color: #6f42c1; }
+        .filter-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
         
-        .priority-urgent { color: #dc3545; }
-        .priority-high { color: #fd7e14; }
-        .priority-medium { color: #ffc107; }
-        .priority-low { color: #28a745; }
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
         
-        .chart-container {
-            background: var(--card-bg);
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-group select {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .table-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table-header h3 {
+            color: var(--text-primary);
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table td {
+            padding: 1rem 1.25rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .data-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+        
+        .data-table a {
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .data-table a:hover {
+            text-decoration: underline;
+        }
+        
+        .priority-urgent { color: #f87171; }
+        .priority-high { color: #fb923c; }
+        .priority-medium { color: #fbbf24; }
+        .priority-low { color: #34d399; }
+        
+        .activity-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .activity-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            gap: 1rem;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.9375rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .activity-desc {
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+        }
+        
+        .activity-notes {
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+        
+        .activity-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .filter-row {
+                flex-direction: column;
+            }
+            .filter-group {
+                width: 100%;
+            }
+            .data-table {
+                font-size: 0.8125rem;
+            }
+            .data-table th,
+            .data-table td {
+                padding: 0.75rem 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-clipboard-list me-2"></i>
-                PM-AJAY Workflow Dashboard
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'submit_complaint' %}">
-                    <i class="fas fa-plus me-1"></i>Submit Complaint
-                </a>
-                <a class="nav-link" href="{% url 'agent_dashboard' %}">
-                    <i class="fas fa-users me-1"></i>Agent Dashboard
-                </a>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container mt-4">
+<!-- Top Navigation -->
+<nav class="top-nav">
+    <div class="nav-container">
+        <a href="{% url 'home' %}" class="nav-brand">
+            <div class="nav-logo">
+                <img src="{% static 'images/dark-mode.png' %}" alt="SETU Logo" class="logo-dark">
+                <img src="{% static 'images/light-mode.png' %}" alt="SETU Logo" class="logo-light">
+            </div>
+        </a>
+        
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+            </svg>
+        </button>
+        
+        <ul class="nav-menu" id="navMenu">
+            <li class="nav-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="nav-item"><a href="{% url 'workflow_dashboard' %}" class="active">Workflow</a></li>
+            <li class="nav-item"><a href="{% url 'submit_complaint' %}">Submit Complaint</a></li>
+            <li class="nav-item"><a href="{% url 'agent_dashboard' %}">Agents</a></li>
+        </ul>
+        
+        <div class="nav-user">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+                <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+            <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+            <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="main-wrapper">
+    <div class="container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1>Workflow Dashboard</h1>
+                <p class="header-subtitle">Track and manage complaint workflows</p>
+            </div>
+            <a href="{% url 'submit_complaint' %}" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Complaint
+            </a>
+        </div>
+
         <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
-                    <div class="stat-number">{{ stats.total_complaints }}</div>
-                    <div class="stat-label">Total Complaints</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
                 </div>
+                <div class="stat-number">{{ stats.total_complaints }}</div>
+                <div class="stat-label">Total Complaints</div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-hourglass-half"></i>
-                    </div>
-                    <div class="stat-number">{{ stats.pending_complaints }}</div>
-                    <div class="stat-label">Pending</div>
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
                 </div>
+                <div class="stat-number">{{ stats.pending_complaints }}</div>
+                <div class="stat-label">Pending</div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-number">{{ stats.completed_complaints }}</div>
-                    <div class="stat-label">Completed</div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
                 </div>
+                <div class="stat-number">{{ stats.completed_complaints }}</div>
+                <div class="stat-label">Completed</div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="stat-number">{{ stats.urgent_complaints }}</div>
-                    <div class="stat-label">Urgent</div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
                 </div>
+                <div class="stat-number">{{ stats.urgent_complaints }}</div>
+                <div class="stat-label">Urgent</div>
             </div>
         </div>
 
         <!-- Charts Row -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Complaints by Status</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="statusChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21.21 15.89A10 10 0 118 2.83"/>
+                        <path d="M22 12A10 10 0 0012 2v10z"/>
+                    </svg>
+                    Complaints by Status
+                </h3>
+                <canvas id="statusChart" height="200"></canvas>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Complaints by Type</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="typeChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
+            <div class="chart-card">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                    Complaints by Type
+                </h3>
+                <canvas id="typeChart" height="200"></canvas>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-body">
-                        <form method="GET" class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Filter by Status</label>
-                                <select name="status" class="form-select">
-                                    <option value="">All Status</option>
-                                    {% for value, label in status_choices %}
-                                        <option value="{{ value }}" {% if value == current_status_filter %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Filter by Priority</label>
-                                <select name="priority" class="form-select">
-                                    <option value="">All Priority</option>
-                                    {% for value, label in priority_choices %}
-                                        <option value="{{ value }}" {% if value == current_priority_filter %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">&nbsp;</label>
-                                <div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-filter me-1"></i>Apply Filters
-                                    </button>
-                                    <a href="{% url 'workflow_dashboard' %}" class="btn btn-secondary ms-2">
-                                        <i class="fas fa-times me-1"></i>Clear
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+        <div class="filter-card">
+            <form method="GET" class="filter-row">
+                <div class="filter-group">
+                    <label>Filter by Status</label>
+                    <select name="status">
+                        <option value="">All Status</option>
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if value == current_status_filter %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-            </div>
+                <div class="filter-group">
+                    <label>Filter by Priority</label>
+                    <select name="priority">
+                        <option value="">All Priority</option>
+                        {% for value, label in priority_choices %}
+                            <option value="{{ value }}" {% if value == current_priority_filter %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                        </svg>
+                        Apply
+                    </button>
+                    <a href="{% url 'workflow_dashboard' %}" class="btn btn-secondary">Clear</a>
+                </div>
+            </form>
         </div>
 
         <!-- Complaints Table -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recent Complaints</h5>
+        <div class="table-card">
+            <div class="table-header">
+                <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"/>
+                        <line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    Recent Complaints
+                </h3>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-dark table-striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Villager</th>
-                                <th>Village</th>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th>Priority</th>
-                                <th>Post Office</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for complaint in complaints %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'complaint_detail' complaint.complaint_id %}" class="text-decoration-none">
-                                        {{ complaint.complaint_id }}
-                                    </a>
-                                </td>
-                                <td>{{ complaint.villager_name }}</td>
-                                <td>{{ complaint.village.name }}</td>
-                                <td>
-                                    <span class="badge bg-secondary">{{ complaint.complaint_type|capfirst }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge status-{{ complaint.status }}">
-                                        {{ complaint.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="priority-{{ complaint.priority_level }}">
-                                        <i class="fas fa-circle"></i> {{ complaint.priority_level|capfirst }}
-                                    </span>
-                                </td>
-                                <td>{{ complaint.post_office.name }}</td>
-                                <td>{{ complaint.created_at|date:"M d, Y" }}</td>
-                                <td>
-                                    <a href="{% url 'complaint_detail' complaint.complaint_id %}" class="btn btn-sm btn-outline-light">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="9" class="text-center">No complaints found</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Villager</th>
+                            <th>Village</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Post Office</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for complaint in complaints %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'complaint_detail' complaint.complaint_id %}">{{ complaint.complaint_id }}</a>
+                            </td>
+                            <td style="color: var(--text-primary);">{{ complaint.villager_name }}</td>
+                            <td>{{ complaint.village.name }}</td>
+                            <td>
+                                <span class="badge badge-info">{{ complaint.complaint_type|capfirst }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {% if complaint.status == 'case_closed' %}badge-success{% elif complaint.status == 'work_in_progress' %}badge-warning{% else %}badge-info{% endif %}">
+                                    {{ complaint.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="priority-{{ complaint.priority_level }}">● {{ complaint.priority_level|capfirst }}</span>
+                            </td>
+                            <td>{{ complaint.post_office.name }}</td>
+                            <td>{{ complaint.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'complaint_detail' complaint.complaint_id %}" class="btn btn-secondary" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 3rem; color: var(--text-muted);">No complaints found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- Recent Activity -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Workflow Activity</h5>
+        <div class="activity-card">
+            <div class="table-header">
+                <h3>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    Recent Workflow Activity
+                </h3>
             </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    {% for activity in recent_activities %}
-                    <div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                            <div class="fw-bold">{{ activity.complaint.complaint_id }} - {{ activity.complaint.villager_name }}</div>
-                            <small>{{ activity.get_action_type_display }} by {{ activity.action_by }}</small>
-                            {% if activity.notes %}
-                            <div class="text-muted small mt-1">{{ activity.notes }}</div>
-                            {% endif %}
-                        </div>
-                        <small>{{ activity.timestamp|timesince }} ago</small>
+            <ul class="activity-list">
+                {% for activity in recent_activities %}
+                <li class="activity-item">
+                    <div class="activity-content">
+                        <div class="activity-title">{{ activity.complaint.complaint_id }} - {{ activity.complaint.villager_name }}</div>
+                        <div class="activity-desc">{{ activity.get_action_type_display }} by {{ activity.action_by }}</div>
+                        {% if activity.notes %}
+                        <div class="activity-notes">{{ activity.notes }}</div>
+                        {% endif %}
                     </div>
-                    {% empty %}
-                    <div class="list-group-item list-group-item-dark text-center">
-                        No recent activity
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+                    <span class="activity-time">{{ activity.timestamp|timesince }} ago</span>
+                </li>
+                {% empty %}
+                <li class="activity-item" style="justify-content: center;">
+                    <span style="color: var(--text-muted);">No recent activity</span>
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Status Chart
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        const statusData = {{ status_data|safe }};
-        const statusLabels = statusData.map(item => item.status);
-        const statusCounts = statusData.map(item => item.count);
+<script>
+function toggleMenu() {
+    document.getElementById('navMenu').classList.toggle('active');
+}
 
-        new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: statusLabels,
-                datasets: [{
-                    data: statusCounts,
-                    backgroundColor: [
-                        '#6c757d', '#0dcaf0', '#fd7e14', '#20c997',
-                        '#0d6efd', '#198754', '#28a745', '#6f42c1'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#333333'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#ffffff'
-                        }
-                    }
+function toggleTheme() {
+    const body = document.body;
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    
+    if (body.classList.contains('light-mode')) {
+        body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+    } else {
+        body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+    }
+    
+    // Update chart colors
+    updateChartColors();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        if (sunIcon) sunIcon.style.display = 'none';
+        if (moonIcon) moonIcon.style.display = 'block';
+    }
+    
+    initCharts();
+});
+
+let statusChartInstance, typeChartInstance;
+
+function getChartColors() {
+    const isLight = document.body.classList.contains('light-mode');
+    return {
+        text: isLight ? '#1e293b' : '#e2e8f0',
+        grid: isLight ? '#e2e8f0' : '#334155',
+        bg: isLight ? '#ffffff' : '#1e293b'
+    };
+}
+
+function initCharts() {
+    const colors = getChartColors();
+    
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {{ status_data|safe }};
+    const statusLabels = statusData.map(item => item.status);
+    const statusCounts = statusData.map(item => item.count);
+
+    statusChartInstance = new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusCounts,
+                backgroundColor: [
+                    '#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd',
+                    '#34d399', '#10b981', '#059669', '#6ee7b7'
+                ],
+                borderWidth: 2,
+                borderColor: colors.bg
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: colors.text, font: { size: 11 } }
                 }
             }
-        });
+        }
+    });
 
-        // Type Chart  
-        const typeCtx = document.getElementById('typeChart').getContext('2d');
-        const typeData = {{ type_data|safe }};
-        const typeLabels = typeData.map(item => item.complaint_type);
-        const typeCounts = typeData.map(item => item.count);
+    // Type Chart  
+    const typeCtx = document.getElementById('typeChart').getContext('2d');
+    const typeData = {{ type_data|safe }};
+    const typeLabels = typeData.map(item => item.complaint_type);
+    const typeCounts = typeData.map(item => item.count);
 
-        new Chart(typeCtx, {
-            type: 'bar',
-            data: {
-                labels: typeLabels,
-                datasets: [{
-                    label: 'Complaints',
-                    data: typeCounts,
-                    backgroundColor: '#666666',
-                    borderColor: '#333333',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: '#ffffff'
-                        },
-                        grid: {
-                            color: '#333333'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: '#ffffff'
-                        },
-                        grid: {
-                            color: '#333333'
-                        }
-                    }
+    typeChartInstance = new Chart(typeCtx, {
+        type: 'bar',
+        data: {
+            labels: typeLabels,
+            datasets: [{
+                label: 'Complaints',
+                data: typeCounts,
+                backgroundColor: '#8b5cf6',
+                borderColor: '#7c3aed',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: colors.text },
+                    grid: { color: colors.grid }
                 },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#ffffff'
-                        }
-                    }
+                x: {
+                    ticks: { color: colors.text },
+                    grid: { display: false }
                 }
+            },
+            plugins: {
+                legend: { display: false }
             }
-        });
-    </script>
+        }
+    });
+}
+
+function updateChartColors() {
+    const colors = getChartColors();
+    
+    if (statusChartInstance) {
+        statusChartInstance.options.plugins.legend.labels.color = colors.text;
+        statusChartInstance.data.datasets[0].borderColor = colors.bg;
+        statusChartInstance.update();
+    }
+    
+    if (typeChartInstance) {
+        typeChartInstance.options.scales.y.ticks.color = colors.text;
+        typeChartInstance.options.scales.y.grid.color = colors.grid;
+        typeChartInstance.options.scales.x.ticks.color = colors.text;
+        typeChartInstance.update();
+    }
+}
+</script>
+
 </body>
 </html>

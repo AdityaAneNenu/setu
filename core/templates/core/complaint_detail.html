@@ -1,190 +1,586 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint {{ complaint.complaint_id }} - PM-AJAY</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Complaint {{ complaint.complaint_id }} - SETU</title>
+    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
     <style>
-        :root {
-            --primary-color: #000000;
-            --secondary-color: #333333;
-            --accent-color: #666666;
-            --text-color: #ffffff;
-            --bg-color: #000000;
-            --card-bg: #1a1a1a;
-            --border-color: #333333;
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
         }
         
-        body {
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .card {
-            background: var(--card-bg);
+        .detail-card {
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
-            color: var(--text-color);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .detail-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .detail-header h2 {
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .detail-header h2 svg {
+            width: 22px;
+            height: 22px;
+            color: var(--accent-purple);
+        }
+        
+        .detail-body {
+            padding: 1.5rem;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        
+        .info-section h3 {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .info-section h3 svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .info-item {
+            margin-bottom: 0.875rem;
+        }
+        
+        .info-item strong {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-item span {
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+        }
+        
+        .priority-urgent { color: #f87171; }
+        .priority-high { color: #fb923c; }
+        .priority-medium { color: #fbbf24; }
+        .priority-low { color: #34d399; }
+        
+        .content-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .content-section h4 {
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        
+        .content-section p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+            line-height: 1.7;
+        }
+        
+        .verification-alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        
+        .verification-alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+        
+        .verification-alert.warning {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+        
+        .verification-alert svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        
+        .agent-info {
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+            margin-top: 0.5rem;
+        }
+        
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .photo-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .photo-item svg {
+            width: 32px;
+            height: 32px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        
+        .photo-item span {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            display: block;
+        }
+        
+        .update-form {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+        }
+        
+        .voice-warning {
+            color: #fbbf24;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            display: none;
         }
         
         .timeline {
             position: relative;
-            padding-left: 2rem;
+            padding-left: 1.5rem;
         }
         
         .timeline::before {
             content: '';
             position: absolute;
-            left: 1rem;
-            top: 0;
-            bottom: 0;
+            left: 0.5rem;
+            top: 0.5rem;
+            bottom: 0.5rem;
             width: 2px;
             background: var(--border-color);
         }
         
         .timeline-item {
             position: relative;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
+            padding-left: 0.5rem;
+        }
+        
+        .timeline-item:last-child {
+            margin-bottom: 0;
         }
         
         .timeline-item::before {
             content: '';
             position: absolute;
-            left: -1.6rem;
-            top: 0.3rem;
-            width: 12px;
-            height: 12px;
+            left: -1.125rem;
+            top: 0.375rem;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: var(--accent-color);
-            border: 2px solid var(--card-bg);
+            background: var(--border-color);
+            border: 2px solid var(--bg-card);
         }
         
         .timeline-item.current::before {
-            background: #0d6efd;
+            background: var(--accent-purple);
         }
         
-        .status-badge {
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+        
+        .timeline-action {
+            color: var(--text-primary);
             font-size: 0.875rem;
-            padding: 0.5rem 1rem;
+            font-weight: 600;
+        }
+        
+        .timeline-date {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        
+        .timeline-transition {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        
+        .timeline-by {
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+        }
+        
+        .timeline-notes {
+            color: var(--accent-purple);
+            font-size: 0.8125rem;
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            border-color: var(--accent-purple);
+            color: var(--text-primary);
+        }
+        
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .action-btn.success {
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #34d399;
+        }
+        
+        .action-btn.danger {
+            border-color: rgba(248, 113, 113, 0.5);
+            color: #f87171;
+        }
+        
+        .action-btn.warning {
+            border-color: rgba(251, 191, 36, 0.5);
+            color: #fbbf24;
+        }
+        
+        .action-alert {
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .action-alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+        
+        .action-alert.warning {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+        
+        @media (max-width: 1024px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .info-grid,
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .photos-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'workflow_dashboard' %}">
-                <i class="fas fa-clipboard-list me-2"></i>
-                PM-AJAY Workflow
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'workflow_dashboard' %}">
-                    <i class="fas fa-dashboard me-1"></i>Dashboard
-                </a>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container mt-4">
+<!-- Top Navigation -->
+<nav class="top-nav">
+    <div class="nav-container">
+        <a href="{% url 'home' %}" class="nav-brand">
+            <div class="nav-logo">
+                <img src="{% static 'images/dark-mode.png' %}" alt="SETU Logo" class="logo-dark">
+                <img src="{% static 'images/light-mode.png' %}" alt="SETU Logo" class="logo-light">
+            </div>
+        </a>
+        
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+            </svg>
+        </button>
+        
+        <ul class="nav-menu" id="navMenu">
+            <li class="nav-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li class="nav-item"><a href="{% url 'workflow_dashboard' %}" class="active">Workflow</a></li>
+            <li class="nav-item"><a href="{% url 'submit_complaint' %}">Submit Complaint</a></li>
+            <li class="nav-item"><a href="{% url 'agent_dashboard' %}">Agents</a></li>
+        </ul>
+        
+        <div class="nav-user">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+                <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+            <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+            <a href="{% url 'logout' %}" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="main-wrapper">
+    <div class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
+            <div class="verification-alert {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}warning{% else %}warning{% endif %}" style="margin-bottom: 1rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    {% if message.tags == 'success' %}
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                    {% else %}
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    {% endif %}
+                </svg>
+                {{ message }}
+            </div>
             {% endfor %}
         {% endif %}
 
-        <!-- Complaint Header -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-file-alt me-2"></i>
-                        Complaint {{ complaint.complaint_id }}
-                    </h4>
-                    <span class="badge status-badge bg-primary">{{ complaint.get_status_display }}</span>
-                </div>
+        <!-- Complaint Header Card -->
+        <div class="detail-card">
+            <div class="detail-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Complaint {{ complaint.complaint_id }}
+                </h2>
+                <span class="badge {% if complaint.status == 'case_closed' %}badge-success{% elif complaint.status == 'work_in_progress' %}badge-warning{% else %}badge-info{% endif %}">{{ complaint.get_status_display }}</span>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-user me-2"></i>Villager Details</h6>
-                        <p><strong>Name:</strong> {{ complaint.villager_name }}</p>
-                        <p><strong>Village:</strong> {{ complaint.village.name }}</p>
-                        <p><strong>Type:</strong> <span class="badge bg-secondary">{{ complaint.complaint_type|capfirst }}</span></p>
-                        <p><strong>Priority:</strong> 
-                            <span class="priority-{{ complaint.priority_level }}">
-                                <i class="fas fa-circle"></i> {{ complaint.priority_level|capfirst }}
-                            </span>
-                        </p>
+            <div class="detail-body">
+                <div class="info-grid">
+                    <div class="info-section">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Villager Details
+                        </h3>
+                        <div class="info-item">
+                            <strong>Name</strong>
+                            <span>{{ complaint.villager_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Village</strong>
+                            <span>{{ complaint.village.name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Type</strong>
+                            <span class="badge badge-info">{{ complaint.complaint_type|capfirst }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Priority</strong>
+                            <span class="priority-{{ complaint.priority_level }}">● {{ complaint.priority_level|capfirst }}</span>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <h6><i class="fas fa-building me-2"></i>Processing Details</h6>
-                        <p><strong>Post Office:</strong> {{ complaint.post_office.name }}</p>
-                        <p><strong>PM-AJAY Office:</strong> {{ complaint.pmajay_office.name }}</p>
-                        <p><strong>Submitted:</strong> {{ complaint.created_at|date:"M d, Y g:i A" }}</p>
-                        <p><strong>Last Updated:</strong> {{ complaint.updated_at|date:"M d, Y g:i A" }}</p>
+                    <div class="info-section">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            Processing Details
+                        </h3>
+                        <div class="info-item">
+                            <strong>Post Office</strong>
+                            <span>{{ complaint.post_office.name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>PM-AJAY Office</strong>
+                            <span>{{ complaint.pmajay_office.name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Submitted</strong>
+                            <span>{{ complaint.created_at|date:"M d, Y g:i A" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Last Updated</strong>
+                            <span>{{ complaint.updated_at|date:"M d, Y g:i A" }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-8">
+        <div class="detail-grid">
+            <div class="main-content">
                 <!-- Complaint Content -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5><i class="fas fa-edit me-2"></i>Complaint Details</h5>
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Complaint Details
+                        </h2>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <h6>Original Complaint:</h6>
+                    <div class="detail-body">
+                        <div class="content-section">
+                            <h4>Original Complaint:</h4>
                             <p>{{ complaint.complaint_text|linebreaks }}</p>
                         </div>
                         
                         {% if complaint.audio_transcription %}
-                        <div class="mb-3">
-                            <h6><i class="fas fa-microphone me-2"></i>Audio Transcription:</h6>
-                            <p class="text-muted">{{ complaint.audio_transcription|linebreaks }}</p>
+                        <div class="content-section">
+                            <h4>🎤 Audio Transcription:</h4>
+                            <p style="color: var(--text-muted);">{{ complaint.audio_transcription|linebreaks }}</p>
                             {% if complaint.audio_file %}
                                 {% if voice_verified %}
-                                <div class="alert alert-success p-2 mt-2">
-                                    <i class="fas fa-shield-check me-1"></i>
+                                <div class="verification-alert success">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <polyline points="9 12 12 15 16 10"/>
+                                    </svg>
                                     <strong>Voice Verified</strong> - This complaint has been verified with voice biometrics
                                 </div>
                                 {% else %}
-                                <div class="alert alert-warning p-2 mt-2">
-                                    <i class="fas fa-shield-exclamation me-1"></i>
+                                <div class="verification-alert warning">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
                                     <strong>Voice Verification Pending</strong> - Verification required before case closure
                                 </div>
                                 {% endif %}
                             {% endif %}
                             {% if complaint.recorded_by_agent %}
-                            <small class="text-info">
-                                <i class="fas fa-user-tie me-1"></i>
-                                Recorded by: {{ complaint.agent_name }}
-                            </small>
+                            <p class="agent-info">
+                                👤 Recorded by: {{ complaint.agent_name }}
+                            </p>
                             {% endif %}
                         </div>
                         {% endif %}
                         
                         {% if complaint.geotagged_photos %}
-                        <div class="mb-3">
-                            <h6><i class="fas fa-camera me-2"></i>Geotagged Photos:</h6>
-                            <div class="row">
+                        <div class="content-section">
+                            <h4>📷 Geotagged Photos:</h4>
+                            <div class="photos-grid">
                                 {% for photo in complaint.geotagged_photos %}
-                                <div class="col-md-4 mb-2">
-                                    <div class="border rounded p-2 text-center">
-                                        <i class="fas fa-image fa-2x text-muted"></i>
-                                        <br><small>{{ photo }}</small>
-                                    </div>
+                                <div class="photo-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <span>{{ photo }}</span>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -194,17 +590,23 @@
                 </div>
 
                 <!-- Status Update Form -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-edit me-2"></i>Update Status</h5>
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Update Status
+                        </h2>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="{% url 'update_complaint_status' complaint.complaint_id %}">
+                    <div class="detail-body">
+                        <form method="POST" action="{% url 'update_complaint_status' complaint.complaint_id %}" class="update-form">
                             {% csrf_token %}
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">New Status</label>
-                                    <select name="status" class="form-select" id="statusSelect">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>New Status</label>
+                                    <select name="status" class="form-control" id="statusSelect">
                                         {% for value, label in status_choices %}
                                             {% if value == 'case_closed' and complaint.audio_file %}
                                                 <option value="{{ value }}" {% if value == complaint.status %}selected{% endif %} data-voice-required="true">
@@ -216,53 +618,59 @@
                                         {% endfor %}
                                     </select>
                                     {% if complaint.audio_file %}
-                                    <small class="text-warning mt-1" id="voiceWarning" style="display: none;">
-                                        <i class="fas fa-exclamation-triangle"></i> Voice verification required before closing
-                                    </small>
+                                    <p class="voice-warning" id="voiceWarning">
+                                        ⚠️ Voice verification required before closing
+                                    </p>
                                     {% endif %}
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Notes</label>
+                                <div class="form-group">
+                                    <label>Notes</label>
                                     <input type="text" name="notes" class="form-control" placeholder="Optional notes...">
                                 </div>
                             </div>
-                            <div class="mt-3">
-                                <button type="submit" class="btn btn-primary" id="updateStatusBtn">
-                                    <i class="fas fa-save me-1"></i>Update Status
-                                </button>
-                            </div>
+                            <button type="submit" class="btn btn-primary" id="updateStatusBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                    <polyline points="17 21 17 13 7 13 7 21"/>
+                                    <polyline points="7 3 7 8 15 8"/>
+                                </svg>
+                                Update Status
+                            </button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
+            <div class="sidebar-content">
                 <!-- Workflow Timeline -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5><i class="fas fa-history me-2"></i>Workflow History</h5>
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            Workflow History
+                        </h2>
                     </div>
-                    <div class="card-body">
+                    <div class="detail-body">
                         <div class="timeline">
                             {% for log in workflow_logs %}
                             <div class="timeline-item {% if forloop.last %}current{% endif %}">
-                                <div class="d-flex justify-content-between">
-                                    <strong>{{ log.get_action_type_display }}</strong>
-                                    <small class="text-muted">{{ log.timestamp|date:"M d" }}</small>
+                                <div class="timeline-header">
+                                    <span class="timeline-action">{{ log.get_action_type_display }}</span>
+                                    <span class="timeline-date">{{ log.timestamp|date:"M d" }}</span>
                                 </div>
                                 {% if log.from_status and log.to_status %}
-                                <div class="small text-muted">
-                                    {{ log.from_status }} → {{ log.to_status }}
-                                </div>
+                                <div class="timeline-transition">{{ log.from_status }} → {{ log.to_status }}</div>
                                 {% endif %}
-                                <div class="small">By: {{ log.action_by }}</div>
+                                <div class="timeline-by">By: {{ log.action_by }}</div>
                                 {% if log.notes %}
-                                <div class="small text-info mt-1">{{ log.notes }}</div>
+                                <div class="timeline-notes">{{ log.notes }}</div>
                                 {% endif %}
                             </div>
                             {% empty %}
                             <div class="timeline-item">
-                                <div class="text-muted">No workflow history available</div>
+                                <span style="color: var(--text-muted);">No workflow history available</span>
                             </div>
                             {% endfor %}
                         </div>
@@ -270,50 +678,80 @@
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h6><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            Quick Actions
+                        </h2>
                     </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
+                    <div class="detail-body">
+                        <div class="quick-actions">
                             {% if complaint.status == 'under_analysis' %}
-                            <button class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-user-plus me-1"></i>Assign Worker
+                            <button class="action-btn success">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                                    <circle cx="8.5" cy="7" r="4"/>
+                                    <line x1="20" y1="8" x2="20" y2="14"/>
+                                    <line x1="23" y1="11" x2="17" y2="11"/>
+                                </svg>
+                                Assign Worker
                             </button>
                             {% endif %}
                             
                             {% if complaint.status == 'work_completed' %}
-                            <button class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-paper-plane me-1"></i>Send to Villager
+                            <button class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                                Send to Villager
                             </button>
                             {% endif %}
                             
                             {% if complaint.audio_file and complaint.status != 'case_closed' %}
                                 {% if voice_verified %}
-                                <a href="{% url 'voice_verification_dashboard' complaint.complaint_id %}" class="btn btn-outline-success btn-sm">
-                                    <i class="fas fa-check-circle me-1"></i>Voice Verified ✓
+                                <a href="{% url 'voice_verification_dashboard' complaint.complaint_id %}" class="action-btn success">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                    Voice Verified ✓
                                 </a>
-                                <div class="alert alert-success mt-2 p-2 small">
-                                    <i class="fas fa-check-circle me-1"></i>
-                                    <strong>Voice verified!</strong> You can now close this complaint
+                                <div class="action-alert success">
+                                    ✓ Voice verified! You can now close this complaint
                                 </div>
                                 {% else %}
-                                <a href="{% url 'voice_verification_dashboard' complaint.complaint_id %}" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-microphone me-1"></i>Voice Verification Required
+                                <a href="{% url 'voice_verification_dashboard' complaint.complaint_id %}" class="action-btn danger">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                                        <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+                                    </svg>
+                                    Voice Verification Required
                                 </a>
-                                <div class="alert alert-warning mt-2 p-2 small">
-                                    <i class="fas fa-exclamation-triangle me-1"></i>
-                                    <strong>Voice verification required</strong> to close this audio complaint
+                                <div class="action-alert warning">
+                                    ⚠️ Voice verification required to close this audio complaint
                                 </div>
                                 {% endif %}
                             {% endif %}
                             
-                            <button class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-sms me-1"></i>Send SMS Update
+                            <button class="action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22 6 12 13 2 6"/>
+                                </svg>
+                                Send SMS Update
                             </button>
                             
-                            <button class="btn btn-outline-warning btn-sm">
-                                <i class="fas fa-exclamation-triangle me-1"></i>Escalate
+                            <button class="action-btn warning">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                Escalate
                             </button>
                         </div>
                     </div>
@@ -321,36 +759,71 @@
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Voice verification warning for case closure
-        {% if complaint.audio_file %}
-        document.getElementById('statusSelect').addEventListener('change', function() {
-            const voiceWarning = document.getElementById('voiceWarning');
-            const updateBtn = document.getElementById('updateStatusBtn');
-            
-            if (this.value === 'case_closed') {
-                voiceWarning.style.display = 'block';
-                updateBtn.classList.add('btn-warning');
-                updateBtn.classList.remove('btn-primary');
-            } else {
-                voiceWarning.style.display = 'none';
-                updateBtn.classList.add('btn-primary');
-                updateBtn.classList.remove('btn-warning');
-            }
-        });
-        
-        // Confirm before closing case with audio
-        document.querySelector('form[action*="update_status"]').addEventListener('submit', function(e) {
-            const status = document.getElementById('statusSelect').value;
-            if (status === 'case_closed') {
-                if (!confirm('⚠️ Have you completed voice verification for this audio complaint? The system will check if verification has been done.')) {
-                    e.preventDefault();
-                }
-            }
-        });
-        {% endif %}
-    </script>
+<script>
+function toggleMenu() {
+    document.getElementById('navMenu').classList.toggle('active');
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    
+    if (body.classList.contains('light-mode')) {
+        body.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+    } else {
+        body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        if (sunIcon) sunIcon.style.display = 'none';
+        if (moonIcon) moonIcon.style.display = 'block';
+    }
+});
+
+// Voice verification warning for case closure
+{% if complaint.audio_file %}
+document.getElementById('statusSelect').addEventListener('change', function() {
+    const voiceWarning = document.getElementById('voiceWarning');
+    const updateBtn = document.getElementById('updateStatusBtn');
+    
+    if (this.value === 'case_closed') {
+        voiceWarning.style.display = 'block';
+        updateBtn.style.background = '#fbbf24';
+        updateBtn.style.borderColor = '#fbbf24';
+    } else {
+        voiceWarning.style.display = 'none';
+        updateBtn.style.background = '';
+        updateBtn.style.borderColor = '';
+    }
+});
+
+// Confirm before closing case with audio
+document.querySelector('form[action*="update_status"]').addEventListener('submit', function(e) {
+    const status = document.getElementById('statusSelect').value;
+    if (status === 'case_closed') {
+        if (!confirm('⚠️ Have you completed voice verification for this audio complaint? The system will check if verification has been done.')) {
+            e.preventDefault();
+        }
+    }
+});
+{% endif %}
+</script>
+
 </body>
 </html>

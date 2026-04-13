@@ -13,9 +13,9 @@ import { fonts } from '../theme';
 import { authApi } from '../services/api';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { useTranslation } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 // Menu items for Ground Level Workers only
-// No Dashboard, Manage Gaps, or Analytics - those are for Manager+ on the web
 const menuItems = [
   { icon: 'person-circle-outline', labelKey: 'drawer.profile', screen: 'Profile' },
   { icon: 'scan-outline', labelKey: 'drawer.scanDocument', screen: 'ScanDocument' },
@@ -28,6 +28,7 @@ const menuItems = [
 export default function CustomDrawer({ navigation }) {
   const { triggerHaptic } = useAccessibility();
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const handleSignOut = async () => {
     triggerHaptic('medium');
@@ -40,16 +41,14 @@ export default function CustomDrawer({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+    <View style={[styles.container, { backgroundColor: colors.drawerBg }]}>
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.drawerBg} />
       
-      {/* Decorative background images - matching Figma nodes 118:52, 2521:6 */}
       <View style={styles.decorativeContainer}>
         <View style={styles.decorativeImage1} />
         <View style={styles.decorativeImage2} />
       </View>
 
-      {/* Menu Items - matching Figma nodes 118:0 to 118:5 */}
       <View style={styles.menuContainer}>
         {menuItems.map((item, index) => (
           <View key={index}>
@@ -61,24 +60,29 @@ export default function CustomDrawer({ navigation }) {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name={item.icon} size={24} color="#FFFFFF" />
-              <Text style={styles.menuLabel}>{t(item.labelKey)}</Text>
+              <Ionicons name={item.icon} size={24} color={colors.drawerText} />
+              <Text style={[styles.menuLabel, { color: colors.drawerText }]}>{t(item.labelKey)}</Text>
             </TouchableOpacity>
-            {/* Divider line - matching Figma nodes 121:2 to 121:5 */}
-            {index < menuItems.length - 1 && <View style={styles.menuDivider} />}
+            {index < menuItems.length - 1 && (
+              <View
+                style={[
+                  styles.menuDivider,
+                  { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                ]}
+              />
+            )}
           </View>
         ))}
       </View>
 
-      {/* Sign Out - matching Figma nodes 118:4 and 121:0 */}
       <View style={styles.signOutContainer}>
         <TouchableOpacity 
           style={styles.signOutButton} 
           onPress={handleSignOut}
           activeOpacity={0.7}
         >
-          <Text style={styles.signOutText}>{t('drawer.signOut')}</Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+          <Text style={[styles.signOutText, { color: colors.drawerText }]}>{t('drawer.signOut')}</Text>
+          <Ionicons name="arrow-forward" size={20} color={colors.drawerText} />
         </TouchableOpacity>
       </View>
     </View>
@@ -88,7 +92,6 @@ export default function CustomDrawer({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   decorativeContainer: {
     position: 'absolute',
@@ -132,12 +135,10 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: '#FFFFFF',
     marginLeft: 18,
   },
   menuDivider: {
     height: 0.6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginLeft: 42,
     width: 132,
   },
@@ -154,7 +155,6 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 17,
     fontFamily: fonts.semiBold,
-    color: '#FFFFFF',
     marginRight: 12,
   },
 });

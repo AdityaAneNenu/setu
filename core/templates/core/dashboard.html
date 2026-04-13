@@ -71,28 +71,67 @@
 
     <!-- Statistics Cards -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">{% trans "Total Gaps" %}</div>
-        <div class="stat-value">{{ total_gaps }}</div>
-        <p class="stat-subtitle">{% trans "Across all villages" %}</p>
+      <div class="stat-card accent-purple">
+        <div class="stat-card-icon">
+          <div class="stat-icon purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-label">{% trans "Total Gaps" %}</div>
+            <div class="stat-value">{{ total_gaps }}</div>
+            <p class="stat-subtitle">{% trans "Across all villages" %}</p>
+          </div>
+        </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-label">{% trans "Pending" %}</div>
-        <div class="stat-value">{{ pending_gaps }}</div>
-        <p class="stat-subtitle">{% trans "Awaiting action" %}</p>
+      <div class="stat-card accent-red">
+        <div class="stat-card-icon">
+          <div class="stat-icon red">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-label">{% trans "Pending" %}</div>
+            <div class="stat-value">{{ pending_gaps }}</div>
+            <p class="stat-subtitle">{% trans "Awaiting action" %}</p>
+          </div>
+        </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-label">{% trans "In Progress" %}</div>
-        <div class="stat-value">{{ in_progress_gaps }}</div>
-        <p class="stat-subtitle">{% trans "Currently working" %}</p>
+      <div class="stat-card accent-orange">
+        <div class="stat-card-icon">
+          <div class="stat-icon orange">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-label">{% trans "In Progress" %}</div>
+            <div class="stat-value">{{ in_progress_gaps }}</div>
+            <p class="stat-subtitle">{% trans "Currently working" %}</p>
+          </div>
+        </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-label">{% trans "Resolved" %}</div>
-        <div class="stat-value">{{ resolved_gaps }}</div>
-        <p class="stat-subtitle">{% trans "Successfully completed" %}</p>
+      <div class="stat-card accent-green">
+        <div class="stat-card-icon">
+          <div class="stat-icon green">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div>
+            <div class="stat-label">{% trans "Resolved" %}</div>
+            <div class="stat-value">{{ resolved_gaps }}</div>
+            <p class="stat-subtitle">{% trans "Successfully completed" %}</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -144,7 +183,22 @@
             {% empty %}
             <tr>
               <td colspan="7" class="empty-state">
-                {% trans "No gaps found. Upload data to get started." %}
+                <div class="empty-state-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10" stroke-dasharray="2 2" opacity="0.3"></circle>
+                    <path d="M9 9h.01M15 9h.01M9.5 13.5a3.5 3.5 0 0 0 5 0"></path>
+                  </svg>
+                </div>
+                <div class="empty-state-title">{% trans "All quiet here!" %}</div>
+                <div class="empty-state-text">{% trans "No gaps recorded yet. Head to the upload page to start tracking village development." %}</div>
+                <a href="{% url 'upload_form' %}" class="btn btn-primary" style="margin-top: 16px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  {% trans "Upload Data" %}
+                </a>
               </td>
             </tr>
             {% endfor %}
@@ -185,7 +239,14 @@
             {% empty %}
             <tr>
               <td colspan="6" class="empty-state">
-                No villages found.
+                <div class="empty-state-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                </div>
+                <div class="empty-state-title">No villages found</div>
+                <div class="empty-state-text">Upload village data to start tracking development progress.</div>
               </td>
             </tr>
             {% endfor %}

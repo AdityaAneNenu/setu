@@ -1,8 +1,42 @@
+# Backend-only Railway deploy context
 frontend/
 mobile-app/
+
+# Local/dev environments
 .venv/
+venv/
+env/
 .vscode/
-locale/
-db.sqlite3
+.idea/
+
+# Python cache/artifacts
 *.pyc
 __pycache__/
+
+# Local runtime data and generated assets
+db.sqlite3
+*.sqlite3
+staticfiles/
+media/uploads/
+media/gap_audio/
+media/voice_samples/
+
+# Node/Expo build artifacts (if present locally)
+**/node_modules/
+mobile-app/.expo/
+mobile-app/.expo-shared/
+mobile-app/dist-*/
+frontend/.next/
+frontend/out/
+
+# Secrets and local env files
+.env
+.env.*
+firebase-service-account.json
+
+# Non-runtime docs and helper scripts
+docs/
+*.md
+deploy_railway.bat
+check_railway.py
+verify_deployment.py

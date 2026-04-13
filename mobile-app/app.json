@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/setu_logo.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/setu_logo.png",
@@ -17,7 +17,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.setu.mobileapp"
+      "bundleIdentifier": "com.setu.mobileapp",
+      "userInterfaceStyle": "automatic"
     },
     "android": {
       "icon": "./assets/setu_logo.png",
@@ -26,6 +27,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.setu.mobileapp",
+      "userInterfaceStyle": "automatic",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",

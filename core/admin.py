@@ -1,4 +1,10 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User, Group
+from django.utils.html import format_html
+from unfold.admin import ModelAdmin
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.decorators import display
 
 # Register your models here.
 from .models import (
@@ -20,31 +26,78 @@ from .models import (
 )
 
 
-@admin.register(Village)
-class VillageAdmin(admin.ModelAdmin):
-    list_display = ("name", "id")
+# Unregister the default User and Group admins
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin, ModelAdmin):
+    """Enhanced User admin with Unfold styling"""
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+    list_display = ("username", "email", "first_name", "last_name", "display_staff", "display_active")
+    list_filter_submit = True
+
+    @display(description="Staff", boolean=True)
+    def display_staff(self, obj):
+        return obj.is_staff
+
+    @display(description="Active", boolean=True)
+    def display_active(self, obj):
+        return obj.is_active
+
+
+@admin.register(Group)
+class GroupAdmin(ModelAdmin):
+    """Enhanced Group admin with Unfold styling"""
+    list_display = ("name", "user_count")
     search_fields = ("name",)
+    filter_horizontal = ("permissions",)
+
+    @display(description="Users")
+    def user_count(self, obj):
+        return obj.user_set.count()
+
+
+@admin.register(Village)
+class VillageAdmin(ModelAdmin):
+    list_display = ("name", "id", "gap_count")
+    search_fields = ("name",)
+    list_filter_submit = True
+
+    @display(description="Active Gaps", ordering="id")
+    def gap_count(self, obj):
+        count = obj.gap_set.exclude(status="resolved").count()
+        if count > 0:
+            return format_html(
+                '<span style="color: #f97316; font-weight: 600;">{}</span>', count
+            )
+        return format_html('<span style="color: #22c55e; font-weight: 600;">0</span>')
 
 
 @admin.register(Submission)
-class SubmissionAdmin(admin.ModelAdmin):
+class SubmissionAdmin(ModelAdmin):
     list_display = ("village", "image", "created_at")
     list_filter = ("created_at", "village")
     search_fields = ("village__name",)
+    list_filter_submit = True
 
 
 @admin.register(Gap)
-class GapAdmin(admin.ModelAdmin):
+class GapAdmin(ModelAdmin):
     list_display = (
+        "id",
         "village",
         "gap_type",
-        "severity",
-        "status",
+        "display_severity",
+        "display_status",
         "resolved_by",
         "resolution_status",
         "start_date",
         "expected_completion",
-        "is_overdue",
+        "display_overdue",
     )
     list_filter = ("status", "severity", "gap_type", "created_at", "resolved_by")
     search_fields = (
@@ -59,12 +112,43 @@ class GapAdmin(admin.ModelAdmin):
         "resolved_by",
         "resolved_at",
     )
+    list_filter_submit = True
+    list_per_page = 25
+    date_hierarchy = "created_at"
+
+    @display(
+        description="Severity",
+        label={
+            "high": "danger",
+            "medium": "warning",
+            "low": "info",
+        },
+    )
+    def display_severity(self, obj):
+        return obj.severity
+
+    @display(
+        description="Status",
+        label={
+            "resolved": "success",
+            "in_progress": "warning",
+            "pending": "info",
+        },
+    )
+    def display_status(self, obj):
+        return obj.status
+
+    @display(description="Overdue", boolean=True)
+    def display_overdue(self, obj):
+        return obj.is_overdue
 
     def resolution_status(self, obj):
         if obj.status == "resolved":
             if obj.resolution_proof:
-                return "✅ Proof Uploaded"
-            return "⚠️ No Proof"
+                return format_html(
+                    '<span style="color: #22c55e;">✅ Proof Uploaded</span>'
+                )
+            return format_html('<span style="color: #f97316;">⚠️ No Proof</span>')
         return "-"
 
     resolution_status.short_description = "Resolution Proof"
@@ -80,7 +164,8 @@ class GapAdmin(admin.ModelAdmin):
                     "status",
                     "description",
                     "recommendations",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
         (
@@ -93,7 +178,7 @@ class GapAdmin(admin.ModelAdmin):
                     "resolved_at",
                 ),
                 "description": "Resolution proof required by ADMIN role",
-                "classes": ("collapse",),
+                "classes": ["tab"],
             },
         ),
         (
@@ -106,10 +191,16 @@ class GapAdmin(admin.ModelAdmin):
                     "created_at",
                     "is_overdue",
                 ),
-                "classes": ("collapse",),
+                "classes": ["tab"],
             },
         ),
-        ("Location", {"fields": ("latitude", "longitude"), "classes": ("collapse",)}),
+        (
+            "Location",
+            {
+                "fields": ("latitude", "longitude"),
+                "classes": ["tab"],
+            },
+        ),
     )
 
     def is_overdue(self, obj):
@@ -124,16 +215,16 @@ class GapAdmin(admin.ModelAdmin):
 
 
 @admin.register(GapStatusAuditLog)
-class GapStatusAuditLogAdmin(admin.ModelAdmin):
+class GapStatusAuditLogAdmin(ModelAdmin):
     """Admin for viewing gap status change audit logs"""
 
     list_display = (
         "gap",
-        "old_status",
-        "new_status",
+        "display_old_status",
+        "display_new_status",
         "changed_by",
         "changed_at",
-        "source",
+        "display_source",
     )
     list_filter = ("new_status", "source", "changed_at")
     search_fields = ("gap__description", "notes", "changed_by__username")
@@ -148,6 +239,33 @@ class GapStatusAuditLogAdmin(admin.ModelAdmin):
     )
     ordering = ("-changed_at",)
     date_hierarchy = "changed_at"
+    list_filter_submit = True
+
+    @display(description="From Status", label=True)
+    def display_old_status(self, obj):
+        return obj.old_status or "N/A"
+
+    @display(
+        description="To Status",
+        label={
+            "resolved": "success",
+            "in_progress": "warning",
+            "pending": "info",
+        },
+    )
+    def display_new_status(self, obj):
+        return obj.new_status
+
+    @display(
+        description="Source",
+        label={
+            "admin": "info",
+            "api": "warning",
+            "system": "success",
+        },
+    )
+    def display_source(self, obj):
+        return obj.source or "admin"
 
     def has_add_permission(self, request):
         """Audit logs should not be manually created"""
@@ -162,33 +280,32 @@ class GapStatusAuditLogAdmin(admin.ModelAdmin):
         return request.user.is_superuser
 
 
-# Post Office Workflow Admin
-
-
 @admin.register(PostOffice)
-class PostOfficeAdmin(admin.ModelAdmin):
+class PostOfficeAdmin(ModelAdmin):
     list_display = ("name", "pincode", "district", "state", "postmaster_name")
     list_filter = ("state", "district")
     search_fields = ("name", "pincode", "district", "postmaster_name")
     ordering = ("state", "district", "name")
+    list_filter_submit = True
 
 
 @admin.register(PMAJAYOffice)
-class PMAJAYOfficeAdmin(admin.ModelAdmin):
+class PMAJAYOfficeAdmin(ModelAdmin):
     list_display = ("name", "district", "state", "officer_name")
     list_filter = ("state", "district")
     search_fields = ("name", "district", "officer_name")
     filter_horizontal = ("serves_post_offices",)
+    list_filter_submit = True
 
 
 @admin.register(Complaint)
-class ComplaintAdmin(admin.ModelAdmin):
+class ComplaintAdmin(ModelAdmin):
     list_display = (
         "complaint_id",
         "villager_name",
         "village",
-        "status",
-        "priority_level",
+        "display_status",
+        "display_priority",
         "created_at",
     )
     list_filter = (
@@ -205,6 +322,32 @@ class ComplaintAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    list_filter_submit = True
+    list_per_page = 25
+    date_hierarchy = "created_at"
+
+    @display(
+        description="Status",
+        label={
+            "resolved": "success",
+            "in_progress": "warning",
+            "open": "danger",
+            "closed": "info",
+        },
+    )
+    def display_status(self, obj):
+        return obj.status
+
+    @display(
+        description="Priority",
+        label={
+            "high": "danger",
+            "medium": "warning",
+            "low": "info",
+        },
+    )
+    def display_priority(self, obj):
+        return obj.priority_level
 
     fieldsets = (
         (
@@ -216,7 +359,8 @@ class ComplaintAdmin(admin.ModelAdmin):
                     "village",
                     "post_office",
                     "pmajay_office",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
         (
@@ -227,7 +371,8 @@ class ComplaintAdmin(admin.ModelAdmin):
                     "complaint_type",
                     "priority_level",
                     "status",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
         (
@@ -240,28 +385,31 @@ class ComplaintAdmin(admin.ModelAdmin):
                     "agent_name",
                     "villager_signature_image",
                 ),
-                "classes": ("collapse",),
+                "classes": ["tab"],
             },
         ),
         (
             "Location & Photos",
             {
                 "fields": ("latitude", "longitude", "geotagged_photos"),
-                "classes": ("collapse",),
+                "classes": ["tab"],
             },
         ),
         (
             "Timestamps",
-            {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
+            {
+                "fields": ("created_at", "updated_at"),
+                "classes": ["tab"],
+            },
         ),
     )
 
 
 @admin.register(WorkflowLog)
-class WorkflowLogAdmin(admin.ModelAdmin):
+class WorkflowLogAdmin(ModelAdmin):
     list_display = (
         "complaint",
-        "action_type",
+        "display_action_type",
         "from_status",
         "to_status",
         "action_by",
@@ -271,28 +419,41 @@ class WorkflowLogAdmin(admin.ModelAdmin):
     search_fields = ("complaint__complaint_id", "action_by", "notes")
     readonly_fields = ("timestamp",)
     ordering = ("-timestamp",)
+    list_filter_submit = True
+    date_hierarchy = "timestamp"
+
+    @display(description="Action", label=True)
+    def display_action_type(self, obj):
+        return obj.action_type
 
 
 @admin.register(SurveyAgent)
-class SurveyAgentAdmin(admin.ModelAdmin):
-    list_display = ("name", "employee_id", "phone_number")
+class SurveyAgentAdmin(ModelAdmin):
+    list_display = ("name", "employee_id", "phone_number", "village_count")
     search_fields = ("name", "employee_id", "phone_number")
     filter_horizontal = ("assigned_villages", "assigned_post_offices")
+    list_filter_submit = True
+
+    @display(description="Assigned Villages")
+    def village_count(self, obj):
+        return obj.assigned_villages.count()
 
 
 @admin.register(SurveyVisit)
-class SurveyVisitAdmin(admin.ModelAdmin):
+class SurveyVisitAdmin(ModelAdmin):
     list_display = ("agent", "village", "visit_date", "new_complaints_filed")
     list_filter = ("visit_date", "agent", "village")
     search_fields = ("agent__name", "village__name", "notes")
     filter_horizontal = ("complaints_collected",)
+    list_filter_submit = True
+    date_hierarchy = "visit_date"
 
 
 @admin.register(Worker)
-class WorkerAdmin(admin.ModelAdmin):
+class WorkerAdmin(ModelAdmin):
     list_display = (
         "name",
-        "worker_type",
+        "display_worker_type",
         "phone_number",
         "pmajay_office",
         "is_available",
@@ -300,17 +461,22 @@ class WorkerAdmin(admin.ModelAdmin):
     list_filter = ("worker_type", "is_available", "pmajay_office")
     search_fields = ("name", "phone_number")
     list_editable = ("is_available",)
+    list_filter_submit = True
+
+    @display(description="Type", label=True)
+    def display_worker_type(self, obj):
+        return obj.worker_type
 
 
 @admin.register(VoiceVerificationLog)
-class VoiceVerificationLogAdmin(admin.ModelAdmin):
+class VoiceVerificationLogAdmin(ModelAdmin):
     list_display = (
         "complaint",
         "verification_date",
-        "similarity_percentage",
-        "is_match",
-        "confidence",
-        "used_for_closure",
+        "display_similarity",
+        "display_match",
+        "display_confidence",
+        "display_closure",
         "verified_by",
     )
     list_filter = ("is_match", "confidence", "used_for_closure", "verification_date")
@@ -321,9 +487,51 @@ class VoiceVerificationLogAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("verification_date", "similarity_percentage")
     ordering = ("-verification_date",)
+    list_filter_submit = True
+    date_hierarchy = "verification_date"
+
+    @display(description="Similarity")
+    def display_similarity(self, obj):
+        pct = obj.similarity_percentage
+        if pct >= 80:
+            color = "#22c55e"
+        elif pct >= 60:
+            color = "#f97316"
+        else:
+            color = "#ef4444"
+        return format_html(
+            '<span style="color: {}; font-weight: 600;">{:.1f}%</span>',
+            color,
+            pct,
+        )
+
+    @display(description="Match", boolean=True)
+    def display_match(self, obj):
+        return obj.is_match
+
+    @display(
+        description="Confidence",
+        label={
+            "high": "success",
+            "medium": "warning",
+            "low": "danger",
+        },
+    )
+    def display_confidence(self, obj):
+        return obj.confidence
+
+    @display(description="Used for Closure", boolean=True)
+    def display_closure(self, obj):
+        return obj.used_for_closure
 
     fieldsets = (
-        ("Complaint Information", {"fields": ("complaint", "gap", "verified_by")}),
+        (
+            "Complaint Information",
+            {
+                "fields": ("complaint", "gap", "verified_by"),
+                "classes": ["tab"],
+            },
+        ),
         (
             "Verification Results",
             {
@@ -332,7 +540,8 @@ class VoiceVerificationLogAdmin(admin.ModelAdmin):
                     "similarity_percentage",
                     "is_match",
                     "confidence",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
         (
@@ -343,7 +552,8 @@ class VoiceVerificationLogAdmin(admin.ModelAdmin):
                     "verification_date",
                     "used_for_closure",
                     "notes",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
     )
@@ -353,44 +563,79 @@ class VoiceVerificationLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "role", "user_email", "user_is_active")
+class UserProfileAdmin(ModelAdmin):
+    list_display = ("user", "display_role", "user_email", "display_active")
     list_filter = ("role",)
     search_fields = ("user__username", "user__email")
+    list_filter_submit = True
 
+    @display(
+        description="Role",
+        label={
+            "admin": "danger",
+            "manager": "warning",
+            "agent": "info",
+            "viewer": "success",
+        },
+    )
+    def display_role(self, obj):
+        return obj.role
+
+    @display(description="Email")
     def user_email(self, obj):
         return obj.user.email
 
-    user_email.short_description = "Email"
-
-    def user_is_active(self, obj):
+    @display(description="Active", boolean=True)
+    def display_active(self, obj):
         return obj.user.is_active
-
-    user_is_active.boolean = True
-    user_is_active.short_description = "Active"
 
 
 @admin.register(QRSubmission)
-class QRSubmissionAdmin(admin.ModelAdmin):
+class QRSubmissionAdmin(ModelAdmin):
     list_display = (
         "submission_uuid",
         "person_name",
         "village_name",
-        "form_type",
-        "synced_from_mobile",
+        "display_form_type",
+        "display_synced",
         "created_at",
     )
     list_filter = ("synced_from_mobile", "form_type", "created_at")
     search_fields = ("person_name", "village_name", "qr_code", "phone_number")
     readonly_fields = ("submission_uuid", "created_at")
+    list_filter_submit = True
+    date_hierarchy = "created_at"
+
+    @display(description="Form Type", label=True)
+    def display_form_type(self, obj):
+        return obj.form_type
+
+    @display(description="Mobile Sync", boolean=True)
+    def display_synced(self, obj):
+        return obj.synced_from_mobile
 
     fieldsets = (
         (
             "Person Information",
-            {"fields": ("person_name", "phone_number", "person_photo")},
+            {
+                "fields": ("person_name", "phone_number", "person_photo"),
+                "classes": ["tab"],
+            },
         ),
-        ("Location", {"fields": ("village", "village_name", "latitude", "longitude")}),
-        ("QR Data", {"fields": ("qr_code", "form_type", "additional_data")}),
+        (
+            "Location",
+            {
+                "fields": ("village", "village_name", "latitude", "longitude"),
+                "classes": ["tab"],
+            },
+        ),
+        (
+            "QR Data",
+            {
+                "fields": ("qr_code", "form_type", "additional_data"),
+                "classes": ["tab"],
+            },
+        ),
         (
             "Sync Information",
             {
@@ -399,22 +644,49 @@ class QRSubmissionAdmin(admin.ModelAdmin):
                     "synced_from_mobile",
                     "mobile_created_at",
                     "created_at",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
         (
             "Linked Records",
-            {"fields": ("linked_complaint", "linked_gap"), "classes": ("collapse",)},
+            {
+                "fields": ("linked_complaint", "linked_gap"),
+                "classes": ["tab"],
+            },
         ),
     )
 
 
 @admin.register(QRComplaintDetail)
-class QRComplaintDetailAdmin(admin.ModelAdmin):
-    list_display = ("qr_submission", "complaint_type", "severity", "created_at")
+class QRComplaintDetailAdmin(ModelAdmin):
+    list_display = (
+        "qr_submission",
+        "complaint_type",
+        "display_severity",
+        "display_synced",
+        "created_at",
+    )
     list_filter = ("severity", "complaint_type", "synced_from_mobile")
     search_fields = ("complaint_text", "qr_submission__person_name")
     readonly_fields = ("created_at",)
+    list_filter_submit = True
+    date_hierarchy = "created_at"
+
+    @display(
+        description="Severity",
+        label={
+            "high": "danger",
+            "medium": "warning",
+            "low": "info",
+        },
+    )
+    def display_severity(self, obj):
+        return obj.severity
+
+    @display(description="Mobile Sync", boolean=True)
+    def display_synced(self, obj):
+        return obj.synced_from_mobile
 
     fieldsets = (
         (
@@ -425,12 +697,22 @@ class QRComplaintDetailAdmin(admin.ModelAdmin):
                     "complaint_text",
                     "complaint_type",
                     "severity",
-                )
+                ),
+                "classes": ["tab"],
             },
         ),
         (
             "Media",
-            {"fields": ("audio_file", "additional_photos"), "classes": ("collapse",)},
+            {
+                "fields": ("audio_file", "additional_photos"),
+                "classes": ["tab"],
+            },
         ),
-        ("Metadata", {"fields": ("created_at", "synced_from_mobile")}),
+        (
+            "Metadata",
+            {
+                "fields": ("created_at", "synced_from_mobile"),
+                "classes": ["tab"],
+            },
+        ),
     )

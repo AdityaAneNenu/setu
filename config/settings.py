@@ -68,6 +68,9 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",  # Must be before django.contrib.admin
+    "unfold.contrib.filters",  # Enhanced admin filters
+    "unfold.contrib.forms",  # Enhanced admin forms
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -79,6 +82,227 @@ INSTALLED_APPS = [
     "corsheaders",
     "core",
 ]
+
+# Django Unfold Admin Configuration
+UNFOLD = {
+    "SITE_TITLE": "SETU Admin",
+    "SITE_HEADER": "SETU Administration",
+    "SITE_URL": "/",
+    "SITE_ICON": {
+        "light": lambda request: "/static/images/light-mode.png",
+        "dark": lambda request: "/static/images/dark-mode.png",
+    },
+    "SITE_SYMBOL": "monitoring",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "ENVIRONMENT": "config.settings.environment_callback",
+    "DASHBOARD_CALLBACK": "core.admin_dashboard.dashboard_callback",
+    "COLORS": {
+        "primary": {
+            "50": "250 245 255",
+            "100": "243 232 255",
+            "200": "233 213 255",
+            "300": "216 180 254",
+            "400": "192 132 252",
+            "500": "168 85 247",
+            "600": "147 51 234",
+            "700": "126 34 206",
+            "800": "107 33 168",
+            "900": "88 28 135",
+            "950": "59 7 100",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": "Dashboard",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Home",
+                        "icon": "home",
+                        "link": "/",
+                    },
+                    {
+                        "title": "Admin Dashboard",
+                        "icon": "dashboard",
+                        "link": "/admin/",
+                    },
+                ],
+            },
+            {
+                "title": "Village Management",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Villages",
+                        "icon": "location_city",
+                        "link": "/admin/core/village/",
+                    },
+                    {
+                        "title": "Gaps",
+                        "icon": "report_problem",
+                        "link": "/admin/core/gap/",
+                        "badge": "core.admin_dashboard.gap_badge_callback",
+                    },
+                    {
+                        "title": "Gap Audit Logs",
+                        "icon": "history",
+                        "link": "/admin/core/gapstatusauditlog/",
+                    },
+                ],
+            },
+            {
+                "title": "Complaints & Workflow",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Complaints",
+                        "icon": "feedback",
+                        "link": "/admin/core/complaint/",
+                        "badge": "core.admin_dashboard.complaint_badge_callback",
+                    },
+                    {
+                        "title": "Workflow Logs",
+                        "icon": "receipt_long",
+                        "link": "/admin/core/workflowlog/",
+                    },
+                    {
+                        "title": "Voice Verifications",
+                        "icon": "mic",
+                        "link": "/admin/core/voiceverificationlog/",
+                    },
+                ],
+            },
+            {
+                "title": "Offices & Personnel",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Post Offices",
+                        "icon": "mail",
+                        "link": "/admin/core/postoffice/",
+                    },
+                    {
+                        "title": "PMAJAY Offices",
+                        "icon": "business",
+                        "link": "/admin/core/pmajayoffice/",
+                    },
+                    {
+                        "title": "Survey Agents",
+                        "icon": "person_search",
+                        "link": "/admin/core/surveyagent/",
+                    },
+                    {
+                        "title": "Workers",
+                        "icon": "engineering",
+                        "link": "/admin/core/worker/",
+                    },
+                ],
+            },
+            {
+                "title": "Survey & QR",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Survey Visits",
+                        "icon": "event_note",
+                        "link": "/admin/core/surveyvisit/",
+                    },
+                    {
+                        "title": "QR Submissions",
+                        "icon": "qr_code_scanner",
+                        "link": "/admin/core/qrsubmission/",
+                    },
+                    {
+                        "title": "QR Complaint Details",
+                        "icon": "description",
+                        "link": "/admin/core/qrcomplaintdetail/",
+                    },
+                ],
+            },
+            {
+                "title": "User Management",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "people",
+                        "link": "/admin/auth/user/",
+                    },
+                    {
+                        "title": "User Profiles",
+                        "icon": "badge",
+                        "link": "/admin/core/userprofile/",
+                    },
+                    {
+                        "title": "Groups",
+                        "icon": "groups",
+                        "link": "/admin/auth/group/",
+                    },
+                ],
+            },
+        ],
+    },
+    "TABS": [
+        {
+            "models": ["core.gap"],
+            "items": [
+                {
+                    "title": "All Gaps",
+                    "link": "/admin/core/gap/",
+                },
+                {
+                    "title": "Pending",
+                    "link": "/admin/core/gap/?status__exact=pending",
+                },
+                {
+                    "title": "In Progress",
+                    "link": "/admin/core/gap/?status__exact=in_progress",
+                },
+                {
+                    "title": "Resolved",
+                    "link": "/admin/core/gap/?status__exact=resolved",
+                },
+            ],
+        },
+        {
+            "models": ["core.complaint"],
+            "items": [
+                {
+                    "title": "All Complaints",
+                    "link": "/admin/core/complaint/",
+                },
+                {
+                    "title": "Open",
+                    "link": "/admin/core/complaint/?status__exact=open",
+                },
+                {
+                    "title": "In Progress",
+                    "link": "/admin/core/complaint/?status__exact=in_progress",
+                },
+                {
+                    "title": "Resolved",
+                    "link": "/admin/core/complaint/?status__exact=resolved",
+                },
+            ],
+        },
+    ],
+}
+
+
+def environment_callback(request):
+    """Return environment info for admin header"""
+    import os
+
+    if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+        return ["Production", "success"]
+    elif os.getenv("DEBUG", "True").lower() == "true":
+        return ["Development", "warning"]
+    return ["Staging", "info"]
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

@@ -6,18 +6,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{% static 'css/modern.css' %}">
   <style>
+    .page-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .search-box {
+      position: relative;
+      width: 280px;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 10px 14px 10px 42px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+    }
+    
+    .search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    
     .villages-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px 18px;
     }
     
     .village-card {
       background: var(--bg-card);
       border-radius: 12px;
-      padding: 24px;
+      padding: 22px;
       border: 1px solid var(--border-color);
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
     }
@@ -27,35 +64,58 @@
       position: absolute;
       top: 0;
       left: 0;
-      right: 0;
-      height: 2px;
-      background: #8b5cf6;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, #8b5cf6 0%, #ec4899 50%, #f59e0b 100%);
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity 0.3s ease;
     }
     
     .village-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--border-hover);
-      box-shadow: var(--glow-purple);
+      border-color: rgba(139, 92, 246, 0.5);
+      box-shadow: 0 8px 28px rgba(139, 92, 246, 0.12);
+      transform: translateY(-3px);
     }
     
     .village-card:hover::before {
       opacity: 1;
     }
     
+    /* Stagger animation on load */
+    .village-card {
+      animation: fadeSlideIn 0.5s ease backwards;
+    }
+    
+    .village-card:nth-child(1) { animation-delay: 0.05s; }
+    .village-card:nth-child(2) { animation-delay: 0.1s; }
+    .village-card:nth-child(3) { animation-delay: 0.15s; }
+    .village-card:nth-child(4) { animation-delay: 0.2s; }
+    .village-card:nth-child(5) { animation-delay: 0.25s; }
+    .village-card:nth-child(6) { animation-delay: 0.3s; }
+    
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
     .village-header {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     
     .village-icon {
-      width: 48px;
-      height: 48px;
-      background: var(--gradient-purple);
-      border-radius: 12px;
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -63,138 +123,128 @@
     }
     
     .village-icon svg {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       stroke: white;
       stroke-width: 2;
       fill: none;
     }
     
-    .village-info {
-      flex: 1;
-    }
-    
     .village-name {
       color: var(--text-primary);
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 4px;
+      font-size: 17px;
+      font-weight: 600;
+      margin: 0 0 2px 0;
     }
     
     .village-meta {
       color: var(--text-muted);
-      font-size: 14px;
+      font-size: 13px;
+      margin: 0;
     }
     
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    
-    .stat-item {
-      text-align: center;
-      padding: 12px;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-    }
-    
-    .stat-item .stat-value {
-      color: var(--text-primary);
-      font-size: 24px;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 4px;
-      background: none;
-      -webkit-text-fill-color: var(--text-primary);
-    }
-    
-    .stat-item .stat-label {
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .status-indicators {
+    .quick-stats {
       display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 6px;
+      margin-bottom: 14px;
     }
     
-    .status-pill {
+    .quick-stat {
       flex: 1;
-      padding: 8px;
+      padding: 10px 8px;
       border-radius: 6px;
       text-align: center;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    
-    .status-pill.open {
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-    }
-    
-    .status-pill.progress {
-      background: rgba(249, 115, 22, 0.15);
-      color: #f97316;
-    }
-    
-    .status-pill.resolved {
-      background: rgba(34, 197, 94, 0.15);
-      color: #22c55e;
-    }
-    
-    .severity-bar {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 12px;
-    }
-    
-    .severity-label {
-      color: var(--text-muted);
       font-size: 12px;
-      font-weight: 500;
-      margin-bottom: 8px;
     }
     
-    .severity-segment {
-      height: 8px;
-      border-radius: 4px;
-      transition: all 0.3s ease;
+    .quick-stat.open-stat {
+      background: rgba(239, 68, 68, 0.08);
+      color: #dc2626;
     }
     
-    .severity-segment.high {
-      background: #ef4444;
+    .quick-stat.progress-stat {
+      background: rgba(245, 158, 11, 0.08);
+      color: #d97706;
     }
     
-    .severity-segment.medium {
-      background: #f59e0b;
+    .quick-stat.done-stat {
+      background: rgba(34, 197, 94, 0.08);
+      color: #16a34a;
     }
     
-    .severity-segment.low {
-      background: #3b82f6;
+    .quick-stat strong {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2px;
     }
     
-    .village-actions {
+    .severity-row {
+      margin-bottom: 14px;
+    }
+    
+    .severity-row small {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    
+    .severity-track {
+      height: 6px;
+      background: var(--bg-secondary);
+      border-radius: 3px;
+      display: flex;
+      overflow: hidden;
+      gap: 2px;
+    }
+    
+    .sev-high { background: #ef4444; border-radius: 3px 0 0 3px; }
+    .sev-med { background: #f59e0b; }
+    .sev-low { background: #3b82f6; border-radius: 0 3px 3px 0; }
+    
+    .card-actions {
       display: flex;
       gap: 8px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-color);
     }
     
-    @media (max-width: 768px) {
-      .villages-grid {
-        grid-template-columns: 1fr;
-      }
+    .card-actions .btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 12px;
+      font-size: 13px;
     }
     
-    @media (max-width: 480px) {
-      .stats-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .no-results-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: var(--bg-secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .no-results-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--text-muted);
+    }
+    
+    @media (max-width: 640px) {
+      .page-toolbar { flex-direction: column; align-items: stretch; }
+      .search-box { width: 100%; }
+      .villages-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -229,7 +279,7 @@
     </ul>
     
     <div class="nav-user">
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
         <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -254,80 +304,102 @@
 <div class="main-wrapper">
   <div class="container">
   
-  <div class="page-header">
-    <h1>Villages Overview</h1>
-    <p>Monitor infrastructure gaps across all villages</p>
+  <div class="page-header" style="text-align: left; margin-bottom: 24px;">
+    <h1 style="font-size: 1.75rem; margin-bottom: 4px;">Villages</h1>
+    <p style="color: var(--text-muted); font-size: 14px;">Track development gaps across all registered villages</p>
+  </div>
+  
+  <div class="page-toolbar">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="M21 21l-4.35-4.35"></path>
+      </svg>
+      <input type="text" id="villageSearch" placeholder="Search villages..." onkeyup="filterVillages()">
+    </div>
+    <span style="color: var(--text-muted); font-size: 13px;">{{ villages|length }} villages</span>
   </div>
 
-  <div class="villages-grid">
+  <div class="villages-grid" id="villagesGrid">
     {% for village in villages %}
-    <div class="village-card">
+    <div class="village-card" data-name="{{ village.name|lower }}">
       <div class="village-header">
         <div class="village-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
         </div>
-        <div class="village-info">
+        <div>
           <h3 class="village-name">{{ village.name }}</h3>
-          <p class="village-meta">{{ village.total_gaps }} total gaps</p>
+          <p class="village-meta">{{ village.total_gaps }} issues tracked</p>
         </div>
       </div>
 
-      <div class="stats-row">
-        <div class="stat-item">
-          <div class="stat-value">{{ village.total_gaps }}</div>
-          <div class="stat-label">Total</div>
+      <div class="quick-stats">
+        <div class="quick-stat open-stat">
+          <strong>{{ village.open_gaps }}</strong>
+          Open
         </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ village.open_gaps }}</div>
-          <div class="stat-label">Open</div>
+        <div class="quick-stat progress-stat">
+          <strong>{{ village.in_progress_gaps }}</strong>
+          Working
         </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ village.resolved_gaps }}</div>
-          <div class="stat-label">Resolved</div>
+        <div class="quick-stat done-stat">
+          <strong>{{ village.resolved_gaps }}</strong>
+          Done
         </div>
       </div>
 
-      <div class="status-indicators">
-        <div class="status-pill open">{{ village.open_gaps }} Open</div>
-        <div class="status-pill progress">{{ village.in_progress_gaps }} In Progress</div>
-        <div class="status-pill resolved">{{ village.resolved_gaps }} Resolved</div>
+      <div class="severity-row">
+        <small>
+          <span>Severity</span>
+          <span>{{ village.high_severity }}H / {{ village.medium_severity }}M / {{ village.low_severity }}L</span>
+        </small>
+        <div class="severity-track">
+          {% if village.high_severity %}<div class="sev-high" style="flex: {{ village.high_severity }};"></div>{% endif %}
+          {% if village.medium_severity %}<div class="sev-med" style="flex: {{ village.medium_severity }};"></div>{% endif %}
+          {% if village.low_severity %}<div class="sev-low" style="flex: {{ village.low_severity }};"></div>{% endif %}
+        </div>
       </div>
 
-      <div class="severity-label">Severity Distribution</div>
-      <div class="severity-bar">
-        <div class="severity-segment high" style="flex: {{ village.high_severity }};"></div>
-        <div class="severity-segment medium" style="flex: {{ village.medium_severity }};"></div>
-        <div class="severity-segment low" style="flex: {{ village.low_severity }};"></div>
-      </div>
-
-      <div class="village-actions">
-        <a href="{% url 'village_detail' village.id %}" class="btn btn-primary">View Details</a>
-        <a href="{% url 'village_report' village.id %}" class="btn btn-secondary">Reports</a>
+      <div class="card-actions">
+        <a href="{% url 'village_detail' village.id %}" class="btn btn-primary">Details</a>
+        <a href="{% url 'village_report' village.id %}" class="btn btn-secondary">Report</a>
       </div>
     </div>
     {% empty %}
-    <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #64748b;">
-      <p style="font-size: 18px; margin-bottom: 12px;">No villages found</p>
-      <p style="font-size: 14px;">Add sample data by running: python manage.py add_sample_data</p>
+    <div class="no-results">
+      <div class="no-results-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+      </div>
+      <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">No villages yet</p>
+      <p style="color: var(--text-muted); font-size: 13px;">Upload data or run sample data script to get started</p>
     </div>
     {% endfor %}
   </div>
 </div>
-
-<style>
-  @media (max-width: 768px) {
-    .main-content > .menu-toggle {
-      display: block !important;
-    }
-  }
-</style>
-
-  </div>
 </div>
 
 <script>
+function filterVillages() {
+  const query = document.getElementById('villageSearch').value.toLowerCase();
+  const cards = document.querySelectorAll('.village-card');
+  let visible = 0;
+  
+  cards.forEach(card => {
+    const name = card.dataset.name;
+    if (name.includes(query)) {
+      card.style.display = '';
+      visible++;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
 function toggleMenu() {
   document.getElementById('navMenu').classList.toggle('active');
 }
@@ -350,18 +422,15 @@ function toggleTheme() {
   }
 }
 
+// Load saved theme
 document.addEventListener('DOMContentLoaded', function() {
   const savedTheme = localStorage.getItem('theme');
-  const sunIcon = document.querySelector('.sun-icon');
-  const moonIcon = document.querySelector('.moon-icon');
-  
   if (savedTheme === 'light') {
     document.body.classList.add('light-mode');
-    if (sunIcon) sunIcon.style.display = 'none';
-    if (moonIcon) moonIcon.style.display = 'block';
+    document.querySelector('.sun-icon').style.display = 'none';
+    document.querySelector('.moon-icon').style.display = 'block';
   }
 });
 </script>
-
 </body>
 </html>

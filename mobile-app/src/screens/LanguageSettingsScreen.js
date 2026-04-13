@@ -1,96 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  Switch,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts } from '../theme';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
-
-// Horizontal pill scroller component
-const LangScroller = ({ languages, selectedId, onSelect, colors, isDark }) => (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.langScrollContent}
-  >
-    {languages.map((lang) => {
-      const isSelected = selectedId === lang.id;
-      return (
-        <TouchableOpacity
-          key={lang.id}
-          style={[
-            styles.langPill,
-            { backgroundColor: isDark ? colors.surface : colors.white },
-            isSelected && { backgroundColor: colors.buttonPrimaryBg, borderColor: colors.buttonPrimaryBg },
-          ]}
-          onPress={() => onSelect(lang.id)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.langPillNative, { color: colors.text }, isSelected && { color: colors.buttonPrimaryText }]}>
-            {lang.native}
-          </Text>
-          <Text style={[styles.langPillLabel, { color: colors.textLight }, isSelected && { color: colors.buttonPrimaryText, opacity: 0.85 }]}>
-            {lang.label}
-          </Text>
-        </TouchableOpacity>
-      );
-    })}
-  </ScrollView>
-);
-
 export default function LanguageSettingsScreen({ navigation }) {
   const { t, currentLanguage, changeLanguage, languages } = useTranslation();
   const { colors, isDark } = useTheme();
-  const [autoDetect, setAutoDetect] = useState(true);
-  const [scanLang, setScanLang] = useState('en');
-  const [audioLang, setAudioLang] = useState('hi');
 
-  // Load saved preferences
-  useEffect(() => {
-    const loadPrefs = async () => {
-      try {
-        const saved = await AsyncStorage.getItem('language_settings');
-        if (saved) {
-          const prefs = JSON.parse(saved);
-          setAutoDetect(prefs.autoDetect !== false);
-          setScanLang(prefs.scanLang || 'en');
-          setAudioLang(prefs.audioLang || 'hi');
-        }
-      } catch (e) { /* preferences load error */ }
-    };
-    loadPrefs();
-  }, []);
-
-  // Save preferences on change
-  const savePrefs = async (key, value) => {
-    try {
-      const current = await AsyncStorage.getItem('language_settings');
-      const prefs = current ? JSON.parse(current) : {};
-      prefs[key] = value;
-      await AsyncStorage.setItem('language_settings', JSON.stringify(prefs));
-    } catch (e) { /* preferences save error */ }
+  const handleLanguageSelect = (id) => {
+    changeLanguage(id);
   };
-
-  const handleAppLang = (id) => { changeLanguage(id); };
-  const handleScanLang = (id) => { setScanLang(id); savePrefs('scanLang', id); };
-  const handleAudioLang = (id) => { setAudioLang(id); savePrefs('audioLang', id); };
-  const handleAutoDetect = (val) => { setAutoDetect(val); savePrefs('autoDetect', val); };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
       <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.backgroundGray} />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -107,54 +41,41 @@ export default function LanguageSettingsScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Auto Detect */}
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>{t('language.preferences')}</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textLight }]}>{t('language.appLanguage')}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <View style={styles.optionRow}>
-            <Ionicons name="globe-outline" size={22} color={colors.text} />
-            <Text style={[styles.optionTitle, { color: colors.text }]}>{t('language.autoDetect')}</Text>
-            <Switch
-              value={autoDetect}
-              onValueChange={handleAutoDetect}
-              trackColor={{ false: '#E0E0E0', true: colors.accent }}
-              thumbColor={colors.white}
-            />
-          </View>
+          {languages.map((lang, index) => {
+            const isSelected = currentLanguage === lang.id;
+            return (
+              <React.Fragment key={lang.id}>
+                <TouchableOpacity
+                  style={styles.languageRow}
+                  onPress={() => handleLanguageSelect(lang.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.languageInfo}>
+                    <Text style={[styles.languageNative, { color: colors.text }]}>
+                      {lang.native}
+                    </Text>
+                    <Text style={[styles.languageLabel, { color: colors.textLight }]}>
+                      {lang.label}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.radioOuter,
+                    { borderColor: isSelected ? colors.accent : colors.textLight }
+                  ]}>
+                    {isSelected && (
+                      <View style={[styles.radioInner, { backgroundColor: colors.accent }]} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+                {index < languages.length - 1 && (
+                  <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+                )}
+              </React.Fragment>
+            );
+          })}
         </View>
-
-        {/* App Language */}
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>{t('language.appLanguage')}</Text>
-        <LangScroller languages={languages} selectedId={currentLanguage} onSelect={handleAppLang} colors={colors} isDark={isDark} />
-
-        {/* Scan Language */}
-        <Text style={[styles.sectionLabel, { marginTop: 24, color: colors.text }]}>{t('language.scanLanguage')}</Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <View style={styles.optionRow}>
-            <Ionicons name="document-text-outline" size={22} color={colors.text} />
-            <Text style={[styles.optionTitle, { color: colors.text }]}>
-              {languages.find(l => l.id === scanLang)?.label || 'English'}
-            </Text>
-            <Text style={styles.nativeText}>
-              {languages.find(l => l.id === scanLang)?.native || ''}
-            </Text>
-          </View>
-        </View>
-        <LangScroller languages={languages} selectedId={scanLang} onSelect={handleScanLang} colors={colors} isDark={isDark} />
-
-        {/* Audio Language */}
-        <Text style={[styles.sectionLabel, { marginTop: 24, color: colors.text }]}>{t('language.audioLanguage')}</Text>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <View style={styles.optionRow}>
-            <Ionicons name="mic-outline" size={22} color={colors.text} />
-            <Text style={[styles.optionTitle, { color: colors.text }]}>
-              {languages.find(l => l.id === audioLang)?.label || 'Hindi'}
-            </Text>
-            <Text style={styles.nativeText}>
-              {languages.find(l => l.id === audioLang)?.native || ''}
-            </Text>
-          </View>
-        </View>
-        <LangScroller languages={languages} selectedId={audioLang} onSelect={handleAudioLang} colors={colors} isDark={isDark} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -163,117 +84,85 @@ export default function LanguageSettingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F8',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 20,
-    paddingHorizontal: 41,
+    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   backButton: {
-    padding: 0,
+    padding: 8,
+    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 18,
     fontFamily: fonts.semiBold,
-    color: '#000000',
   },
   placeholder: {
-    width: 24,
+    width: 40,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
+    paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 40,
   },
   sectionLabel: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: '#888888',
     letterSpacing: 0.5,
     marginBottom: 12,
-    marginLeft: 28,
+    marginLeft: 4,
   },
   card: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    marginBottom: 12,
-    marginHorizontal: 24,
+    paddingVertical: 4,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 2,
   },
-  optionRow: {
+  languageRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 16,
   },
-  optionTitle: {
+  languageInfo: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: fonts.medium,
-    color: '#000000',
-    marginLeft: 14,
   },
-  nativeText: {
-    fontSize: 14,
+  languageNative: {
+    fontSize: 16,
+    fontFamily: fonts.semiBold,
+    marginBottom: 2,
+  },
+  languageLabel: {
+    fontSize: 13,
     fontFamily: fonts.regular,
-    color: '#888888',
+  },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F0F0F0',
-    marginLeft: 36,
-  },
-  // Horizontal language scroller pills
-  langScrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 4,
-    gap: 10,
-  },
-  langPill: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 80,
-    elevation: 2,
-    shadowColor: 'rgba(0,0,0,0.05)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  langPillSelected: {
-    backgroundColor: '#000000',
-  },
-  langPillNative: {
-    fontSize: 15,
-    fontFamily: fonts.semiBold,
-    color: '#000000',
-    marginBottom: 2,
-  },
-  langPillNativeSelected: {
-    color: '#FFFFFF',
-  },
-  langPillLabel: {
-    fontSize: 11,
-    fontFamily: fonts.regular,
-    color: '#888888',
-  },
-  langPillLabelSelected: {
-    color: '#CCCCCC',
+    marginLeft: 0,
   },
 });

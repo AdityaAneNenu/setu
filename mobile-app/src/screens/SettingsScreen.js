@@ -98,14 +98,6 @@ export default function SettingsScreen({ navigation }) {
         {/* Account Section */}
         <Text style={[styles.sectionLabel, { color: colors.textLight }]}>{t('settings.account')}</Text>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <TouchableOpacity style={styles.optionRow} onPress={() => navigation.navigate('Profile')}>
-            <Ionicons name="person-outline" size={22} color={colors.text} />
-            <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings.profile')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-          </TouchableOpacity>
-
-          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-
           <TouchableOpacity style={styles.optionRow} onPress={() => navigation.navigate('Security')}>
             <Ionicons name="key-outline" size={22} color={colors.text} />
             <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings.securityPassword')}</Text>
@@ -231,14 +223,14 @@ export default function SettingsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20, paddingHorizontal: 41, paddingBottom: 16 },
-  backButton: { padding: 0 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20, paddingHorizontal: 24, paddingBottom: 16 },
+  backButton: { padding: 8, marginLeft: -8 },
   headerTitle: { fontSize: 18, fontFamily: fonts.semiBold },
-  placeholder: { width: 24 },
+  placeholder: { width: 40 },
   content: { flex: 1 },
   scrollContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
   sectionLabel: { fontSize: 12, fontFamily: fonts.semiBold, letterSpacing: 0.5, marginBottom: 12, marginLeft: 4 },
-  card: { borderRadius: 20, paddingHorizontal: 20, paddingVertical: 8, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  card: { borderRadius: 20, paddingHorizontal: 20, paddingVertical: 4, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
   optionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
   optionTitle: { flex: 1, fontSize: 16, fontFamily: fonts.medium, marginLeft: 14 },
   valueContainer: { flexDirection: 'row', alignItems: 'center' },

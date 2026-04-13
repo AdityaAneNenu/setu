@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,13 +16,12 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileScreen({ navigation }) {
   const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
-    // Use onAuthStateChange which fetches the full Firestore profile
     const unsubscribe = authApi.onAuthStateChange((user) => {
       if (user) {
         setUserName(user.displayName || user.username || user.email?.split('@')[0] || t('common.user'));
@@ -33,94 +33,86 @@ export default function ProfileScreen({ navigation }) {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.backgroundGray} />
 
-      {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.backgroundGray }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>{t('profile.title')}</Text>
         <View style={styles.placeholder} />
       </View>
 
-      {/* Profile Content */}
-      <View style={styles.content}>
-        {/* Profile Avatar */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={50} color="#FFFFFF" />
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
+            <Ionicons name="person" size={40} color="#FFFFFF" />
           </View>
+          <Text style={[styles.userName, { color: colors.text }]}>{userName}</Text>
+          <Text style={[styles.userEmail, { color: colors.textLight }]}>{userEmail}</Text>
+          {userRole ? (
+            <View style={[styles.roleBadge, { backgroundColor: `${colors.accent}15` }]}>
+              <Text style={[styles.roleText, { color: colors.accent }]}>
+                {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        {/* User Info */}
-        <Text style={[styles.userName, { color: colors.text }]}>{userName}</Text>
-        <Text style={[styles.userEmail, { color: colors.textLight }]}>{userEmail}</Text>
-        {userRole ? (
-          <Text style={styles.userRole}>{userRole.charAt(0).toUpperCase() + userRole.slice(1)}</Text>
-        ) : null}
-
-        {/* Profile Options */}
-        <View style={styles.optionsContainer}>
+        <Text style={[styles.sectionLabel, { color: colors.textLight }]}>{t('settings.account')}</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <TouchableOpacity
-            style={styles.optionItem}
+            style={styles.optionRow}
+            onPress={() => navigation.navigate('Security')}
+          >
+            <Ionicons name="key-outline" size={22} color={colors.text} />
+            <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings.securityPassword')}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </TouchableOpacity>
+
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => navigation.navigate('LanguageSettings')}
+          >
+            <Ionicons name="language-outline" size={22} color={colors.text} />
+            <Text style={[styles.optionTitle, { color: colors.text }]}>{t('settings.language')}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: colors.textLight }]}>{t('settings.preferences')}</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <TouchableOpacity
+            style={styles.optionRow}
             onPress={() => navigation.navigate('Settings')}
           >
-            <Ionicons name="person-outline" size={24} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>{t('profile.accountSettings')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.iconInactive} />
+            <Ionicons name="settings-outline" size={22} color={colors.text} />
+            <Text style={[styles.optionTitle, { color: colors.text }]}>{t('profile.settings')}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Ionicons name="notifications-outline" size={24} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>{t('profile.notifications')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.iconInactive} />
-          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
           <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Ionicons name="settings-outline" size={24} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>{t('profile.settings')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.iconInactive} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionItem}
+            style={styles.optionRow}
             onPress={() => navigation.navigate('HelpSupport')}
           >
-            <Ionicons name="help-circle-outline" size={24} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>{t('profile.helpSupport')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.iconInactive} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate('AccessibilitySettings')}
-          >
-            <Ionicons name="accessibility-outline" size={24} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>{t('profile.accessibility')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.iconInactive} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate('StorageCloud')}
-          >
-            <Ionicons name="cloud-outline" size={24} color={colors.text} />
-            <Text style={[styles.optionText, { color: colors.text }]}>{t('profile.storageCloud')}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.iconInactive} />
+            <Ionicons name="help-circle-outline" size={22} color={colors.text} />
+            <Text style={[styles.optionTitle, { color: colors.text }]}>{t('profile.helpSupport')}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -128,81 +120,103 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   backButton: {
-    padding: 4,
+    padding: 8,
+    marginLeft: -8,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: fonts.semiBold,
-    color: '#000000',
   },
   placeholder: {
-    width: 36,
+    width: 40,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 24,
   },
-  avatarContainer: {
-    marginBottom: 20,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  profileCard: {
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#000000',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: fonts.bold,
-    color: '#000000',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
     fontFamily: fonts.regular,
-    color: '#888888',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  userRole: {
+  roleBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  roleText: {
     fontSize: 12,
     fontFamily: fonts.semiBold,
-    color: '#FA4A0C',
-    backgroundColor: '#FA4A0C15',
-    paddingHorizontal: 12,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  card: {
+    borderRadius: 20,
+    paddingHorizontal: 20,
     paddingVertical: 4,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 32,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  optionsContainer: {
-    width: '100%',
-  },
-  optionItem: {
+  optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
-  optionText: {
+  optionTitle: {
     flex: 1,
     fontSize: 16,
-    fontFamily: fonts.regular,
-    color: '#000000',
-    marginLeft: 16,
+    fontFamily: fonts.medium,
+    marginLeft: 14,
+  },
+  divider: {
+    height: 1,
+    marginLeft: 36,
   },
 });
