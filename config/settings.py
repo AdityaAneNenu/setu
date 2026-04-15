@@ -32,7 +32,8 @@ if not SECRET_KEY:
     )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+# Default to False for safer behavior when env vars are missing.
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 RAILWAY_PUBLIC_DOMAIN = os.getenv("RAILWAY_PUBLIC_DOMAIN")
@@ -299,7 +300,7 @@ def environment_callback(request):
 
     if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
         return ["Production", "success"]
-    elif os.getenv("DEBUG", "True").lower() == "true":
+    elif os.getenv("DEBUG", "False").lower() == "true":
         return ["Development", "warning"]
     return ["Staging", "info"]
 

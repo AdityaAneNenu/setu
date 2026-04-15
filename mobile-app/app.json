@@ -58,7 +58,8 @@
       "expo-asset"
     ],
     "extra": {
-      "PRODUCTION_API_URL": "https://setu-pm-django-production.up.railway.app",
+      "PRODUCTION_API_URL": "https://setu.up.railway.app",
+      "USE_LOCAL_BACKEND_IN_DEV": false,
       "firebaseApiKey": "AIzaSyB9-QbV4n5eJWBXuQUvXenbAegT2NlF5Ps",
       "firebaseAuthDomain": "setu-pm.firebaseapp.com",
       "firebaseProjectId": "setu-pm",

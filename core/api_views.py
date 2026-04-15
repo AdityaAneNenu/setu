@@ -26,6 +26,102 @@ from .models import Complaint, Village, QRSubmission, Gap, SurveyAgent
 from .serializers import QRSubmissionSerializer
 from django.db.models import Count, Q
 from django.db import transaction
+from urllib.parse import urlsplit
+import mimetypes
+
+
+logger = logging.getLogger(__name__)
+
+
+class AudioPersistenceError(Exception):
+    """Raised when an audio file cannot be persisted for a gap."""
+
+
+def _get_gap_audio_url(gap):
+    """Return the best available audio URL for a gap."""
+    if gap.audio_file:
+        try:
+            return gap.audio_file.url
+        except Exception:
+            logger.warning("Could not resolve local audio URL for gap %s", gap.id)
+    return gap.audio_url or None
+
+
+def _save_remote_audio_to_gap(gap, remote_url, max_audio_size=50 * 1024 * 1024):
+    """Download remote audio and attach it to gap.audio_file."""
+    import requests
+    from django.core.files.base import ContentFile
+
+    if not remote_url:
+        raise AudioPersistenceError("Audio URL is missing")
+
+    try:
+        response = requests.get(remote_url, timeout=60)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise AudioPersistenceError(
+            f"Failed to download audio from URL: {str(exc)}"
+        ) from exc
+
+    content = response.content
+    if not content:
+        raise AudioPersistenceError("Downloaded audio file is empty")
+
+    if len(content) > max_audio_size:
+        raise AudioPersistenceError("Audio file too large. Maximum size is 50MB.")
+
+    content_type = (response.headers.get("Content-Type") or "").split(";")[0].strip()
+    ext = os.path.splitext(urlsplit(remote_url).path)[1]
+    if not ext:
+        ext = mimetypes.guess_extension(content_type) if content_type else None
+    if not ext:
+        ext = ".m4a"
+
+    filename = f"gap_{gap.id}_audio{ext}"
+    gap.audio_file.save(filename, ContentFile(content), save=False)
+
+
+def _generate_voice_code_for_gap(gap):
+    """Generate and attach a unique voice code when possible."""
+    if not gap.audio_file:
+        return False
+
+    try:
+        from .voice_verification import VoiceFeatureExtractor
+
+        voice_code = VoiceFeatureExtractor.generate_voice_code(gap.audio_file.path)
+        if not voice_code or voice_code == "error":
+            return False
+
+        if Gap.objects.filter(voice_code=voice_code).exclude(id=gap.id).exists():
+            logger.warning("Voice code collision detected for gap %s", gap.id)
+            return False
+
+        gap.voice_code = voice_code
+        return True
+    except Exception as exc:
+        logger.warning("Voice code generation failed for gap %s: %s", gap.id, exc)
+        return False
+
+
+def _ensure_gap_has_local_audio(gap):
+    """Backfill local audio_file from audio_url when possible."""
+    if gap.audio_file:
+        return True
+
+    if not gap.audio_url:
+        return False
+
+    try:
+        _save_remote_audio_to_gap(gap, gap.audio_url)
+        update_fields = ["audio_file"]
+        if gap.input_method == "voice" and _generate_voice_code_for_gap(gap):
+            update_fields.append("voice_code")
+        gap.save(update_fields=update_fields)
+        return True
+    except AudioPersistenceError as exc:
+        logger.warning("Could not backfill local audio for gap %s: %s", gap.id, exc)
+        return False
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -244,6 +340,7 @@ def api_gaps_list(request):
 
     gaps_data = []
     for gap in gaps:
+        resolved_audio_url = _get_gap_audio_url(gap)
         gaps_data.append(
             {
                 "id": gap.id,
@@ -258,7 +355,8 @@ def api_gaps_list(request):
                 "created_at": gap.created_at.isoformat() if gap.created_at else None,
                 "latitude": float(gap.latitude) if gap.latitude else None,
                 "longitude": float(gap.longitude) if gap.longitude else None,
-                "audio_file": gap.audio_file.url if gap.audio_file else None,
+                "audio_file": resolved_audio_url,
+                "audio_url": resolved_audio_url,
             }
         )
 
@@ -275,12 +373,58 @@ def api_gaps_list(request):
     )
 
 
-@api_view(["GET"])
+@api_view(["GET", "DELETE"])
 @permission_classes([IsAuthenticated])
 def api_gap_detail(request, gap_id):
     """JSON API endpoint to get single gap details"""
     try:
         gap = Gap.objects.select_related("village").get(id=gap_id)
+
+        if request.method == "DELETE":
+            from .permissions import can_resolve_gaps
+
+            if not can_resolve_gaps(request.user):
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Only Admin can delete gaps",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            gap_description = gap.description or ""
+            gap.delete()
+
+            # Best effort cleanup for any mirrored Firestore records.
+            try:
+                from .firebase_utils import get_firestore_client
+
+                firestore_db = get_firestore_client()
+                if firestore_db:
+                    firestore_db.collection("gaps").document(str(gap_id)).delete()
+                    for gap_doc in (
+                        firestore_db.collection("gaps")
+                        .where("django_id", "==", gap_id)
+                        .stream()
+                    ):
+                        gap_doc.reference.delete()
+            except Exception as fs_err:
+                logger.warning(
+                    "Gap deleted in Django but Firestore cleanup failed for %s: %s",
+                    gap_id,
+                    fs_err,
+                )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Gap deleted successfully",
+                    "id": gap_id,
+                    "description": gap_description,
+                }
+            )
+
+        resolved_audio_url = _get_gap_audio_url(gap)
         data = {
             "id": gap.id,
             "village_id": gap.village_id if gap.village_id else None,
@@ -302,7 +446,8 @@ def api_gap_detail(request, gap_id):
             ),
             "latitude": float(gap.latitude) if gap.latitude else None,
             "longitude": float(gap.longitude) if gap.longitude else None,
-            "audio_file": gap.audio_file.url if gap.audio_file else None,
+            "audio_file": resolved_audio_url,
+            "audio_url": resolved_audio_url,
             "resolution_proof": (
                 gap.resolution_proof.url if gap.resolution_proof else None
             ),
@@ -438,6 +583,7 @@ class GapUploadAPIView(APIView):
             language_code = request.data.get("language_code", "hi")
             latitude = request.data.get("latitude")
             longitude = request.data.get("longitude")
+            audio_url = (request.data.get("audio_url") or "").strip()
 
             if not village_id:
                 return Response(
@@ -449,6 +595,22 @@ class GapUploadAPIView(APIView):
             except Village.DoesNotExist:
                 return Response(
                     {"error": "Village not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+
+            if audio_url and not audio_url.startswith(("http://", "https://")):
+                return Response(
+                    {"error": "Invalid audio URL format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if (
+                submission_type == "audio"
+                and "audio_file" not in request.FILES
+                and not audio_url
+            ):
+                return Response(
+                    {"error": "audio_file or audio_url is required for audio submission"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             input_method = "text"
@@ -635,6 +797,9 @@ class GapUploadAPIView(APIView):
                     processed_gap_type = "other"
                     processed_severity = "medium"
 
+            elif audio_url:
+                input_method = "voice"
+
             # Handle image file processing
             elif "image" in request.FILES:
                 input_method = "image"
@@ -723,14 +888,24 @@ class GapUploadAPIView(APIView):
                     status="open",
                     latitude=latitude if latitude else None,
                     longitude=longitude if longitude else None,
+                    audio_url=audio_url if audio_url else None,
                 )
 
-                # Save audio file to gap (size already validated above)
+                # Persist audio for voice submissions (file upload or external URL)
                 if "audio_file" in request.FILES:
                     audio_file = request.FILES["audio_file"]
                     audio_file.seek(0)  # Reset file pointer after earlier processing
                     gap.audio_file = audio_file
-                    gap.save()
+                    update_fields = ["audio_file"]
+                    if _generate_voice_code_for_gap(gap):
+                        update_fields.append("voice_code")
+                    gap.save(update_fields=update_fields)
+                elif audio_url:
+                    _save_remote_audio_to_gap(gap, audio_url)
+                    update_fields = ["audio_file"]
+                    if _generate_voice_code_for_gap(gap):
+                        update_fields.append("voice_code")
+                    gap.save(update_fields=update_fields)
 
             # Sync to Firebase Firestore (outside transaction - non-critical)
             try:
@@ -748,8 +923,16 @@ class GapUploadAPIView(APIView):
                     "gap_type": processed_gap_type,
                     "severity": processed_severity,
                     "description": processed_description,
+                    "has_audio": bool(gap.audio_file or gap.audio_url),
+                    "audio_url": _get_gap_audio_url(gap),
+                    "has_voice_code": bool(gap.voice_code),
                 },
                 status=status.HTTP_201_CREATED,
+            )
+
+        except AudioPersistenceError as audio_err:
+            return Response(
+                {"error": str(audio_err)}, status=status.HTTP_400_BAD_REQUEST
             )
 
         except Exception as e:
@@ -1027,8 +1210,8 @@ def api_voice_verification_logs(request, gap_id):
                 "gap_id": gap_id,
                 "total_attempts": len(logs_data),
                 "logs": logs_data,
-                "has_original_audio": bool(gap.audio_file),
-                "original_audio_url": gap.audio_file.url if gap.audio_file else None,
+                "has_original_audio": bool(gap.audio_file or gap.audio_url),
+                "original_audio_url": _get_gap_audio_url(gap),
             }
         )
     except Gap.DoesNotExist:
@@ -1046,6 +1229,10 @@ def api_gap_for_verification(request, gap_id):
     """Get gap details needed for voice verification"""
     try:
         gap = Gap.objects.select_related("village").get(id=gap_id)
+        _ensure_gap_has_local_audio(gap)
+
+        resolved_audio_url = _get_gap_audio_url(gap)
+        has_any_audio = bool(gap.audio_file or gap.audio_url)
 
         return Response(
             {
@@ -1056,8 +1243,8 @@ def api_gap_for_verification(request, gap_id):
                 "severity": gap.severity,
                 "status": gap.status,
                 "input_method": gap.input_method,
-                "has_audio": bool(gap.audio_file),
-                "audio_url": gap.audio_file.url if gap.audio_file else None,
+                "has_audio": has_any_audio,
+                "audio_url": resolved_audio_url,
                 "voice_code": gap.voice_code or None,
                 "created_at": gap.created_at.isoformat() if gap.created_at else None,
                 "can_verify": gap.status != "resolved" and bool(gap.audio_file),
@@ -1080,6 +1267,10 @@ class VoiceVerificationSubmitAPIView(APIView):
 
         try:
             gap = Gap.objects.get(id=gap_id)
+
+            # Backfill local audio file from stored audio_url when possible.
+            if not gap.audio_file and gap.audio_url:
+                _ensure_gap_has_local_audio(gap)
 
             # Check if gap has original audio
             if not gap.audio_file:
@@ -1472,6 +1663,7 @@ class MobileGapSyncAPIView(APIView):
             image_url = (request.data.get("image_url") or "").strip()
             submitted_by = request.data.get("submitted_by")
             submitted_by_email = request.data.get("submitted_by_email")
+            uploaded_audio_file = request.FILES.get("audio_file")
 
             # Validate Firebase UID for mobile submissions (required for anonymous access)
             if not request.user.is_authenticated and not submitted_by:
@@ -1540,6 +1732,15 @@ class MobileGapSyncAPIView(APIView):
             # Validate input_method
             if input_method not in self.VALID_INPUT_METHODS:
                 input_method = "text"
+
+            if input_method == "voice" and not audio_url and not uploaded_audio_file:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Voice submissions require audio_file or audio_url",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Validate coordinates
             if latitude is not None:
@@ -1629,64 +1830,27 @@ class MobileGapSyncAPIView(APIView):
                     audio_url=audio_url if audio_url else None,
                 )
 
-                # Download and save audio file from Cloudinary URL
-                if audio_url and audio_url.startswith(("http://", "https://")):
-                    try:
-                        import requests
-                        from django.core.files.base import ContentFile
-                        import os
+                # Persist audio (multipart file or remote URL)
+                if uploaded_audio_file:
+                    max_audio_size = 50 * 1024 * 1024  # 50MB
+                    if uploaded_audio_file.size > max_audio_size:
+                        raise AudioPersistenceError(
+                            "Audio file too large. Maximum size is 50MB."
+                        )
+                    uploaded_audio_file.seek(0)
+                    gap.audio_file = uploaded_audio_file
+                    gap.save(update_fields=["audio_file"])
+                elif audio_url:
+                    _save_remote_audio_to_gap(gap, audio_url)
+                    gap.save(update_fields=["audio_file"])
 
-                        print(f"Downloading audio from: {audio_url}")
-                        response = requests.get(audio_url, timeout=60)
-                        if response.status_code == 200:
-                            # Get file extension from URL or default to m4a
-                            url_path = audio_url.split("?")[0]  # Remove query params
-                            ext = os.path.splitext(url_path)[1] or ".m4a"
-                            filename = f"gap_{gap.id}_audio{ext}"
+                if input_method == "voice" and not gap.audio_file:
+                    raise AudioPersistenceError(
+                        "Could not persist audio for voice submission"
+                    )
 
-                            # Save the audio file
-                            gap.audio_file.save(
-                                filename, ContentFile(response.content), save=False
-                            )
-                            print(f"Audio saved as: {gap.audio_file.name}")
-
-                            # Generate voice code for voice verification
-                            if input_method == "voice":
-                                try:
-                                    from .voice_verification import (
-                                        VoiceFeatureExtractor,
-                                    )
-
-                                    voice_code = (
-                                        VoiceFeatureExtractor.generate_voice_code(
-                                            gap.audio_file.path
-                                        )
-                                    )
-                                    if voice_code and voice_code != "error":
-                                        # Check uniqueness before saving
-                                        if (
-                                            not Gap.objects.filter(
-                                                voice_code=voice_code
-                                            )
-                                            .exclude(id=gap.id)
-                                            .exists()
-                                        ):
-                                            gap.voice_code = voice_code
-                                            print(
-                                                f"Voice code generated: {voice_code[:16]}..."
-                                            )
-                                        else:
-                                            print("Voice code collision - skipping")
-                                except Exception as vc_err:
-                                    print(f"Voice code generation failed: {vc_err}")
-
-                            gap.save()
-                        else:
-                            print(
-                                f"Failed to download audio: HTTP {response.status_code}"
-                            )
-                    except Exception as dl_err:
-                        print(f"Audio download error: {dl_err}")
+                if input_method == "voice" and _generate_voice_code_for_gap(gap):
+                    gap.save(update_fields=["voice_code"])
 
                 # Create audit log for new gap creation
                 from .models import GapStatusAuditLog
@@ -1711,10 +1875,17 @@ class MobileGapSyncAPIView(APIView):
                     "firestore_id": firestore_id,
                     "gap_type": gap.gap_type,
                     "severity": gap.severity,
-                    "has_audio": bool(gap.audio_file),
+                    "has_audio": bool(gap.audio_file or gap.audio_url),
+                    "audio_url": _get_gap_audio_url(gap),
                     "has_voice_code": bool(gap.voice_code),
                 },
                 status=status.HTTP_201_CREATED,
+            )
+
+        except AudioPersistenceError as audio_err:
+            return Response(
+                {"success": False, "error": str(audio_err)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         except Exception as e:
@@ -1966,7 +2137,6 @@ Response must be valid JSON only, no additional text."""
                 )
 
                 if not transcription["success"]:
-                    os.unlink(tmp_path)
                     return Response(
                         {
                             "error": f"Transcription failed: {transcription.get('error', 'Unknown error')}"
@@ -1974,8 +2144,29 @@ Response must be valid JSON only, no additional text."""
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
+                # Build deterministic fallback so transcription still succeeds
+                # even when Gemini is rate-limited/unavailable.
+                heuristic = processor.analyze_complaint(transcription["text"])
+                priority_to_severity = {
+                    "urgent": "high",
+                    "high": "high",
+                    "medium": "medium",
+                    "low": "low",
+                }
+                fallback_payload = {
+                    "success": True,
+                    "transcription": transcription["text"],
+                    "description": transcription["text"],
+                    "gap_type": heuristic.get("gap_type", "other"),
+                    "severity": priority_to_severity.get(
+                        heuristic.get("priority", "medium"), "medium"
+                    ),
+                    "confidence": heuristic.get("analysis_confidence", 0.5),
+                }
+
                 # Analyze transcribed text with Gemini
-                prompt = f"""Analyze this transcribed complaint from a villager:
+                try:
+                    prompt = f"""Analyze this transcribed complaint from a villager:
 
 "{transcription['text']}"
 
@@ -1993,39 +2184,47 @@ Provide a response in JSON format with:
 
 Response must be valid JSON only, no additional text."""
 
-                ai_response = model.generate_content(prompt)
+                    ai_response = model.generate_content(prompt)
 
-                # Parse JSON from response
-                response_text = ai_response.text.strip()
-                if response_text.startswith("```json"):
-                    response_text = (
-                        response_text.replace("```json", "").replace("```", "").strip()
+                    # Parse JSON from response
+                    response_text = ai_response.text.strip()
+                    if response_text.startswith("```json"):
+                        response_text = (
+                            response_text.replace("```json", "")
+                            .replace("```", "")
+                            .strip()
+                        )
+                    elif response_text.startswith("```"):
+                        response_text = response_text.replace("```", "").strip()
+
+                    analysis = json.loads(response_text)
+
+                    return Response(
+                        {
+                            "success": True,
+                            "analysis_source": "gemini",
+                            "transcription": transcription["text"],
+                            "description": analysis.get("description", ""),
+                            "gap_type": analysis.get("gap_type", "other"),
+                            "severity": analysis.get("severity", "medium"),
+                            "confidence": analysis.get("confidence", 0.7),
+                        },
+                        status=status.HTTP_200_OK,
                     )
-                elif response_text.startswith("```"):
-                    response_text = response_text.replace("```", "").strip()
+                except Exception as gemini_err:
+                    logger.warning(
+                        "Gemini analysis unavailable for audio; using heuristic fallback: %s",
+                        gemini_err,
+                    )
+                    fallback_payload["analysis_source"] = "heuristic"
+                    fallback_payload[
+                        "warning"
+                    ] = "Gemini analysis unavailable; used rule-based fallback."
+                    return Response(fallback_payload, status=status.HTTP_200_OK)
 
-                analysis = json.loads(response_text)
-
-                # Clean up
-                os.unlink(tmp_path)
-
-                return Response(
-                    {
-                        "success": True,
-                        "transcription": transcription["text"],
-                        "description": analysis.get("description", ""),
-                        "gap_type": analysis.get("gap_type", "other"),
-                        "severity": analysis.get("severity", "medium"),
-                        "confidence": analysis.get("confidence", 0.7),
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            except Exception as e:
-                # Clean up on error
-                if os.path.exists(tmp_path):
+            finally:
+                if tmp_path and os.path.exists(tmp_path):
                     os.unlink(tmp_path)
-                raise e
         else:
             return Response(
                 {"error": "media_type must be 'image' or 'audio'"},

@@ -4,7 +4,7 @@
 
 [![CI/CD Status](https://github.com/AdityaAneNenu/setu/workflows/🚀%20SETU%20PM-AJAY%20CI/CD/badge.svg)](https://github.com/AdityaAneNenu/setu/actions)
 [![Security Grade](https://img.shields.io/badge/security-A+-brightgreen)](https://github.com/AdityaAneNenu/setu)
-[![Production Status](https://img.shields.io/badge/production-ready-success)](https://setu-pm-django-production.up.railway.app/health/)
+[![Production Status](https://img.shields.io/badge/production-ready-success)](https://setu.up.railway.app/health/)
 
 ---
 
@@ -43,7 +43,7 @@ SETU provides a complete ecosystem for infrastructure gap management with **95% 
 - ✅ **Firebase sync recovery** (intelligent retry mechanism)
 - ✅ **Enhanced validation** (email, phone, file formats)
 
-**Production deployment verified:** [Health Check](https://setu-pm-django-production.up.railway.app/health/)
+**Production deployment verified:** [Health Check](https://setu.up.railway.app/health/)
 - **Multi-modal Gap Submission**: Image, voice, text, and QR-based mobile submissions
 - **AI-Powered Analysis**: Automatic categorization and severity assessment using Google Gemini AI
 - **Voice Biometric Verification**: Prevents fraudulent closures through voice fingerprinting

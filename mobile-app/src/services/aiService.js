@@ -157,11 +157,26 @@ export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
     console.error('AI processing error:', error);
     const isTimeout = error.name === 'AbortError';
     const isNetwork = error.message === 'Network request failed';
+    const timeoutSeconds = mediaType === 'audio' ? 180 : 90;
     let errorMsg = error.message || 'Failed to analyze media';
+    const normalizedError = String(errorMsg).toLowerCase();
+
+    if (normalizedError.includes('application not found')) {
+      errorMsg = `Backend deployment not found at ${API_CONFIG.DJANGO_URL}. Update PRODUCTION_API_URL to an active Railway URL (current default: https://setu.up.railway.app).`;
+    }
+
     if (isNetwork) {
-      errorMsg = `Cannot reach server at ${API_CONFIG.DJANGO_URL}. Make sure Django is running and your device is on the same Wi-Fi network.`;
+      errorMsg = `Cannot reach backend at ${API_CONFIG.DJANGO_URL}. Check network connectivity and verify the Railway domain is active.`;
     } else if (isTimeout) {
-      errorMsg = 'AI analysis timed out after 60 seconds. Please try again.';
+      errorMsg = `AI analysis timed out after ${timeoutSeconds} seconds. Please try again.`;
+    } else if (
+      normalizedError.includes('quota exceeded') ||
+      normalizedError.includes('rate limit') ||
+      normalizedError.includes('429')
+    ) {
+      errorMsg = 'AI service is temporarily busy (rate limit reached). Please retry after a few seconds.';
+    } else if (!errorMsg || errorMsg.trim().split(/\s+/).length < 3) {
+      errorMsg = 'Unable to analyze media right now. Please try again.';
     }
     return {
       success: false,

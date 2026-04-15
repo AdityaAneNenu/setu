@@ -124,7 +124,7 @@ def sync_gap_to_firestore(gap):
         "status": gap.status or "open",
         "input_method": gap.input_method or "text",
         "recommendations": gap.recommendations or "",
-        "audio_url": gap.audio_file.url if gap.audio_file else None,
+        "audio_url": gap.audio_file.url if gap.audio_file else (gap.audio_url or None),
         "image_url": None,
         "voice_code": gap.voice_code or None,
         "latitude": float(gap.latitude) if gap.latitude else None,

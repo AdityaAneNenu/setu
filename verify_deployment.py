@@ -54,7 +54,13 @@ class DeploymentVerifier:
         """Verify critical environment variables"""
         print("\n🔍 Checking Environment Variables...")
 
-        required_vars = ["SECRET_KEY", "DATABASE_URL", "RAILWAY_PUBLIC_DOMAIN"]
+        required_vars = ["SECRET_KEY"]
+        production_required_vars = ["DATABASE_URL", "RAILWAY_PUBLIC_DOMAIN"]
+        is_production_like = (
+            os.getenv("RAILWAY_ENVIRONMENT") == "production"
+            or bool(os.getenv("RAILWAY_PUBLIC_DOMAIN"))
+            or not settings.DEBUG
+        )
 
         recommended_vars = [
             "GEMINI_API_KEY",
@@ -69,6 +75,19 @@ class DeploymentVerifier:
                 self.log_error(f"Missing required environment variable: {var}")
             else:
                 self.log_success(f"Required variable {var} is set")
+
+        for var in production_required_vars:
+            if not os.getenv(var):
+                if is_production_like:
+                    self.log_error(
+                        f"Missing required production variable: {var}"
+                    )
+                else:
+                    self.log_warning(
+                        f"Production variable {var} not set (acceptable in local development)"
+                    )
+            else:
+                self.log_success(f"Production variable {var} is set")
 
         for var in recommended_vars:
             if not os.getenv(var):
@@ -137,12 +156,18 @@ class DeploymentVerifier:
             with open(firebase_config_path, "r") as f:
                 content = f.read()
 
-            if "AIzaSy" in content and "__DEV__" not in content:
+            # Firebase web API keys are public client identifiers and may appear in app code.
+            # Treat only private service-account material as a hard failure.
+            if (
+                "BEGIN PRIVATE KEY" in content
+                or "private_key" in content
+                or "client_email" in content
+            ):
                 self.log_error(
-                    "Firebase API keys still exposed in mobile app source code"
+                    "Firebase private service-account credentials exposed in mobile source code"
                 )
             else:
-                self.log_success("Firebase credentials properly secured")
+                self.log_success("Firebase configuration does not expose private credentials")
         else:
             self.log_warning("Firebase config file not found")
 
@@ -163,9 +188,18 @@ class DeploymentVerifier:
         """Verify security configurations"""
         print("\n🔒 Checking Security Settings...")
 
+        is_production_like = (
+            os.getenv("RAILWAY_ENVIRONMENT") == "production"
+            or bool(os.getenv("RAILWAY_PUBLIC_DOMAIN"))
+            or not settings.DEBUG
+        )
+
         # Check Django security settings
         if settings.DEBUG:
-            self.log_error("DEBUG is True - should be False in production")
+            if is_production_like:
+                self.log_error("DEBUG is True - should be False in production")
+            else:
+                self.log_warning("DEBUG is True (development mode)")
         else:
             self.log_success("DEBUG properly disabled")
 
@@ -220,44 +254,51 @@ class DeploymentVerifier:
         print("\n🛡️  Running Security Tests...")
 
         # Test file size validation
-        from django.test import Client
+        from rest_framework.test import APIClient
         from django.core.files.uploadedfile import SimpleUploadedFile
-        import io
 
-        client = Client()
+        client = APIClient()
 
         # Create oversized file (virtual)
-        large_content = b"x" * (51 * 1024 * 1024)  # 51MB
+        large_content = b"x" * ((50 * 1024 * 1024) + 1)  # 50MB + 1 byte
         large_file = SimpleUploadedFile(
             "test.wav", large_content, content_type="audio/wav"
         )
 
         try:
             from django.contrib.auth.models import User
-            from rest_framework.authtoken.models import Token
+            from core.models import Village
 
             # Create test user for authentication
             user, created = User.objects.get_or_create(username="test_security")
-            token, _ = Token.objects.get_or_create(user=user)
+            client.force_authenticate(user=user)
+
+            village = Village.objects.order_by("id").first()
+            if not village:
+                village = Village.objects.create(name="Security Test Village")
 
             # Test oversized audio file rejection
             response = client.post(
-                "/api/gaps/",
+                "/api/gaps/upload/",
                 {
+                    "village": village.id,
                     "description": "Test gap",
                     "gap_type": "water",
                     "severity": "medium",
-                    "latitude": 28.6139,
-                    "longitude": 77.2090,
+                    "submission_type": "audio",
+                    "language_code": "en",
                     "audio_file": large_file,
                 },
-                HTTP_AUTHORIZATION=f"Token {token.key}",
+                format="multipart",
             )
 
-            if response.status_code == 400 and "too large" in str(response.content):
+            response_content = str(getattr(response, "data", response.content)).lower()
+            if response.status_code == 400 and "too large" in response_content:
                 self.log_success("File size validation working")
             else:
-                self.log_error("File size validation may not be working")
+                self.log_error(
+                    f"File size validation failed (status {response.status_code}): {response_content[:200]}"
+                )
 
         except Exception as e:
             self.log_warning(f"Security test failed: {e}")

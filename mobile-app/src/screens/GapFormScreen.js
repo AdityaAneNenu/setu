@@ -23,6 +23,7 @@ import { uploadService } from '../services/cloudinaryService';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { parseArray } from '../utils/safeJSON';
+import { formatErrorForDisplay } from '../utils/errorDisplay';
 
 // Gap Type Categories - matching backend API
 const getGapTypes = (t) => [
@@ -136,17 +137,25 @@ export default function GapFormScreen({ route, navigation }) {
         );
       } else {
         // AI failed, but media is uploaded - user can fill manually
+        const friendly = formatErrorForDisplay(aiResult.error, {
+          action: 'analyze media',
+          fallback: t('gapForm.aiFailedMsg'),
+        });
         Alert.alert(
           t('gapForm.aiFailed'),
-          t('gapForm.aiFailedMsg'),
+          friendly.message,
           [{ text: t('common.ok') }]
         );
       }
     } catch (error) {
       console.error('AI processing error:', error);
+      const friendly = formatErrorForDisplay(error, {
+        action: 'process media',
+        fallback: t('gapForm.processingErrorMsg'),
+      });
       Alert.alert(
         t('gapForm.processingError'),
-        t('gapForm.processingErrorMsg'),
+        friendly.message,
         [{ text: t('common.ok') }]
       );
     } finally {
@@ -165,9 +174,13 @@ export default function GapFormScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error('Failed to load villages:', error);
+      const friendly = formatErrorForDisplay(error, {
+        action: 'load villages',
+        fallback: t('gapForm.connectionErrorMsg'),
+      });
       Alert.alert(
         t('gapForm.connectionError'),
-        t('gapForm.connectionErrorMsg'),
+        friendly.message,
         [
           { text: t('common.retry'), onPress: () => loadVillages() },
           { text: t('common.cancel') },
@@ -295,9 +308,13 @@ export default function GapFormScreen({ route, navigation }) {
           [{ text: t('common.ok'), onPress: () => navigation.navigate('Home') }]
         );
       } catch (saveError) {
+        const friendly = formatErrorForDisplay(error, {
+          action: 'submit your report',
+          fallback: t('gapForm.submitFailed'),
+        });
         Alert.alert(
           t('common.error'),
-          error.message || t('gapForm.submitFailed')
+          friendly.message
         );
       }
     } finally {

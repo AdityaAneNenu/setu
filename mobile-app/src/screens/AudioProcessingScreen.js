@@ -16,6 +16,7 @@ import { fonts } from '../theme';
 import { analyzeMedia } from '../services/aiService';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { formatErrorForDisplay } from '../utils/errorDisplay';
 
 // Supported languages (backend AssemblyAI)
 const LANGUAGES = [
@@ -109,12 +110,20 @@ export default function AudioProcessingScreen({ navigation, route }) {
           { text: t('common.ok') },
         ]);
       } else {
-        setTranscription(t('audioProcessing.processingFailedPrefix') + result.error);
-        Alert.alert(t('audioProcessing.processingFailed'), result.error);
+        const friendly = formatErrorForDisplay(result.error, {
+          action: 'analyze audio',
+          fallback: t('audioProcessing.processingFailed'),
+        });
+        setTranscription(`${t('audioProcessing.processingFailedPrefix')} ${friendly.message}`);
+        Alert.alert(t('audioProcessing.processingFailed'), friendly.message);
       }
     } catch (e) {
-      setTranscription(t('common.error') + ': ' + e.message);
-      Alert.alert(t('common.error'), e.message);
+      const friendly = formatErrorForDisplay(e, {
+        action: 'analyze audio',
+        fallback: t('audioProcessing.processingFailed'),
+      });
+      setTranscription(`${t('audioProcessing.processingFailedPrefix')} ${friendly.message}`);
+      Alert.alert(t('common.error'), friendly.message);
     } finally {
       setProcessing(false);
     }

@@ -327,8 +327,8 @@ railway shell "python manage.py migrate"
 
 ## 📞 Support & Resources
 
-- **Production URL**: https://setu-pm-django-production.up.railway.app  
-- **Health Monitoring**: https://setu-pm-django-production.up.railway.app/health/
+- **Production URL**: https://setu.up.railway.app  
+- **Health Monitoring**: https://setu.up.railway.app/health/
 - **GitHub Actions**: Automated CI/CD pipeline
 - **Documentation**: Complete API docs at `/api/schema/swagger/`
 

@@ -11,6 +11,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { formatErrorForDisplay } from '../utils/errorDisplay';
 
 export default function SecurityScreen({ navigation }) {
   const { t } = useTranslation();
@@ -23,7 +24,11 @@ export default function SecurityScreen({ navigation }) {
         await sendPasswordResetEmail(auth, user.email);
         Alert.alert(t('security.resetEmailSent'), t('security.resetEmailSentMsg', { email: user.email }));
       } catch (error) {
-        Alert.alert(t('common.error'), error.message || t('security.resetEmailFailed'));
+        const friendly = formatErrorForDisplay(error, {
+          action: 'send reset email',
+          fallback: t('security.resetEmailFailed'),
+        });
+        Alert.alert(t('common.error'), friendly.message);
       }
     } else {
       Alert.alert(t('common.error'), t('security.noEmailFound'));

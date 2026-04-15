@@ -18,6 +18,7 @@ urlpatterns = [
         views.update_gap_status,
         name="update_gap_status",
     ),
+    path("delete-gap/<int:gap_id>/", views.delete_gap, name="delete_gap"),
     path("public-dashboard/", views.public_dashboard, name="public_dashboard"),
     # Workflow Management URLs
     path("workflow/", workflow_views.workflow_dashboard, name="workflow_dashboard"),

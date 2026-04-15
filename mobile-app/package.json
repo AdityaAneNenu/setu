@@ -28,7 +28,6 @@
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
     "expo-location": "~19.0.8",
-    "expo-module-scripts": "^55.0.2",
     "expo-network": "~8.0.8",
     "expo-speech": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
@@ -42,8 +41,7 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "sharp-cli": "^5.2.0"
+    "@babel/core": "^7.24.0"
   },
   "private": true
 }

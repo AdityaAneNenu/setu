@@ -7,15 +7,17 @@
   <link rel="stylesheet" href="{% static 'css/modern.css' %}">
   <style>
     .container {
-      min-height: 100vh;
-      background: var(--bg-primary);
-      padding-top: 70px;
+      min-height: auto;
+      background: transparent;
+      padding-top: 0;
     }
     
     .main-wrapper {
-      min-height: 100vh;
-      padding: 2rem;
+      margin-top: 70px;
+      min-height: calc(100vh - 70px);
+      padding: 0.75rem 1.5rem 2rem;
       position: relative;
+      background: var(--bg-primary);
     }
     
     .page-header {
@@ -25,6 +27,10 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 1rem;
+    }
+
+    .page-header h1 {
+      margin: 0;
     }
     
     .page-title {
@@ -378,6 +384,230 @@
         overflow-x: auto;
       }
     }
+
+    /* Manage gaps decluttered layout */
+    .manage-gaps-container {
+      max-width: 1420px;
+      padding: 1.25rem 1.5rem 2.5rem;
+    }
+
+    .header-filters {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 0;
+    }
+
+    .header-filters .filter-select {
+      min-width: 180px;
+      margin-bottom: 0;
+    }
+
+    .gaps-table {
+      border-radius: 14px;
+      overflow: auto;
+      box-shadow: 0 12px 28px rgba(2, 6, 23, 0.25);
+    }
+
+    .gaps-table table {
+      min-width: 1280px;
+    }
+
+    .gaps-table th,
+    .gaps-table td {
+      padding: 14px 16px;
+      vertical-align: middle;
+    }
+
+    .gaps-table tbody tr:nth-child(even) {
+      background: rgba(148, 163, 184, 0.02);
+    }
+
+    .gaps-table th:nth-child(6),
+    .gaps-table td:nth-child(6) {
+      min-width: 140px;
+    }
+
+    .gaps-table th:nth-child(8),
+    .gaps-table td:nth-child(8) {
+      min-width: 130px;
+    }
+
+    .gaps-table th:nth-child(9),
+    .gaps-table td:nth-child(9) {
+      width: 190px;
+      min-width: 190px;
+    }
+
+    .description-cell {
+      max-width: 320px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .created-cell,
+    .voice-cell {
+      white-space: nowrap;
+    }
+
+    .status-cell {
+      white-space: nowrap;
+    }
+
+    .status-meta {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .status-proof {
+      display: inline-block;
+      margin-top: 3px;
+      color: #a78bfa;
+      font-size: 11px;
+      text-decoration: none;
+    }
+
+    .status-proof:hover {
+      text-decoration: underline;
+    }
+
+    .action-cell {
+      white-space: nowrap;
+    }
+
+    .action-stack {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+
+    .action-stack > * {
+      flex-shrink: 0;
+    }
+
+    .action-top {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: nowrap;
+    }
+
+    .action-top-column {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .action-meta {
+      color: var(--text-secondary);
+      font-size: 11px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+
+    .proof-link {
+      color: #8b5cf6;
+      font-size: 11px;
+      text-decoration: none;
+    }
+
+    .proof-link:hover {
+      text-decoration: underline;
+    }
+
+    .delete-gap-form {
+      margin-top: 0;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .status-select {
+      min-width: 108px;
+      min-height: 34px;
+      padding: 6px 26px 6px 10px;
+      border-radius: 8px;
+    }
+
+    .status-select-cell {
+      width: 122px;
+    }
+
+    .btn-verify {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #e2e8f0;
+      background: rgba(15, 23, 42, 0.55);
+      border-radius: 8px;
+      min-width: 64px;
+      min-height: 34px;
+      padding: 7px 10px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .btn-verify:hover {
+      background: rgba(30, 41, 59, 0.9);
+      color: #ffffff;
+      border-color: rgba(148, 163, 184, 0.6);
+    }
+
+    .btn-delete {
+      min-width: 74px;
+      min-height: 34px;
+      padding: 7px 12px;
+      line-height: 1;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      background: rgba(127, 29, 29, 0.16);
+    }
+
+    .action-cell .delete-gap-form {
+      margin-left: 0.25rem;
+    }
+
+    @media (max-width: 1024px) {
+      .header-filters {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .manage-gaps-container {
+        padding: 1rem 1rem 2rem;
+      }
+
+      .header-filters {
+        width: 100%;
+      }
+
+      .header-filters .filter-select {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .action-stack {
+        min-width: 0;
+        flex-wrap: wrap;
+      }
+    }
   </style>
 </head>
 <body>
@@ -434,7 +664,7 @@
 </nav>
 
 <div class="main-wrapper">
-  <div class="container">
+  <div class="container manage-gaps-container">
   
   <!-- Messages Display -->
   {% if messages %}
@@ -454,7 +684,7 @@
   
   <div class="page-header">
     <h1>Manage Infrastructure Gaps</h1>
-    <div class="filter-group">
+    <div class="filter-group header-filters">
       <select class="filter-select" onchange="window.location.href='?status=' + this.value">
         <option value="">All Statuses</option>
         <option value="open" {% if request.GET.status == 'open' %}selected{% endif %}>Open</option>
@@ -491,69 +721,60 @@
         <tr>
           <td><strong>{{ gap.village.name }}</strong></td>
           <td>{{ gap.gap_type|title }}</td>
-          <td>{{ gap.description|truncatewords:15 }}</td>
+          <td class="description-cell" title="{{ gap.description }}">{{ gap.description|truncatewords:15 }}</td>
           <td><span class="input-method-badge {{ gap.input_method }}">{{ gap.get_input_method_display }}</span></td>
           <td><span class="severity-badge {{ gap.severity }}">{{ gap.severity }}</span></td>
-          <td><span class="badge {{ gap.status }}">{{ gap.get_status_display }}</span></td>
-          <td>{{ gap.created_at|date:"M d, Y" }}</td>
-          <td>
-            {% if gap.audio_file %}
+          <td class="status-cell">
+            {% if gap.status != "resolved" %}
+              <select class="status-select status-select-cell" onchange="handleStatusChange(this, {{ gap.id }}, {% if gap.audio_file %}'{{ gap.audio_file.url|escapejs }}'{% elif gap.audio_url %}'{{ gap.audio_url|escapejs }}'{% else %}null{% endif %}, {% if can_resolve %}true{% else %}false{% endif %}, '{{ gap.input_method }}')">
+                <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
+                <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
+                {% if can_resolve %}
+                  <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
+                {% else %}
+                  <option value="resolved" disabled title="Only ADMIN can resolve">🔒 Resolved</option>
+                {% endif %}
+              </select>
+            {% else %}
+              <span class="badge {{ gap.status }}">{{ gap.get_status_display }}</span>
+              {% if gap.resolved_by %}
+                <small class="status-meta">by {{ gap.resolved_by.username }}</small>
+              {% endif %}
+              {% if gap.resolution_proof %}
+                <a href="{{ gap.resolution_proof.url }}" target="_blank" class="status-proof">Proof</a>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td class="created-cell">{{ gap.created_at|date:"M d, Y" }}</td>
+          <td class="voice-cell">
+            {% if gap.audio_file or gap.audio_url %}
               <!-- Voice recording button for voice-based gaps -->
-              <button class="btn btn-sm btn-record" onclick="openRecordingModal({{ gap.id }}, '{{ gap.village.name }}')" title="Record voice for verification">
+              <button class="btn btn-record" onclick="openRecordingModal({{ gap.id }}, '{{ gap.village.name }}')" title="Record voice for verification">
                 🎙️ Record Voice
               </button>
             {% else %}
               <span style="color: #94a3b8; font-size: 12px;">N/A</span>
             {% endif %}
           </td>
-          <td>
-            {% if gap.audio_file %}
-              <!-- Voice gap - show verification button -->
-              <div class="d-flex align-items-center gap-2">
-                {% if gap.status == "resolved" %}
-                  <span class="badge resolved">Resolved</span>
-                  {% if gap.resolved_by %}
-                    <small style="color: var(--text-secondary); font-size: 11px;">by {{ gap.resolved_by.username }}</small>
-                  {% endif %}
-                {% else %}
-                  <select class="status-select" onchange="handleStatusChange(this, {{ gap.id }}, '{{ gap.audio_file }}', {% if can_resolve %}true{% else %}false{% endif %}, '{{ gap.input_method }}')">
-                    <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
-                    <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
-                    {% if can_resolve %}
-                      <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
-                    {% else %}
-                      <option value="resolved" disabled title="Only ADMIN can resolve">🔒 Resolved (Need Admin)</option>
-                    {% endif %}
-                  </select>
-                  <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
-                     class="btn btn-sm btn-outline-danger" 
-                     title="Voice verification required">
-                    🎤
-                  </a>
-                {% endif %}
-              </div>
-            {% else %}
-              <!-- Regular gap - normal status update -->
-              {% if gap.status == "resolved" %}
-                <span class="badge resolved">Resolved</span>
-                {% if gap.resolved_by %}
-                  <small style="color: var(--text-secondary); font-size: 11px; display: block;">by {{ gap.resolved_by.username }}</small>
-                {% endif %}
-                {% if gap.resolution_proof %}
-                  <a href="{{ gap.resolution_proof.url }}" target="_blank" style="font-size: 11px; color: #8b5cf6;">📄 View Proof</a>
-                {% endif %}
-              {% else %}
-                <select class="status-select" onchange="handleStatusChange(this, {{ gap.id }}, null, {% if can_resolve %}true{% else %}false{% endif %}, '{{ gap.input_method }}')">
-                  <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
-                  <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
-                  {% if can_resolve %}
-                    <option value="resolved" {% if gap.status == "resolved" %}selected{% endif %}>Resolved</option>
-                  {% else %}
-                    <option value="resolved" disabled title="Only ADMIN can resolve">🔒 Resolved (Need Admin)</option>
-                  {% endif %}
-                </select>
-              {% endif %}
+          <td class="action-cell">
+            <div class="action-stack">
+            {% if gap.status != "resolved" %}
+            {% if gap.audio_file or gap.audio_url %}
+              <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
+                 class="btn btn-verify" 
+                 title="Voice verification required">
+                Verify
+              </a>
             {% endif %}
+            {% endif %}
+
+            {% if can_delete %}
+              <form method="post" action="{% url 'delete_gap' gap.id %}" class="delete-gap-form" onsubmit="return confirmDeleteGap('{{ gap.id }}', '{{ gap.village.name|escapejs }}');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-delete">Delete</button>
+              </form>
+            {% endif %}
+            </div>
           </td>
         </tr>
         {% empty %}
@@ -667,18 +888,49 @@
     background: #8b5cf6;
     color: white;
     border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+    white-space: nowrap;
+    line-height: 1.1;
   }
   
   .btn-record:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
   }
+
+    .delete-gap-form {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 0;
+    }
+
+    .btn-delete {
+      background: rgba(127, 29, 29, 0.16);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      border-radius: 8px;
+      min-width: 74px;
+      min-height: 34px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+
+    .btn-delete:hover {
+      background: rgba(220, 38, 38, 0.75);
+      color: #fff;
+      border-color: rgba(248, 113, 113, 0.9);
+      transform: translateY(-1px);
+    }
   
   /* Recording Modal */
   .recording-modal {
@@ -1198,6 +1450,12 @@ function handleStatusChange(selectElement, gapId, audioFile, canResolve, inputMe
 
 function closeResolutionProofModal() {
   document.getElementById('resolutionProofModal').style.display = 'none';
+}
+
+function confirmDeleteGap(gapId, villageName) {
+  return confirm(
+    `Are you sure you want to delete Gap #${gapId} from ${villageName}?\n\nThis action cannot be undone.`
+  );
 }
 
 // Old function for backward compatibility with voice gaps

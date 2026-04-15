@@ -278,6 +278,7 @@ def voice_verification_dashboard(request, complaint_id):
 
     context = {
         "complaint": complaint,
+        "original_audio_url": complaint.audio_file.url if complaint.audio_file else None,
         "has_original_audio": bool(complaint.audio_file),
         "verification_history": verification_history,
         "can_verify": complaint.status != "case_closed" and complaint.audio_file,
@@ -334,11 +335,20 @@ def gap_voice_verification_dashboard(request, gap_id):
     Similar to complaint verification but for gaps
     """
     from .models import Gap
+    from .api_views import _ensure_gap_has_local_audio, _get_gap_audio_url
 
     gap = get_object_or_404(Gap, id=gap_id)
 
-    # Check if gap has audio file
-    if not gap.audio_file:
+    # Backfill local audio from stored audio_url when possible.
+    if not gap.audio_file and gap.audio_url:
+        _ensure_gap_has_local_audio(gap)
+        gap.refresh_from_db(fields=["audio_file", "audio_url", "voice_code"])
+
+    resolved_audio_url = _get_gap_audio_url(gap)
+    has_original_audio = bool(resolved_audio_url)
+
+    # Check if gap has any available original audio.
+    if not has_original_audio:
         messages.error(request, "This gap was not submitted via voice recording.")
         return render(
             request,
@@ -354,8 +364,8 @@ def gap_voice_verification_dashboard(request, gap_id):
     context = {
         "gap": gap,
         "gap_id": gap.id,
-        "original_audio_url": gap.audio_file.url if gap.audio_file else None,
-        "has_original_audio": bool(gap.audio_file),
+        "original_audio_url": resolved_audio_url,
+        "has_original_audio": has_original_audio,
         "verification_history": verification_logs,
         "can_verify": gap.status != "resolved" and gap.audio_file,
         "is_gap_verification": True,  # Flag to differentiate from complaint verification
@@ -373,6 +383,7 @@ def verify_voice_for_gap_resolution(request):
     """
     try:
         from .models import Gap
+        from .api_views import _ensure_gap_has_local_audio
 
         gap_id = request.POST.get("gap_id")
         verified_by = request.POST.get("verified_by", "Unknown")
@@ -389,6 +400,11 @@ def verify_voice_for_gap_resolution(request):
             )
 
         gap = get_object_or_404(Gap, id=gap_id)
+
+        # Recover local audio file from remote URL when available.
+        if not gap.audio_file and gap.audio_url:
+            _ensure_gap_has_local_audio(gap)
+            gap.refresh_from_db(fields=["audio_file", "audio_url", "voice_code"])
 
         if not gap.audio_file:
             return JsonResponse(

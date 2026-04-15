@@ -488,6 +488,7 @@ def manage_gaps(request):
         "gaps": gaps,
         "user_role": user_role,
         "can_resolve": can_resolve_gaps(request.user),
+        "can_delete": can_resolve_gaps(request.user),
     }
 
     return render(request, "core/manage_gaps.html", context)
@@ -495,9 +496,40 @@ def manage_gaps(request):
 
 @login_required
 @role_required(MANAGER_AND_ABOVE)
+def delete_gap(request, gap_id):
+    from .permissions import can_resolve_gaps, get_user_role
+
+    if request.method != "POST":
+        messages.error(request, "Invalid request method for deleting gaps.")
+        return redirect("manage_gaps")
+
+    if not can_resolve_gaps(request.user):
+        user_role = get_user_role(request.user) or "unknown"
+        messages.error(
+            request,
+            f"Only ADMIN can delete gaps. Your role: {user_role.upper()}",
+        )
+        return redirect("manage_gaps")
+
+    gap = get_object_or_404(Gap, id=gap_id)
+    gap_label = f"#{gap.id} ({gap.village.name})"
+
+    try:
+        gap.delete()
+        messages.success(request, f"Gap {gap_label} deleted successfully.")
+    except Exception as exc:
+        print(f"Delete gap failed for {gap_label}: {exc}")
+        messages.error(request, f"Failed to delete gap {gap_label}. Please try again.")
+
+    return redirect("manage_gaps")
+
+
+@login_required
+@role_required(MANAGER_AND_ABOVE)
 def update_gap_status(request, gap_id):
     gap = get_object_or_404(Gap, id=gap_id)
     from .permissions import get_user_role, Role, can_resolve_gaps
+    from .api_views import _ensure_gap_has_local_audio
 
     if request.method == "POST":
         new_status = request.POST.get("status")
@@ -576,6 +608,16 @@ def update_gap_status(request, gap_id):
             print(
                 f"🔍 DEBUG: Original gap voice_code: {gap.voice_code[:16] if gap.voice_code else 'None'}..."
             )
+
+            if not gap.audio_file and gap.audio_url:
+                print(
+                    "⚠️ DEBUG: Local audio missing, attempting to recover from stored audio_url"
+                )
+                if _ensure_gap_has_local_audio(gap):
+                    gap.refresh_from_db(fields=["audio_file", "audio_url", "voice_code"])
+                    print("✅ DEBUG: Recovered local audio from audio_url")
+                else:
+                    print("❌ DEBUG: Could not recover local audio from audio_url")
 
             # Check if gap has a voice code
             from .models import VoiceVerificationLog

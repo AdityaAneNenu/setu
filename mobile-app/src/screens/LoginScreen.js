@@ -18,6 +18,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { formatErrorForDisplay } from '../utils/errorDisplay';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -35,7 +36,11 @@ export default function LoginScreen({ navigation }) {
       await sendPasswordResetEmail(auth, email.trim());
       Alert.alert(t('login.resetSent'), t('login.resetSentMsg'), [{ text: t('common.ok') }]);
     } catch (error) {
-      Alert.alert(t('login.resetError'), error.message || t('login.resetError'), [{ text: t('common.ok') }]);
+      const friendly = formatErrorForDisplay(error, {
+        action: 'send reset email',
+        fallback: t('login.resetError'),
+      });
+      Alert.alert(t('login.resetError'), friendly.message, [{ text: t('common.ok') }]);
     }
   };
 
@@ -51,9 +56,13 @@ export default function LoginScreen({ navigation }) {
       // App.js onAuthStateChanged auto-navigates to Main
     } catch (error) {
       console.error('Login error:', error);
+      const friendly = formatErrorForDisplay(error, {
+        action: 'sign in',
+        fallback: t('login.loginFailedMsg'),
+      });
       Alert.alert(
         t('login.loginFailed'),
-        error.message || t('login.loginFailedMsg'),
+        friendly.message,
         [{ text: t('common.ok') }]
       );
     } finally {
