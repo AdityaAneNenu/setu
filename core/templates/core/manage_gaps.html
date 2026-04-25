@@ -299,11 +299,6 @@
       color: #8b5cf6;
     }
     
-    .input-method-badge.voice {
-      background: rgba(34, 197, 94, 0.15);
-      color: #22c55e;
-    }
-    
     .input-method-badge.text {
       background: rgba(249, 115, 22, 0.15);
       color: #f97316;
@@ -431,11 +426,6 @@
 
     .gaps-table th:nth-child(8),
     .gaps-table td:nth-child(8) {
-      min-width: 130px;
-    }
-
-    .gaps-table th:nth-child(9),
-    .gaps-table td:nth-child(9) {
       width: 190px;
       min-width: 190px;
     }
@@ -450,8 +440,7 @@
       overflow: hidden;
     }
 
-    .created-cell,
-    .voice-cell {
+    .created-cell {
       white-space: nowrap;
     }
 
@@ -530,39 +519,6 @@
       margin-top: 0;
       display: inline-flex;
       align-items: center;
-    }
-
-    .status-select {
-      min-width: 108px;
-      min-height: 34px;
-      padding: 6px 26px 6px 10px;
-      border-radius: 8px;
-    }
-
-    .status-select-cell {
-      width: 122px;
-    }
-
-    .btn-verify {
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      color: #e2e8f0;
-      background: rgba(15, 23, 42, 0.55);
-      border-radius: 8px;
-      min-width: 64px;
-      min-height: 34px;
-      padding: 7px 10px;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 600;
-      transition: all 0.2s ease;
-      line-height: 1;
-      text-align: center;
-    }
-
-    .btn-verify:hover {
-      background: rgba(30, 41, 59, 0.9);
-      color: #ffffff;
-      border-color: rgba(148, 163, 184, 0.6);
     }
 
     .btn-delete {
@@ -712,7 +668,6 @@
           <th>Severity</th>
           <th>Status</th>
           <th>Created</th>
-          <th>Voice Recording</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -726,7 +681,7 @@
           <td><span class="severity-badge {{ gap.severity }}">{{ gap.severity }}</span></td>
           <td class="status-cell">
             {% if gap.status != "resolved" %}
-              <select class="status-select status-select-cell" onchange="handleStatusChange(this, {{ gap.id }}, {% if gap.audio_file %}'{{ gap.audio_file.url|escapejs }}'{% elif gap.audio_url %}'{{ gap.audio_url|escapejs }}'{% else %}null{% endif %}, {% if can_resolve %}true{% else %}false{% endif %}, '{{ gap.input_method }}')">
+              <select class="status-select status-select-cell" onchange="handleStatusChange(this, {{ gap.id }}, {% if can_resolve %}true{% else %}false{% endif %})">
                 <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
                 <option value="in_progress" {% if gap.status == "in_progress" %}selected{% endif %}>In Progress</option>
                 {% if can_resolve %}
@@ -746,28 +701,8 @@
             {% endif %}
           </td>
           <td class="created-cell">{{ gap.created_at|date:"M d, Y" }}</td>
-          <td class="voice-cell">
-            {% if gap.audio_file or gap.audio_url %}
-              <!-- Voice recording button for voice-based gaps -->
-              <button class="btn btn-record" onclick="openRecordingModal({{ gap.id }}, '{{ gap.village.name }}')" title="Record voice for verification">
-                🎙️ Record Voice
-              </button>
-            {% else %}
-              <span style="color: #94a3b8; font-size: 12px;">N/A</span>
-            {% endif %}
-          </td>
           <td class="action-cell">
             <div class="action-stack">
-            {% if gap.status != "resolved" %}
-            {% if gap.audio_file or gap.audio_url %}
-              <a href="{% url 'gap_voice_verification_dashboard' gap.id %}" 
-                 class="btn btn-verify" 
-                 title="Voice verification required">
-                Verify
-              </a>
-            {% endif %}
-            {% endif %}
-
             {% if can_delete %}
               <form method="post" action="{% url 'delete_gap' gap.id %}" class="delete-gap-form" onsubmit="return confirmDeleteGap('{{ gap.id }}', '{{ gap.village.name|escapejs }}');">
                 {% csrf_token %}
@@ -779,8 +714,8 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8;">
-            No gaps found. Upload an image or audio to create new gap entries.
+          <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+            No gaps found. Submit geo-tagged photo evidence to create new gap entries.
           </td>
         </tr>
         {% endfor %}
@@ -789,79 +724,11 @@
   </div>
 </div>
 
-<!-- Voice Recording Modal -->
-<div id="recordingModal" class="recording-modal" style="display: none;">
-  <div class="recording-modal-content">
-    <div class="recording-modal-header">
-      <h3>🎙️ Record Voice for Verification</h3>
-      <button class="close-modal" onclick="closeRecordingModal()">&times;</button>
-    </div>
-    <div class="recording-modal-body">
-      <div class="recording-info">
-        <p><strong>Gap ID:</strong> <span id="recordingGapId"></span></p>
-        <p><strong>Village:</strong> <span id="recordingVillage"></span></p>
-      </div>
-      
-      <div class="recording-status">
-        <div id="recordingStatusIdle" class="status-message">
-          <p>Click the button below to start recording your voice.</p>
-          <p style="font-size: 12px; color: #94a3b8;">This recording will be used for voice verification.</p>
-        </div>
-        <div id="recordingStatusActive" class="status-message" style="display: none;">
-          <div class="recording-animation">
-            <div class="pulse-ring"></div>
-            <div class="pulse-ring delay-1"></div>
-            <div class="pulse-ring delay-2"></div>
-          </div>
-          <p style="color: #dc3545; font-weight: bold; margin-top: 20px;">⏺ RECORDING IN PROGRESS...</p>
-          <p id="recordingTimer" style="font-size: 24px; font-weight: bold; margin-top: 10px;">00:00</p>
-        </div>
-        <div id="recordingStatusComplete" class="status-message" style="display: none;">
-          <p style="color: #10b981; font-weight: bold;">✅ Recording Complete!</p>
-          <audio id="recordingPlayback" controls style="margin-top: 15px; width: 100%;"></audio>
-        </div>
-      </div>
-      
-      <div class="recording-controls">
-        <button id="startRecordBtn" class="btn btn-record-start" onclick="startRecording()">
-          <span class="btn-icon">🎙️</span> Start Recording
-        </button>
-        <button id="stopRecordBtn" class="btn btn-record-stop" onclick="stopRecording()" style="display: none;">
-          <span class="btn-icon">⏹️</span> Stop Recording
-        </button>
-        <button id="saveRecordBtn" class="btn btn-record-save" onclick="saveRecording()" style="display: none;">
-          <span class="btn-icon">💾</span> Save & Use for Verification
-        </button>
-        <button id="retryRecordBtn" class="btn btn-record-retry" onclick="retryRecording()" style="display: none;">
-          <span class="btn-icon">🔄</span> Record Again
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <style>
   @media (max-width: 768px) {
     .main-content > .menu-toggle {
       display: block !important;
     }
-  }
-  
-  /* Voice verification button styling */
-  .btn-outline-danger {
-    border: 1px solid #dc3545;
-    color: #dc3545;
-    background: transparent;
-    padding: 2px 8px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: all 0.2s;
-  }
-  
-  .btn-outline-danger:hover {
-    background: #dc3545;
-    color: white;
   }
   
   /* Flexbox utilities */
@@ -883,27 +750,6 @@
     font-size: 12px;
   }
   
-  /* Voice recording button */
-  .btn-record {
-    background: #8b5cf6;
-    color: white;
-    border: none;
-    padding: 7px 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
-    white-space: nowrap;
-    line-height: 1.1;
-  }
-  
-  .btn-record:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-  }
-
     .delete-gap-form {
       display: inline-flex;
       align-items: center;
@@ -932,7 +778,6 @@
       transform: translateY(-1px);
     }
   
-  /* Recording Modal */
   .recording-modal {
     position: fixed;
     top: 0;
@@ -1133,215 +978,6 @@
   }
 </style>
 
-<script>
-function confirmGapStatusChange(selectElement, gapId, audioFile) {
-  const newStatus = selectElement.value;
-  const form = selectElement.closest('form');
-  const originalValue = selectElement.getAttribute('data-original-value') || 'open';
-  
-  if (newStatus === 'resolved' && audioFile) {
-    // CRITICAL: Voice verification is MANDATORY for voice-based gaps
-    // Prevent immediate form submission
-    selectElement.value = originalValue;
-    
-    const confirmed = confirm(
-      '🔒 VOICE VERIFICATION REQUIRED!\n\n' +
-      '❌ This gap was submitted via VOICE RECORDING.\n\n' +
-      '✅ You MUST complete voice verification before resolving this gap.\n\n' +
-      '👉 Steps:\n' +
-      '   1. Click the 🎤 button next to this dropdown\n' +
-      '   2. Complete voice verification\n' +
-      '   3. Return and select "Resolved" again\n\n' +
-      '⚠️ The system will BLOCK resolution without verification.\n\n' +
-      'Click OK to attempt anyway (will be blocked by backend)'
-    );
-    
-    if (confirmed) {
-      // User wants to try anyway - let backend handle it
-      selectElement.value = newStatus;
-      form.submit();
-    } else {
-      // User cancelled - reset to original value
-      selectElement.value = originalValue;
-    }
-  } else {
-    // Non-voice gap or non-resolution status - allow immediate submission
-    selectElement.setAttribute('data-original-value', selectElement.value);
-    form.submit();
-  }
-}
-
-// Store original values on page load
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.status-select').forEach(function(select) {
-    select.setAttribute('data-original-value', select.value);
-  });
-});
-
-// Voice Recording Functions
-let mediaRecorder;
-let audioChunks = [];
-let recordingStartTime;
-let timerInterval;
-let currentGapId;
-let recordedBlob;
-
-function openRecordingModal(gapId, villageName) {
-  currentGapId = gapId;
-  document.getElementById('recordingGapId').textContent = gapId;
-  document.getElementById('recordingVillage').textContent = villageName;
-  document.getElementById('recordingModal').style.display = 'flex';
-  resetRecordingUI();
-}
-
-function closeRecordingModal() {
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    mediaRecorder.stop();
-  }
-  document.getElementById('recordingModal').style.display = 'none';
-  clearInterval(timerInterval);
-}
-
-function resetRecordingUI() {
-  document.getElementById('recordingStatusIdle').style.display = 'block';
-  document.getElementById('recordingStatusActive').style.display = 'none';
-  document.getElementById('recordingStatusComplete').style.display = 'none';
-  document.getElementById('startRecordBtn').style.display = 'inline-flex';
-  document.getElementById('stopRecordBtn').style.display = 'none';
-  document.getElementById('saveRecordBtn').style.display = 'none';
-  document.getElementById('retryRecordBtn').style.display = 'none';
-  audioChunks = [];
-  recordedBlob = null;
-}
-
-function startRecording() {
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      mediaRecorder = new MediaRecorder(stream);
-      audioChunks = [];
-      
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
-      };
-      
-      mediaRecorder.onstop = () => {
-        recordedBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(recordedBlob);
-        document.getElementById('recordingPlayback').src = audioUrl;
-        
-        // Show complete status
-        document.getElementById('recordingStatusActive').style.display = 'none';
-        document.getElementById('recordingStatusComplete').style.display = 'block';
-        document.getElementById('saveRecordBtn').style.display = 'inline-flex';
-        document.getElementById('retryRecordBtn').style.display = 'inline-flex';
-        
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
-        clearInterval(timerInterval);
-      };
-      
-      mediaRecorder.start();
-      recordingStartTime = Date.now();
-      
-      // Update UI
-      document.getElementById('recordingStatusIdle').style.display = 'none';
-      document.getElementById('recordingStatusActive').style.display = 'block';
-      document.getElementById('startRecordBtn').style.display = 'none';
-      document.getElementById('stopRecordBtn').style.display = 'inline-flex';
-      
-      // Start timer
-      timerInterval = setInterval(updateTimer, 1000);
-    })
-    .catch(error => {
-      alert('❌ Microphone access denied! Please allow microphone access to record.');
-      console.error('Error accessing microphone:', error);
-    });
-}
-
-function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    mediaRecorder.stop();
-    document.getElementById('stopRecordBtn').style.display = 'none';
-  }
-}
-
-function updateTimer() {
-  const elapsed = Date.now() - recordingStartTime;
-  const seconds = Math.floor(elapsed / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const displaySeconds = seconds % 60;
-  document.getElementById('recordingTimer').textContent = 
-    `${String(minutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}`;
-}
-
-function retryRecording() {
-  resetRecordingUI();
-}
-
-function saveRecording() {
-  if (!recordedBlob) {
-    alert('No recording available!');
-    return;
-  }
-  
-  const formData = new FormData();
-  formData.append('verification_audio', recordedBlob, `gap_${currentGapId}_verification_${Date.now()}.wav`);
-  formData.append('gap_id', currentGapId);
-  formData.append('verified_by', 'Web User');
-  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-  
-  // Show loading state
-  document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">⏳</span> Verifying Voice...';
-  document.getElementById('saveRecordBtn').disabled = true;
-  
-  fetch('/api/voice/verify-gap/', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      const verification = data.verification;
-      if (verification.is_match) {
-        alert('✅ Voice Biometric Verification PASSED!\n\n' +
-              '🎤 Speaker Recognition Result:\n' +
-              `   • Match: YES - Same person speaking\n` +
-              `   • Confidence: ${verification.confidence.toUpperCase()}\n` +
-              `   • Voice Similarity: ${(verification.similarity_score * 100).toFixed(1)}%\n\n` +
-              '📝 Important: The system compared your VOICE characteristics,\n' +
-              '   not the words you spoke. Different words are OK!\n\n' +
-              '🔓 RESOLUTION UNLOCKED!\n' +
-              '👉 Now change the status dropdown to "Resolved" to close this gap.');
-        closeRecordingModal();
-        location.reload(); // Refresh to show updated status
-      } else {
-        alert('❌ Voice Biometric Verification FAILED!\n\n' +
-              '🎤 Speaker Recognition Result:\n' +
-              `   • Match: NO - Different person speaking\n` +
-              `   • Voice Similarity: ${(verification.similarity_score * 100).toFixed(1)}%\n\n` +
-              '⚠️ The system detected that your voice characteristics\n' +
-              '   do NOT match the original complainant.\n\n' +
-              '🔒 Only the person who filed this complaint can resolve it.\n\n' +
-              'Note: The system compares voice biometrics (pitch, tone, timbre),\n' +
-              '      not the specific words spoken.');
-        document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">💾</span> Save & Use for Verification';
-        document.getElementById('saveRecordBtn').disabled = false;
-      }
-    } else {
-      alert('❌ Verification failed: ' + (data.error || 'Unknown error'));
-      document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">💾</span> Save & Use for Verification';
-      document.getElementById('saveRecordBtn').disabled = false;
-    }
-  })
-  .catch(error => {
-    alert('❌ Verification failed: ' + error.message);
-    console.error('Error verifying voice:', error);
-    document.getElementById('saveRecordBtn').innerHTML = '<span class="btn-icon">💾</span> Save & Use for Verification';
-    document.getElementById('saveRecordBtn').disabled = false;
-  });
-}  
-</script>
-
 <!-- Resolution Proof Modal -->
 <div id="resolutionProofModal" class="recording-modal" style="display: none;">
   <div class="recording-modal-content">
@@ -1353,8 +989,7 @@ function saveRecording() {
       <div class="recording-info">
         <p><strong>Gap ID:</strong> <span id="resolutionGapId"></span></p>
         <p style="color: var(--text-secondary); font-size: 13px; margin-top: 10px;">
-          As an ADMIN, you must provide resolution proof (letter/document) before marking this <strong>photo-based</strong> gap as resolved.<br>
-          <em style="color: var(--text-muted);">Note: Voice-recorded gaps use voice verification instead and don't need this letter.</em>
+          As an ADMIN, you must provide resolution proof (letter/document) before marking a gap as resolved.
         </p>
       </div>
       
@@ -1393,33 +1028,13 @@ function saveRecording() {
 
 <script>
 // Handle status change with role-based resolution proof
-function handleStatusChange(selectElement, gapId, audioFile, canResolve, inputMethod) {
+function handleStatusChange(selectElement, gapId, canResolve) {
   const newStatus = selectElement.value;
-  const oldStatus = selectElement.getAttribute('data-old-status') || selectElement.options[selectElement.selectedIndex].defaultSelected;
-  
-  // Check if this is a voice-based gap
-  const isVoiceGap = inputMethod === 'voice' || audioFile;
+  const oldStatus = selectElement.getAttribute('data-old-status') || 'open';
   
   // If trying to resolve and user has admin role
   if (newStatus === 'resolved' && canResolve) {
-    // Voice gaps: Skip proof modal, submit directly for voice verification
-    if (isVoiceGap) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `/update-gap-status/${gapId}/`;
-      
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-      form.innerHTML = `
-        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-        <input type="hidden" name="status" value="${newStatus}">
-      `;
-      
-      document.body.appendChild(form);
-      form.submit();
-      return;
-    }
-    
-    // Photo/image gaps: Show resolution proof modal
+    // Show resolution proof modal
     document.getElementById('resolutionGapId').textContent = gapId;
     const form = document.getElementById('resolutionProofForm');
     form.action = `/update-gap-status/${gapId}/`;
@@ -1458,11 +1073,6 @@ function confirmDeleteGap(gapId, villageName) {
   );
 }
 
-// Old function for backward compatibility with voice gaps
-function confirmGapStatusChange(selectElement, gapId, audioFile) {
-  handleStatusChange(selectElement, gapId, audioFile, true, audioFile ? 'voice' : 'image');
-}
-
 function toggleMenu() {
   document.getElementById('navMenu').classList.toggle('active');
 }
@@ -1486,6 +1096,10 @@ function toggleTheme() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.status-select').forEach(function(select) {
+    select.setAttribute('data-old-status', select.value);
+  });
+
   const savedTheme = localStorage.getItem('theme');
   const sunIcon = document.querySelector('.sun-icon');
   const moonIcon = document.querySelector('.moon-icon');

@@ -8,7 +8,7 @@ import datetime
 @require_http_methods(["GET"])
 def test_connection(request):
     """Simple endpoint to test connectivity"""
-    from core.models import Gap, Village, Submission, VoiceVerificationLog
+    from core.models import Gap, Village, Submission
     from django.contrib.auth.models import User
 
     response = JsonResponse(
@@ -23,7 +23,6 @@ def test_connection(request):
                 "villages": Village.objects.count(),
                 "gaps": Gap.objects.count(),
                 "submissions": Submission.objects.count(),
-                "voice_logs": VoiceVerificationLog.objects.count(),
             },
         }
     )

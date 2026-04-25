@@ -60,6 +60,19 @@ const parseResponseBody = async (response) => {
   }
 };
 
+const isLowSignalTranscription = (transcription) => {
+  const text = String(transcription || '').trim();
+  if (!text) return true;
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const alphaChars = (text.match(/[A-Za-z\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/g) || []).length;
+
+  if (text.length <= 2 || alphaChars <= 1) return true;
+  if (words.length <= 1 && text.length < 8) return true;
+
+  return false;
+};
+
 const runAnalyzeRequest = async ({ fileUri, mediaType, language, idToken }) => {
   const url = `${API_CONFIG.DJANGO_URL}${API_CONFIG.AI_ANALYZE_ENDPOINT}`;
   const formData = new FormData();
@@ -130,6 +143,11 @@ export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
     for (const lang of languageAttempts) {
       try {
         data = await runAnalyzeRequest({ fileUri, mediaType, language: lang, idToken });
+
+        if (mediaType === 'audio' && isLowSignalTranscription(data?.transcription)) {
+          throw new Error(`Transcription quality is too low for language: ${lang}`);
+        }
+
         break;
       } catch (attemptError) {
         lastError = attemptError;
@@ -152,6 +170,8 @@ export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
       severity: data.severity || 'medium',
       confidence: data.confidence || 0.7,
       transcription: data.transcription, // Only for audio
+      transcription_language: data.transcription_language,
+      transcription_confidence: data.transcription_confidence,
     };
   } catch (error) {
     console.error('AI processing error:', error);
@@ -175,6 +195,12 @@ export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
       normalizedError.includes('429')
     ) {
       errorMsg = 'AI service is temporarily busy (rate limit reached). Please retry after a few seconds.';
+    } else if (
+      normalizedError.includes('transcription quality is too low') ||
+      normalizedError.includes('transcription too short') ||
+      normalizedError.includes('speak clearly')
+    ) {
+      errorMsg = 'Audio was not clear enough for transcription. Please re-record in a quieter place and speak clearly for 8-12 seconds.';
     } else if (!errorMsg || errorMsg.trim().split(/\s+/).length < 3) {
       errorMsg = 'Unable to analyze media right now. Please try again.';
     }

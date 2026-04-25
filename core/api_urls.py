@@ -36,6 +36,32 @@ urlpatterns = [
         api_views.api_mobile_gap_status_sync,
         name="api_mobile_gap_status_sync",
     ),
+    path(
+        "api/mobile/complaints/submit/",
+        api_views.api_mobile_submit_complaint,
+        name="api_mobile_submit_complaint",
+    ),
+    path(
+        "api/mobile/complaints/in-progress/",
+        api_views.api_mobile_in_progress_complaints,
+        name="api_mobile_in_progress_complaints",
+    ),
+    path(
+        "api/mobile/complaints/<str:complaint_id>/verify-close/",
+        api_views.api_mobile_verify_close_complaint,
+        name="api_mobile_verify_close_complaint",
+    ),
+    path(
+        "api/mobile/complaints/<str:complaint_id>/resolve-photo/",
+        api_views.api_mobile_resolve_photo_complaint,
+        name="api_mobile_resolve_photo_complaint",
+    ),
+    # Geo-tagged Photo Closure
+    path(
+        "api/gaps/<int:gap_id>/close-with-proof/",
+        api_views.close_gap_with_photo_proof,
+        name="api_close_gap_with_photo",
+    ),
     # Public Dashboard API
     path(
         "api/public-dashboard/",
@@ -61,33 +87,6 @@ urlpatterns = [
         "api/analyze-media/",
         api_views.api_analyze_media,
         name="api_analyze_media",
-    ),
-    # Voice Verification API
-    path(
-        "api/voice/<int:gap_id>/logs/",
-        api_views.api_voice_verification_logs,
-        name="api_voice_logs",
-    ),
-    path(
-        "api/voice/<int:gap_id>/submit/",
-        api_views.VoiceVerificationSubmitAPIView.as_view(),
-        name="api_voice_submit",
-    ),
-    path(
-        "api/voice/<int:gap_id>/gap-details/",
-        api_views.api_gap_for_verification,
-        name="api_gap_for_verification",
-    ),
-    path(
-        "api/voice/<int:gap_id>/resolve/",
-        api_views.api_resolve_gap_with_voice,
-        name="api_resolve_gap_with_voice",
-    ),
-    # QR submission endpoint for mobile app
-    path(
-        "api/qr-submissions/",
-        api_views.QRSubmissionAPIView.as_view(),
-        name="qr_submissions",
     ),
     # Test endpoint for connectivity checking
     path("api/test/", test_connection, name="test_connection"),

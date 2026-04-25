@@ -69,5 +69,10 @@
   // Terminal settings
   "terminal.integrated.env.windows": {
     "DJANGO_SETTINGS_MODULE": "config.settings"
-  }
+  },
+  "cursorpyright.analysis.diagnosticMode": "workspace",
+  "cursorpyright.analysis.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/core"
+  ]
 }

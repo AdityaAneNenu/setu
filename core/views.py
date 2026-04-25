@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils.text import slugify
-from .models import Village, Submission, Gap, QRSubmission, QRComplaintDetail
+from .models import Village, Submission, Gap
 from .permissions import role_required, Role, get_user_role
 from .email_utils import send_resolution_email, TEAM_EMAIL
 import google.generativeai as genai
@@ -11,7 +11,6 @@ from PIL import Image
 import json
 import os
 from django.db.models import Count
-from django.core.paginator import Paginator
 
 # Initialize Gemini AI for translation
 try:
@@ -223,6 +222,7 @@ def upload_form(request):
                 try:
                     data = json.loads(clean_text)
                 except json.JSONDecodeError:
+                    print(f"JSON parsing error in image analysis: {clean_text[:200]}")
                     data = {
                         "extracted_text": clean_text,
                         "gap_type": "unknown",
@@ -268,24 +268,6 @@ def upload_form(request):
             latitude=latitude if latitude else None,
             longitude=longitude if longitude else None,
         )
-
-        # BACKGROUND: Generate voice code for voice-based gaps
-        if submission_type == "audio" and gap.audio_file:
-            try:
-                from .voice_verification import VoiceFeatureExtractor
-
-                voice_code = VoiceFeatureExtractor.generate_voice_code(
-                    gap.audio_file.path
-                )
-                gap.voice_code = voice_code
-                gap.save(update_fields=["voice_code"])
-                print(
-                    f"✅ Voice code generated for Gap #{gap.id}: {voice_code[:16]}..."
-                )
-            except Exception as e:
-                print(
-                    f"⚠️ Warning: Could not generate voice code for Gap #{gap.id}: {e}"
-                )
 
         # Return context with analysis results
         # Initialize language info variables
@@ -430,7 +412,7 @@ def analytics(request):
         raw_percentage = (item["count"] / total_gaps * 100) if total_gaps > 0 else 0
         # Ensure bars are always visible for non-zero counts
         display_percentage = max(
-            round(raw_percentage, 1), 6 if item["count"] > 0 else 0
+            round(raw_percentage, 1), 6 if item["count"] > 0 and total_gaps > 0 else 0
         )
         type_slug = slugify(item["gap_type"] or "other")
         gaps_by_type.append(
@@ -529,7 +511,6 @@ def delete_gap(request, gap_id):
 def update_gap_status(request, gap_id):
     gap = get_object_or_404(Gap, id=gap_id)
     from .permissions import get_user_role, Role, can_resolve_gaps
-    from .api_views import _ensure_gap_has_local_audio
 
     if request.method == "POST":
         new_status = request.POST.get("status")
@@ -560,28 +541,23 @@ def update_gap_status(request, gap_id):
             )
             return redirect("manage_gaps")
 
-        # CRITICAL: Check if this is a voice-based gap (submitted via audio)
-        # Voice verification is ONLY required for gaps submitted through voice recording
-        is_voice_gap = gap.input_method == "voice" or bool(gap.audio_file)
-
-        # RESOLUTION PROOF CHECK: ADMIN must provide proof when resolving
-        # BUT: Only for photo/image uploads - NOT for voice recordings!
-        if new_status == "resolved" and not is_voice_gap:
+        # RESOLUTION PROOF CHECK: required for non-audio/photo-style gap closures only.
+        is_audio_submission = gap.input_method == "voice" or bool(gap.audio_file)
+        if new_status == "resolved" and not is_audio_submission:
             resolution_proof = request.FILES.get("resolution_proof")
             resolution_proof_number = request.POST.get(
                 "resolution_proof_number", ""
             ).strip()
 
-            # Require proof for non-voice gaps, or if not already provided
+            # Require proof if not already provided
             if not gap.resolution_proof and not resolution_proof:
                 print(
-                    f"❌ DEBUG: Resolution proof required but not provided (photo-based gap)"
+                    f"❌ DEBUG: Resolution proof required but not provided"
                 )
                 messages.error(
                     request,
                     "❌ <strong>Resolution Proof Required!</strong><br>"
-                    "Please upload the resolution letter/document and provide reference number before marking as resolved.<br>"
-                    "<em>Note: This is required for photo uploads. Voice recordings use voice verification instead.</em>",
+                    "Please upload the resolution letter/document and provide reference number before marking as resolved.<br>",
                     extra_tags="safe",
                 )
                 return redirect("manage_gaps")
@@ -595,128 +571,11 @@ def update_gap_status(request, gap_id):
                 gap.resolution_proof_number = resolution_proof_number
                 print(f"✅ DEBUG: Resolution proof number: {resolution_proof_number}")
 
-        print(f"🔍 DEBUG: is_voice_gap = {is_voice_gap}")
+        # Voice verification module removed: resolving no longer requires voice checks.
+
+        # Proceed with status update
         print(
-            f"🔍 DEBUG: Condition check: new_status='{new_status}' == 'resolved' AND is_voice_gap={is_voice_gap}"
-        )
-
-        # If trying to resolve a VOICE GAP, voice CODE MATCHING is MANDATORY
-        if new_status == "resolved" and is_voice_gap:
-            print(
-                f"🔒 DEBUG: Voice gap resolution detected - VOICE CODE VERIFICATION REQUIRED"
-            )
-            print(
-                f"🔍 DEBUG: Original gap voice_code: {gap.voice_code[:16] if gap.voice_code else 'None'}..."
-            )
-
-            if not gap.audio_file and gap.audio_url:
-                print(
-                    "⚠️ DEBUG: Local audio missing, attempting to recover from stored audio_url"
-                )
-                if _ensure_gap_has_local_audio(gap):
-                    gap.refresh_from_db(fields=["audio_file", "audio_url", "voice_code"])
-                    print("✅ DEBUG: Recovered local audio from audio_url")
-                else:
-                    print("❌ DEBUG: Could not recover local audio from audio_url")
-
-            # Check if gap has a voice code
-            from .models import VoiceVerificationLog
-
-            if not gap.voice_code:
-                print(f"⚠️ DEBUG: Gap has no voice code - trying to generate now")
-                if gap.audio_file:
-                    try:
-                        from .voice_verification import VoiceFeatureExtractor
-
-                        gap.voice_code = VoiceFeatureExtractor.generate_voice_code(
-                            gap.audio_file.path
-                        )
-                        gap.save(update_fields=["voice_code"])
-                        print(
-                            f"✅ DEBUG: Generated voice code: {gap.voice_code[:16]}..."
-                        )
-                    except Exception as e:
-                        print(f"❌ DEBUG: Failed to generate voice code: {e}")
-                        messages.error(
-                            request,
-                            "❌ Cannot verify voice - gap audio processing failed.",
-                        )
-                        return redirect("manage_gaps")
-                else:
-                    messages.error(
-                        request, "❌ Cannot verify voice - no audio file found."
-                    )
-                    return redirect("manage_gaps")
-
-            # Look for SUCCESSFUL verification logs (is_match=True)
-            # Voice verification passes if biometric comparison succeeded, regardless of exact code match
-            # This is because we use fuzzy matching and similarity thresholds
-            verified_logs = VoiceVerificationLog.objects.filter(
-                gap=gap,  # Use gap foreign key instead of text search
-                is_match=True,  # Voice biometric verification PASSED
-                used_for_closure=False,
-            ).order_by("-verification_date")
-
-            verification_count = verified_logs.count()
-            print(
-                f"🔍 DEBUG: Found {verification_count} SUCCESSFUL verification logs (is_match=True)"
-            )
-
-            if not verified_logs.exists():
-                # BLOCK RESOLUTION - No successful voice verification found
-                print(
-                    f"❌ DEBUG: BLOCKING RESOLUTION - No successful voice verification found!"
-                )
-                messages.error(
-                    request,
-                    "❌ <strong>Voice Verification Required!</strong><br>"
-                    "You must complete voice verification before resolving this gap. "
-                    "Click the 🎙️ Record Voice button to verify your identity.",
-                    extra_tags="safe",
-                )
-                return redirect("manage_gaps")
-
-            print(f"✅ DEBUG: Voice verification PASSED - proceeding with resolution")
-
-            # Voice codes match - mark verification as used
-            latest_verification = verified_logs.first()
-            latest_verification.used_for_closure = True
-            latest_verification.notes = f"Used for Gap #{gap.id} resolution. Voice codes matched. {latest_verification.notes or ''}"
-            latest_verification.save()
-
-            # Update status and show success message
-            gap.status = new_status
-            gap.resolved_by = request.user
-            from django.utils import timezone
-
-            gap.resolved_at = timezone.now()
-            gap.save()
-
-            # Send resolution email
-            send_resolution_email(
-                subject=f"Gap #{gap.id} resolved",
-                message=(
-                    f"Gap in village {gap.village.name} has been marked resolved.\n"
-                    f"Type: {gap.gap_type}\n"
-                    f"Description: {gap.description[:200]}...\n"
-                    f"Resolved by: {request.user.username} ({user_role})\n"
-                    f"Voice verification: PASSED"
-                ),
-                recipients=[TEAM_EMAIL],
-            )
-
-            print(
-                f"✅ DEBUG: Gap #{gap.id} status updated to {new_status} (voice code verified + resolution proof)"
-            )
-            messages.success(
-                request,
-                "✅ Gap resolved successfully! Voice codes matched - verified authentic complainant.",
-            )
-            return redirect("manage_gaps")
-
-        # For non-voice gaps or non-resolution status changes
-        print(
-            f"ℹ️ DEBUG: Non-voice gap or non-resolution status change - allowing update"
+            f"ℹ️ DEBUG: Status change - allowing update"
         )
         if new_status in dict(Gap.STATUS_CHOICES):
             old_status = gap.status
@@ -875,133 +734,3 @@ def public_dashboard(request):
     return render(request, "core/public_dashboard.html", context)
 
 
-@login_required
-@role_required(MANAGER_AND_ABOVE)
-def qr_submissions_management(request):
-    """View for managing QR submissions from mobile app"""
-
-    # Get filter parameters
-    village_filter = request.GET.get("village", "")
-    sync_status_filter = request.GET.get("sync_status", "")
-    search_query = request.GET.get("search", "")
-
-    # Base queryset
-    qr_submissions = QRSubmission.objects.select_related(
-        "village", "linked_gap", "linked_complaint"
-    ).order_by("-created_at")
-
-    # Apply filters
-    if village_filter:
-        qr_submissions = qr_submissions.filter(village__id=village_filter)
-
-    if sync_status_filter == "synced":
-        qr_submissions = qr_submissions.filter(synced_from_mobile=True)
-    elif sync_status_filter == "pending":
-        qr_submissions = qr_submissions.filter(synced_from_mobile=False)
-
-    if search_query:
-        qr_submissions = (
-            qr_submissions.filter(person_name__icontains=search_query)
-            | qr_submissions.filter(qr_code__icontains=search_query)
-            | qr_submissions.filter(village_name__icontains=search_query)
-        )
-
-    # Pagination
-    paginator = Paginator(qr_submissions, 20)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    # Statistics
-    total_submissions = QRSubmission.objects.count()
-    synced_submissions = QRSubmission.objects.filter(synced_from_mobile=True).count()
-    pending_submissions = total_submissions - synced_submissions
-
-    # Villages for filter dropdown
-    villages = Village.objects.all().order_by("name")
-
-    context = {
-        "page_obj": page_obj,
-        "total_submissions": total_submissions,
-        "synced_submissions": synced_submissions,
-        "pending_submissions": pending_submissions,
-        "villages": villages,
-        "selected_village": village_filter,
-        "selected_sync_status": sync_status_filter,
-        "search_query": search_query,
-    }
-
-    return render(request, "core/qr_submissions_management.html", context)
-
-
-@login_required
-@role_required(MANAGER_AND_ABOVE)
-def qr_submission_detail(request, submission_id):
-    """View detailed information about a QR submission"""
-
-    qr_submission = get_object_or_404(
-        QRSubmission.objects.select_related(
-            "village", "linked_gap", "linked_complaint"
-        ),
-        id=submission_id,
-    )
-
-    # Get complaint details if they exist
-    complaint_details = None
-    try:
-        complaint_details = qr_submission.complaint_details
-    except QRComplaintDetail.DoesNotExist:
-        pass
-
-    # Handle form submissions
-    if request.method == "POST":
-        action = request.POST.get("action")
-
-        if action == "create_gap":
-            # Create a new Gap from QR submission
-            gap = Gap.objects.create(
-                village=qr_submission.village
-                or Village.objects.filter(
-                    name__icontains=qr_submission.village_name
-                ).first(),
-                description=f"Gap submitted via QR code: {qr_submission.qr_code}",
-                gap_type=request.POST.get("gap_type", "other"),
-                severity=request.POST.get("severity", "medium"),
-                input_method="text",
-                latitude=qr_submission.latitude,
-                longitude=qr_submission.longitude,
-            )
-
-            qr_submission.linked_gap = gap
-            qr_submission.save()
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": "Gap created successfully",
-                    "gap_id": gap.id,
-                }
-            )
-
-        elif action == "link_existing_gap":
-            gap_id = request.POST.get("gap_id")
-            if gap_id:
-                try:
-                    gap = Gap.objects.get(id=gap_id)
-                    qr_submission.linked_gap = gap
-                    qr_submission.save()
-
-                    return JsonResponse(
-                        {
-                            "success": True,
-                            "message": "Linked to existing gap successfully",
-                        }
-                    )
-                except Gap.DoesNotExist:
-                    return JsonResponse({"success": False, "error": "Gap not found"})
-
-    context = {
-        "qr_submission": qr_submission,
-        "complaint_details": complaint_details,
-    }
-
-    return render(request, "core/qr_submission_detail.html", context)

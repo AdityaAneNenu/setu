@@ -1,21 +1,24 @@
-import React, { useCallback } from 'react';
-import { StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as SplashScreen from 'expo-splash-screen';
+import React, { useCallback } from "react";
+import { StyleSheet } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as SplashScreen from "expo-splash-screen";
 import {
   useFonts,
   Nunito_400Regular,
   Nunito_500Medium,
   Nunito_600SemiBold,
   Nunito_700Bold,
-} from '@expo-google-fonts/nunito';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { AccessibilityProvider, useAccessibility } from './src/context/AccessibilityContext';
-import { LanguageProvider } from './src/context/LanguageContext';
-import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+} from "@expo-google-fonts/nunito";
+import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import {
+  AccessibilityProvider,
+  useAccessibility,
+} from "./src/context/AccessibilityContext";
+import { LanguageProvider } from "./src/context/LanguageContext";
+import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 
 import {
   WelcomeScreen,
@@ -42,9 +45,11 @@ import {
   AccessibilitySettingsScreen,
   TTSSettingsScreen,
   GapDetailScreen,
-  VoiceVerificationScreen,
-} from './src/screens';
-import CustomDrawer from './src/components/CustomDrawer';
+  ClosurePhotoScreen,
+  ComplaintSubmissionScreen,
+  ComplaintVerificationScreen,
+} from "./src/screens";
+import CustomDrawer from "./src/components/CustomDrawer";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -60,8 +65,8 @@ function DrawerNavigator() {
       drawerContent={(props) => <CustomDrawer {...props} />}
       screenOptions={{
         headerShown: false,
-        drawerType: 'slide',
-        overlayColor: 'transparent',
+        drawerType: "slide",
+        overlayColor: "transparent",
         drawerStyle: {
           backgroundColor: colors.drawerBg,
           width: 280,
@@ -81,18 +86,34 @@ function DrawerNavigator() {
       <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen name="Notifications" component={NotificationsScreen} />
       <Drawer.Screen name="HelpSupport" component={HelpSupportScreen} />
-      <Drawer.Screen name="DocumentProcessing" component={DocumentProcessingScreen} />
+      <Drawer.Screen
+        name="DocumentProcessing"
+        component={DocumentProcessingScreen}
+      />
       <Drawer.Screen name="AudioProcessing" component={AudioProcessingScreen} />
       <Drawer.Screen name="History" component={HistoryScreen} />
       <Drawer.Screen name="DocumentViewer" component={DocumentViewerScreen} />
       <Drawer.Screen name="AudioViewer" component={AudioViewerScreen} />
-      <Drawer.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
+      <Drawer.Screen
+        name="LanguageSettings"
+        component={LanguageSettingsScreen}
+      />
       <Drawer.Screen name="StorageCloud" component={StorageCloudScreen} />
       <Drawer.Screen name="Search" component={SearchScreen} />
-      <Drawer.Screen name="AccessibilitySettings" component={AccessibilitySettingsScreen} />
+      <Drawer.Screen
+        name="AccessibilitySettings"
+        component={AccessibilitySettingsScreen}
+      />
       <Drawer.Screen name="TTSSettings" component={TTSSettingsScreen} />
       <Drawer.Screen name="GapDetail" component={GapDetailScreen} />
-      <Drawer.Screen name="VoiceVerification" component={VoiceVerificationScreen} />
+      <Drawer.Screen
+        name="ComplaintSubmission"
+        component={ComplaintSubmissionScreen}
+      />
+      <Drawer.Screen
+        name="ComplaintVerification"
+        component={ComplaintVerificationScreen}
+      />
     </Drawer.Navigator>
   );
 }
@@ -126,12 +147,15 @@ function AppContent() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          animation: reduceMotion ? 'none' : 'default',
+          animation: reduceMotion ? "none" : "default",
         }}
       >
         {isLoggedIn ? (
           // Authenticated user - allow access with role-based data filtering
-          <Stack.Screen name="Main" component={DrawerNavigator} />
+          <>
+            <Stack.Screen name="Main" component={DrawerNavigator} />
+            <Stack.Screen name="ClosurePhoto" component={ClosurePhotoScreen} />
+          </>
         ) : (
           // User is not authenticated — show onboarding/login flow
           <>

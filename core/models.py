@@ -228,13 +228,6 @@ class Gap(models.Model):
         null=True,
         help_text="External audio URL (Cloudinary) - will be downloaded to audio_file",
     )
-    voice_code = models.CharField(
-        max_length=64,
-        blank=True,
-        null=True,
-        unique=True,  # Add unique constraint to prevent duplicates
-        help_text="Unique voice fingerprint for voice-based gaps",
-    )
     recommendations = models.TextField(blank=True, null=True, default="None")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -288,8 +281,48 @@ class Gap(models.Model):
         null=True, blank=True, help_text="Timestamp when gap was resolved"
     )
 
+    # Geo-tagged closure photo proof
+    closure_photo_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Cloudinary URL of the geo-tagged closure photo taken on-site",
+    )
+    closure_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text="GPS latitude where the closure photo was taken",
+    )
+    closure_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text="GPS longitude where the closure photo was taken",
+    )
+    closure_photo_timestamp = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Timestamp when the closure photo was captured on-site",
+    )
+
+    # Optional: closure-time selfie for "same person" verification
+    closure_selfie_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Cloudinary URL of the closure-time selfie (for similarity check)",
+    )
+    closure_selfie_match_score = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Selfie similarity score vs original person photo (0-1)",
+    )
+
     def __str__(self):
-        return f"{self.village.name} - {self.gap_type} -{self.created_at}"
+        return f"{self.village.name} - {self.gap_type} - {self.created_at}"
 
     @property
     def is_overdue(self):
@@ -346,7 +379,10 @@ class GapStatusAuditLog(models.Model):
         verbose_name_plural = "Gap Status Audit Logs"
 
     def __str__(self):
-        return f"Gap #{self.gap_id}: {self.old_status or 'NEW'} → {self.new_status} at {self.changed_at}"
+        return (
+            f"Gap #{self.gap_id}: {self.old_status or 'NEW'} "
+            f"-> {self.new_status} at {self.changed_at}"
+        )
 
 
 # Post Office Workflow System Models
@@ -389,6 +425,8 @@ class PMAJAYOffice(models.Model):
 
 class Complaint(models.Model):
     """Main complaint/grievance from villager"""
+
+    CLOSURE_ALLOWED_STATUSES = ("assigned_worker", "work_in_progress")
 
     COMPLAINT_STATUS = [
         ("received_post", "Received at Post Office"),
@@ -441,13 +479,6 @@ class Complaint(models.Model):
     audio_transcription = models.TextField(
         blank=True, help_text="AI transcription of audio"
     )
-    voice_code = models.CharField(
-        max_length=64,
-        blank=True,
-        null=True,
-        db_index=True,
-        help_text="Unique voice fingerprint for complaint audio",
-    )
     recorded_by_agent = models.BooleanField(default=False)
     agent_name = models.CharField(max_length=100, blank=True)
     villager_signature_image = models.ImageField(
@@ -462,9 +493,119 @@ class Complaint(models.Model):
         max_digits=9, decimal_places=6, blank=True, null=True
     )
     geotagged_photos = models.JSONField(default=list, blank=True)  # Store photo paths
+    complaint_document_image = models.ImageField(
+        upload_to="complaints/document_photos/",
+        blank=True,
+        null=True,
+        help_text="Photo of written complaint document captured at submission",
+    )
+
+    # Complaintee verification (photo + geo at submission and closure)
+    complaintee_photo = models.ImageField(
+        upload_to="complaints/complaintee_photos/",
+        blank=True,
+        null=True,
+        help_text="Photo of the complaintee captured at complaint time",
+    )
+    submission_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text="GPS latitude captured at complaint submission time",
+    )
+    submission_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text="GPS longitude captured at complaint submission time",
+    )
+    closure_selfie = models.ImageField(
+        upload_to="complaints/closure_selfies/",
+        blank=True,
+        null=True,
+        help_text="Closure-time selfie of complaintee for verification",
+    )
+    closure_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text="GPS latitude captured at complaint closure time",
+    )
+    closure_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text="GPS longitude captured at complaint closure time",
+    )
+    closure_timestamp = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Timestamp when closure selfie was captured",
+    )
+    closure_distance_m = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Distance between submission GPS and closure GPS (meters)",
+    )
+    closure_selfie_match_score = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Similarity score between submission photo and closure selfie (0-1)",
+    )
+    resolution_letter_image = models.ImageField(
+        upload_to="complaints/resolution_letters/",
+        blank=True,
+        null=True,
+        help_text="Resolution letter image for photo/document complaints",
+    )
 
     def __str__(self):
         return f"{self.complaint_id} - {self.villager_name}"
+
+    @property
+    def uses_resolution_letter(self):
+        """Written/photo complaints close with a resolution letter image."""
+        return bool(self.complaint_document_image)
+
+    @property
+    def requires_selfie_gps_verification(self):
+        """Audio/direct complaints close by matching selfie + GPS against submission."""
+        return not self.uses_resolution_letter
+
+    @property
+    def has_submission_identity_photo(self):
+        return bool(self.complaintee_photo)
+
+    @property
+    def has_submission_geo(self):
+        return (
+            self.submission_latitude is not None
+            and self.submission_longitude is not None
+        )
+
+    @property
+    def is_submission_verification_ready(self):
+        return self.has_submission_identity_photo and self.has_submission_geo
+
+    @property
+    def closure_status_is_actionable(self):
+        return self.status in self.CLOSURE_ALLOWED_STATUSES
+
+    @property
+    def verification_block_reason(self):
+        if self.uses_resolution_letter:
+            return ""
+        if not self.has_submission_identity_photo:
+            return "Submission is missing the complaintee photo."
+        if not self.has_submission_geo:
+            return "Submission is missing the original GPS coordinates."
+        if not self.closure_status_is_actionable:
+            return "Complaint is not yet ready for closure verification."
+        return ""
 
     def save(self, *args, **kwargs):
         if not self.complaint_id:
@@ -619,78 +760,7 @@ class Worker(models.Model):
         return f"{self.name} ({self.worker_type})"
 
 
-class VoiceVerificationLog(models.Model):
-    """Log all voice verification attempts for complaint/gap closure"""
 
-    CONFIDENCE_LEVELS = [
-        ("high", "High - 90%+ match"),
-        ("medium", "Medium - 85-90% match"),
-        ("low", "Low - 75-85% match"),
-        ("very_low", "Very Low - Below 75%"),
-        ("error", "Verification Error"),
-    ]
-
-    complaint = models.ForeignKey(
-        Complaint,
-        on_delete=models.CASCADE,
-        related_name="voice_verifications",
-        null=True,
-        blank=True,
-    )
-    gap = models.ForeignKey(
-        "Gap",
-        on_delete=models.CASCADE,
-        related_name="voice_verifications",
-        null=True,
-        blank=True,
-        help_text="Gap being verified",
-    )
-    verification_audio_path = models.CharField(
-        max_length=500, help_text="Path to verification audio file"
-    )
-    similarity_score = models.FloatField(
-        help_text="Voice similarity score (0.0 to 1.0)"
-    )
-    is_match = models.BooleanField(default=False, help_text="Whether voices matched")
-    confidence = models.CharField(max_length=20, choices=CONFIDENCE_LEVELS)
-
-    # Additional metadata
-    verification_date = models.DateTimeField(auto_now_add=True)
-    verified_by = models.CharField(
-        max_length=100, blank=True, help_text="Person who attempted verification"
-    )
-    notes = models.TextField(blank=True)
-
-    # Track if this verification was used for closure
-    used_for_closure = models.BooleanField(default=False)
-
-    # Voice code for the verification audio
-    verification_voice_code = models.CharField(
-        max_length=64,
-        blank=True,
-        null=True,
-        help_text="Voice code of verification audio",
-    )
-
-    class Meta:
-        ordering = ["-verification_date"]
-        verbose_name = "Voice Verification Log"
-        verbose_name_plural = "Voice Verification Logs"
-
-    def __str__(self):
-        if self.complaint:
-            return f"{self.complaint.complaint_id} - {self.confidence} ({self.similarity_score*100:.1f}%)"
-        elif self.gap:
-            return f"Gap #{self.gap.id} - {self.confidence} ({self.similarity_score*100:.1f}%)"
-        else:
-            return (
-                f"Verification - {self.confidence} ({self.similarity_score*100:.1f}%)"
-            )
-
-    @property
-    def similarity_percentage(self):
-        """Return similarity as percentage"""
-        return self.similarity_score * 100
 
 
 # --- Signals ---

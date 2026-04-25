@@ -418,6 +418,10 @@
 
             <form method="POST" enctype="multipart/form-data" id="complaintForm">
                 {% csrf_token %}
+
+                <!-- Hidden GPS fields (filled by browser geolocation) -->
+                <input type="hidden" id="submission_latitude" name="submission_latitude" value="">
+                <input type="hidden" id="submission_longitude" name="submission_longitude" value="">
                 
                 <!-- Basic Information -->
                 <div class="form-row">
@@ -484,9 +488,28 @@
                         </div>
 
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label style="margin-bottom: 0.5rem;">Upload Supporting Image</label>
+                            <label style="margin-bottom: 0.5rem;">Upload Written Complaint Document Photo</label>
                             <input type="file" class="file-input" name="supporting_image" accept="image/*">
-                            <p class="file-hint">Optional: Upload photos as evidence</p>
+                            <p class="file-hint">Required when you submit a written complaint without audio.</p>
+                        </div>
+                    </div>
+
+                    <!-- Complaintee Verification -->
+                    <div class="method-card">
+                        <div class="method-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <h3>Complaintee Photo + GPS</h3>
+                        </div>
+                        <p class="method-desc">Capture complaintee photo and location at complaint time</p>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="margin-bottom: 0.5rem;">Complaintee Photo *</label>
+                            <input type="file" class="file-input" name="complaintee_photo" accept="image/*" capture="user" required>
+                            <p class="file-hint">Required: capture a clear face photo. GPS is captured automatically if allowed.</p>
+                            <p id="gpsStatus" class="file-hint" style="margin-top: 8px;"></p>
                         </div>
                     </div>
 
@@ -567,7 +590,7 @@
                             <line x1="12" y1="16" x2="12" y2="12"/>
                             <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <strong>Note:</strong> You can submit either written text, audio recording, or both. AI will automatically transcribe audio and analyze the complaint type and priority.
+                        <strong>Note:</strong> Submit written text, audio, or both. Every complaint must include the complaintee photo and the submission GPS location so the closure check can verify identity and geotagging later.
                     </p>
                 </div>
 
@@ -671,6 +694,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Capture GPS at complaint submission time
+(function initSubmissionGPS() {
+    const statusEl = document.getElementById('gpsStatus');
+    const latEl = document.getElementById('submission_latitude');
+    const lngEl = document.getElementById('submission_longitude');
+
+    if (!latEl || !lngEl) return;
+
+    if (!navigator.geolocation) {
+        if (statusEl) statusEl.textContent = "GPS not supported in this browser.";
+        return;
+    }
+
+    if (statusEl) statusEl.textContent = "Fetching GPS...";
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            latEl.value = String(pos.coords.latitude);
+            lngEl.value = String(pos.coords.longitude);
+            if (statusEl) {
+                statusEl.textContent = `GPS captured: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+            }
+        },
+        () => {
+            if (statusEl) statusEl.textContent = "GPS unavailable. You can still submit, but strict closure verification may be blocked.";
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+})();
+
 // Show/hide agent name field
 document.getElementById('recorded_by_agent').addEventListener('change', function() {
     const agentField = document.getElementById('agent_name_field');
@@ -742,10 +794,32 @@ document.getElementById('complaintForm').addEventListener('submit', function(e) 
     const complaintText = document.getElementById('complaint_text').value.trim();
     const hasRecordedAudio = recordedBlob !== undefined;
     const hasUploadedAudio = document.querySelector('input[name="audio_file_upload"]').files.length > 0;
+    const hasComplainteePhoto = document.querySelector('input[name="complaintee_photo"]').files.length > 0;
+    const hasDocumentPhoto = document.querySelector('input[name="supporting_image"]').files.length > 0;
+    const submissionLatitude = document.getElementById('submission_latitude').value.trim();
+    const submissionLongitude = document.getElementById('submission_longitude').value.trim();
     
     if (!complaintText && !hasRecordedAudio && !hasUploadedAudio) {
         e.preventDefault();
         alert('Please provide either written complaint text or audio recording.');
+        return false;
+    }
+
+    if (!hasComplainteePhoto) {
+        e.preventDefault();
+        alert('Capture the complaintee photo before submitting the complaint.');
+        return false;
+    }
+
+    if (!submissionLatitude || !submissionLongitude) {
+        e.preventDefault();
+        alert('Allow location access and capture GPS before submitting the complaint.');
+        return false;
+    }
+
+    if (complaintText && !hasRecordedAudio && !hasUploadedAudio && !hasDocumentPhoto) {
+        e.preventDefault();
+        alert('Written complaints require the written complaint document photo.');
         return false;
     }
     

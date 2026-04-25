@@ -1,30 +1,28 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group, User
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
-from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 from unfold.decorators import display
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 # Register your models here.
 from .models import (
-    Village,
-    Submission,
+    Complaint,
     Gap,
     GapStatusAuditLog,
-    PostOffice,
     PMAJAYOffice,
-    Complaint,
-    WorkflowLog,
+    PostOffice,
+    QRComplaintDetail,
+    QRSubmission,
+    Submission,
     SurveyAgent,
     SurveyVisit,
-    Worker,
-    VoiceVerificationLog,
     UserProfile,
-    QRSubmission,
-    QRComplaintDetail,
+    Village,
+    Worker,
+    WorkflowLog,
 )
-
 
 # Unregister the default User and Group admins
 admin.site.unregister(User)
@@ -34,10 +32,18 @@ admin.site.unregister(Group)
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, ModelAdmin):
     """Enhanced User admin with Unfold styling"""
+
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
-    list_display = ("username", "email", "first_name", "last_name", "display_staff", "display_active")
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "display_staff",
+        "display_active",
+    )
     list_filter_submit = True
 
     @display(description="Staff", boolean=True)
@@ -52,6 +58,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
 @admin.register(Group)
 class GroupAdmin(ModelAdmin):
     """Enhanced Group admin with Unfold styling"""
+
     list_display = ("name", "user_count")
     search_fields = ("name",)
     filter_horizontal = ("permissions",)
@@ -111,6 +118,10 @@ class GapAdmin(ModelAdmin):
         "is_overdue",
         "resolved_by",
         "resolved_at",
+        "closure_photo_url",
+        "closure_latitude",
+        "closure_longitude",
+        "closure_photo_timestamp",
     )
     list_filter_submit = True
     list_per_page = 25
@@ -201,6 +212,18 @@ class GapAdmin(ModelAdmin):
                 "classes": ["tab"],
             },
         ),
+        (
+            "Closure Photo Proof",
+            {
+                "fields": (
+                    "closure_photo_url",
+                    "closure_latitude",
+                    "closure_longitude",
+                    "closure_photo_timestamp",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
     def is_overdue(self, obj):
@@ -211,7 +234,16 @@ class GapAdmin(ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         """Make certain fields always readonly"""
-        return ("created_at", "is_overdue", "resolved_by", "resolved_at")
+        return (
+            "created_at",
+            "is_overdue",
+            "resolved_by",
+            "resolved_at",
+            "closure_photo_url",
+            "closure_latitude",
+            "closure_longitude",
+            "closure_photo_timestamp",
+        )
 
 
 @admin.register(GapStatusAuditLog)
@@ -321,6 +353,9 @@ class ComplaintAdmin(ModelAdmin):
         "audio_transcription",
         "created_at",
         "updated_at",
+        "closure_timestamp",
+        "closure_distance_m",
+        "closure_selfie_match_score",
     )
     list_filter_submit = True
     list_per_page = 25
@@ -391,7 +426,30 @@ class ComplaintAdmin(ModelAdmin):
         (
             "Location & Photos",
             {
-                "fields": ("latitude", "longitude", "geotagged_photos"),
+                "fields": (
+                    "latitude",
+                    "longitude",
+                    "geotagged_photos",
+                    "complaint_document_image",
+                    "complaintee_photo",
+                    "submission_latitude",
+                    "submission_longitude",
+                ),
+                "classes": ["tab"],
+            },
+        ),
+        (
+            "Closure Verification",
+            {
+                "fields": (
+                    "closure_selfie",
+                    "closure_latitude",
+                    "closure_longitude",
+                    "closure_timestamp",
+                    "closure_distance_m",
+                    "closure_selfie_match_score",
+                    "resolution_letter_image",
+                ),
                 "classes": ["tab"],
             },
         ),
@@ -466,100 +524,6 @@ class WorkerAdmin(ModelAdmin):
     @display(description="Type", label=True)
     def display_worker_type(self, obj):
         return obj.worker_type
-
-
-@admin.register(VoiceVerificationLog)
-class VoiceVerificationLogAdmin(ModelAdmin):
-    list_display = (
-        "complaint",
-        "verification_date",
-        "display_similarity",
-        "display_match",
-        "display_confidence",
-        "display_closure",
-        "verified_by",
-    )
-    list_filter = ("is_match", "confidence", "used_for_closure", "verification_date")
-    search_fields = (
-        "complaint__complaint_id",
-        "complaint__villager_name",
-        "verified_by",
-    )
-    readonly_fields = ("verification_date", "similarity_percentage")
-    ordering = ("-verification_date",)
-    list_filter_submit = True
-    date_hierarchy = "verification_date"
-
-    @display(description="Similarity")
-    def display_similarity(self, obj):
-        pct = obj.similarity_percentage
-        if pct >= 80:
-            color = "#22c55e"
-        elif pct >= 60:
-            color = "#f97316"
-        else:
-            color = "#ef4444"
-        return format_html(
-            '<span style="color: {}; font-weight: 600;">{:.1f}%</span>',
-            color,
-            pct,
-        )
-
-    @display(description="Match", boolean=True)
-    def display_match(self, obj):
-        return obj.is_match
-
-    @display(
-        description="Confidence",
-        label={
-            "high": "success",
-            "medium": "warning",
-            "low": "danger",
-        },
-    )
-    def display_confidence(self, obj):
-        return obj.confidence
-
-    @display(description="Used for Closure", boolean=True)
-    def display_closure(self, obj):
-        return obj.used_for_closure
-
-    fieldsets = (
-        (
-            "Complaint Information",
-            {
-                "fields": ("complaint", "gap", "verified_by"),
-                "classes": ["tab"],
-            },
-        ),
-        (
-            "Verification Results",
-            {
-                "fields": (
-                    "similarity_score",
-                    "similarity_percentage",
-                    "is_match",
-                    "confidence",
-                ),
-                "classes": ["tab"],
-            },
-        ),
-        (
-            "Audio & Metadata",
-            {
-                "fields": (
-                    "verification_audio_path",
-                    "verification_date",
-                    "used_for_closure",
-                    "notes",
-                ),
-                "classes": ["tab"],
-            },
-        ),
-    )
-
-    def similarity_percentage(self, obj):
-        return f"{obj.similarity_percentage:.1f}%"
 
 
 @admin.register(UserProfile)

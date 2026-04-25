@@ -22,6 +22,8 @@ const menuItems = [
   { icon: 'mic-outline', labelKey: 'drawer.recordAudio', screen: 'UploadAudio' },
   { icon: 'time-outline', labelKey: 'drawer.history', screen: 'History' },
   { icon: 'search-outline', labelKey: 'drawer.search', screen: 'Search' },
+  { icon: 'camera-outline', labelKey: 'Register Complaint', screen: 'ComplaintSubmission' },
+  { icon: 'checkmark-done-circle-outline', labelKey: 'Resolve Complaints', screen: 'ComplaintVerification' },
   { icon: 'settings-outline', labelKey: 'drawer.settings', screen: 'Settings' },
 ];
 
@@ -61,7 +63,9 @@ export default function CustomDrawer({ navigation }) {
               activeOpacity={0.7}
             >
               <Ionicons name={item.icon} size={24} color={colors.drawerText} />
-              <Text style={[styles.menuLabel, { color: colors.drawerText }]}>{t(item.labelKey)}</Text>
+              <Text style={[styles.menuLabel, { color: colors.drawerText }]}>
+                {item.labelKey.startsWith("drawer.") ? t(item.labelKey) : item.labelKey}
+              </Text>
             </TouchableOpacity>
             {index < menuItems.length - 1 && (
               <View

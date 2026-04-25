@@ -447,6 +447,47 @@
             {% endfor %}
         {% endif %}
 
+        {% if complaint.requires_selfie_gps_verification and not complaint.has_submission_identity_photo %}
+        <div class="verification-alert warning" style="margin-bottom: 1rem; background: rgba(220, 38, 38, 0.12); border-color: rgba(220, 38, 38, 0.35); color: #991b1b;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Submission is missing the complaintee photo, so identity verification is blocked.
+        </div>
+        {% endif %}
+        {% if complaint.requires_selfie_gps_verification and not complaint.has_submission_geo %}
+        <div class="verification-alert warning" style="margin-bottom: 1rem; background: rgba(220, 38, 38, 0.12); border-color: rgba(220, 38, 38, 0.35); color: #991b1b;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Submission is missing the original GPS coordinates, so geotag verification is blocked.
+        </div>
+        {% endif %}
+        {% if complaint.audio_file and not complaint.closure_selfie %}
+        <div class="verification-alert warning" style="margin-bottom: 1rem; background: rgba(220, 38, 38, 0.12); border-color: rgba(220, 38, 38, 0.35); color: #991b1b;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Audio complaint pending verification
+        </div>
+        {% endif %}
+        {% if not complaint.audio_file and not complaint.complaint_document_image %}
+        <div class="verification-alert warning" style="margin-bottom: 1rem; background: rgba(220, 38, 38, 0.12); border-color: rgba(220, 38, 38, 0.35); color: #991b1b;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Written complaint missing document photo
+        </div>
+        {% endif %}
+
         <!-- Complaint Header Card -->
         <div class="detail-card">
             <div class="detail-header">
@@ -488,6 +529,16 @@
                             <strong>Priority</strong>
                             <span class="priority-{{ complaint.priority_level }}">● {{ complaint.priority_level|capfirst }}</span>
                         </div>
+                        <div class="info-item">
+                            <strong>Closure Path</strong>
+                            <span>
+                                {% if complaint.uses_resolution_letter %}
+                                    Resolution letter upload
+                                {% else %}
+                                    Selfie + GPS verification
+                                {% endif %}
+                            </span>
+                        </div>
                     </div>
                     <div class="info-section">
                         <h3>
@@ -512,6 +563,16 @@
                         <div class="info-item">
                             <strong>Last Updated</strong>
                             <span>{{ complaint.updated_at|date:"M d, Y g:i A" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Submission GPS</strong>
+                            <span>
+                                {% if complaint.has_submission_geo %}
+                                    {{ complaint.submission_latitude }}, {{ complaint.submission_longitude }}
+                                {% else %}
+                                    Missing
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -541,26 +602,6 @@
                         <div class="content-section">
                             <h4>🎤 Audio Transcription:</h4>
                             <p style="color: var(--text-muted);">{{ complaint.audio_transcription|linebreaks }}</p>
-                            {% if complaint.audio_file %}
-                                {% if voice_verified %}
-                                <div class="verification-alert success">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                        <polyline points="9 12 12 15 16 10"/>
-                                    </svg>
-                                    <strong>Voice Verified</strong> - This complaint has been verified with voice biometrics
-                                </div>
-                                {% else %}
-                                <div class="verification-alert warning">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                        <line x1="12" y1="8" x2="12" y2="12"/>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                                    </svg>
-                                    <strong>Voice Verification Pending</strong> - Verification required before case closure
-                                </div>
-                                {% endif %}
-                            {% endif %}
                             {% if complaint.recorded_by_agent %}
                             <p class="agent-info">
                                 👤 Recorded by: {{ complaint.agent_name }}
@@ -608,20 +649,19 @@
                                     <label>New Status</label>
                                     <select name="status" class="form-control" id="statusSelect">
                                         {% for value, label in status_choices %}
-                                            {% if value == 'case_closed' and complaint.audio_file %}
-                                                <option value="{{ value }}" {% if value == complaint.status %}selected{% endif %} data-voice-required="true">
-                                                    {{ label }} ⚠️ (Voice Verification Required)
+                                            {% if value == 'case_closed' and complaint.complaint_document_image and not complaint.resolution_letter_image %}
+                                                <option value="{{ value }}" disabled title="Upload resolution letter first">
+                                                    {{ label }} (Resolution letter required)
+                                                </option>
+                                            {% elif value == 'case_closed' and not complaint.complaint_document_image and not complaint.closure_selfie %}
+                                                <option value="{{ value }}" disabled title="Complete selfie+GPS verification first">
+                                                    {{ label }} (Verify selfie+GPS first)
                                                 </option>
                                             {% else %}
                                                 <option value="{{ value }}" {% if value == complaint.status %}selected{% endif %}>{{ label }}</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
-                                    {% if complaint.audio_file %}
-                                    <p class="voice-warning" id="voiceWarning">
-                                        ⚠️ Voice verification required before closing
-                                    </p>
-                                    {% endif %}
                                 </div>
                                 <div class="form-group">
                                     <label>Notes</label>
@@ -639,6 +679,109 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Verification & Close (Audio/Text complaints) -->
+                {% if not complaint.complaint_document_image %}
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <polyline points="9 12 12 15 16 10"/>
+                            </svg>
+                            Verify & Close (Selfie + GPS)
+                        </h2>
+                    </div>
+                    <div class="detail-body">
+                        <p style="color: var(--text-muted); margin-bottom: 0.75rem;">
+                            Capture a fresh selfie of the complaintee and current GPS. System will check distance and photo similarity before closing.
+                        </p>
+                        {% if not complaint.is_submission_verification_ready %}
+                        <div class="verification-alert warning" style="margin-bottom: 0.75rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {{ complaint.verification_block_reason }}
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" enctype="multipart/form-data" action="{% url 'verify_and_close_complaint' complaint.complaint_id %}">
+                            {% csrf_token %}
+                            <input type="hidden" id="closure_latitude" name="closure_latitude" value="">
+                            <input type="hidden" id="closure_longitude" name="closure_longitude" value="">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Closure Selfie *</label>
+                                    <input type="file" class="file-input" name="closure_selfie" accept="image/*" capture="user" required>
+                                    <p id="closureGpsStatus" style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;"></p>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                Verify & Close Complaint
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if complaint.complaint_document_image %}
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 12l2 2 4-4"/>
+                                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                            </svg>
+                            Resolve Photo Complaint
+                        </h2>
+                    </div>
+                    <div class="detail-body">
+                        <p style="color: var(--text-muted); margin-bottom: 0.75rem;">
+                            Upload resolution letter image to close this photo/document complaint.
+                        </p>
+                        <form method="POST" enctype="multipart/form-data" action="{% url 'resolve_photo_complaint_with_letter' complaint.complaint_id %}">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label>Resolution Letter Image *</label>
+                                <input type="file" class="file-input" name="resolution_letter_image" accept="image/*" capture="environment" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 0.75rem;">
+                                Upload & Close Complaint
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if is_admin and complaint.status != 'case_closed' %}
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <h2>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            Admin Override
+                        </h2>
+                    </div>
+                    <div class="detail-body">
+                        <p style="color: #991b1b; margin-bottom: 0.75rem;">
+                            Force Resolve bypasses verification checks. Use only for exceptional admin-only cases.
+                        </p>
+                        <form method="POST" action="{% url 'force_resolve_complaint' complaint.complaint_id %}" onsubmit="return confirm('Force resolve this complaint? This bypasses verification checks.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary" style="background: #b91c1c; border-color: #b91c1c;">
+                                Force Resolve (Admin Only)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <div class="sidebar-content">
@@ -711,32 +854,6 @@
                             </button>
                             {% endif %}
                             
-                            {% if complaint.audio_file and complaint.status != 'case_closed' %}
-                                {% if voice_verified %}
-                                <a href="{% url 'voice_verification_dashboard' complaint.complaint_id %}" class="action-btn success">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                                        <polyline points="22 4 12 14.01 9 11.01"/>
-                                    </svg>
-                                    Voice Verified ✓
-                                </a>
-                                <div class="action-alert success">
-                                    ✓ Voice verified! You can now close this complaint
-                                </div>
-                                {% else %}
-                                <a href="{% url 'voice_verification_dashboard' complaint.complaint_id %}" class="action-btn danger">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-                                        <path d="M19 10v2a7 7 0 01-14 0v-2"/>
-                                    </svg>
-                                    Voice Verification Required
-                                </a>
-                                <div class="action-alert warning">
-                                    ⚠️ Voice verification required to close this audio complaint
-                                </div>
-                                {% endif %}
-                            {% endif %}
-                            
                             <button class="action-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -796,33 +913,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Voice verification warning for case closure
-{% if complaint.audio_file %}
-document.getElementById('statusSelect').addEventListener('change', function() {
-    const voiceWarning = document.getElementById('voiceWarning');
-    const updateBtn = document.getElementById('updateStatusBtn');
-    
-    if (this.value === 'case_closed') {
-        voiceWarning.style.display = 'block';
-        updateBtn.style.background = '#fbbf24';
-        updateBtn.style.borderColor = '#fbbf24';
-    } else {
-        voiceWarning.style.display = 'none';
-        updateBtn.style.background = '';
-        updateBtn.style.borderColor = '';
-    }
-});
+// Capture GPS at complaint closure verification time
+(function initClosureGPS() {
+    const statusEl = document.getElementById('closureGpsStatus');
+    const latEl = document.getElementById('closure_latitude');
+    const lngEl = document.getElementById('closure_longitude');
+    if (!latEl || !lngEl) return;
 
-// Confirm before closing case with audio
-document.querySelector('form[action*="update_status"]').addEventListener('submit', function(e) {
-    const status = document.getElementById('statusSelect').value;
-    if (status === 'case_closed') {
-        if (!confirm('⚠️ Have you completed voice verification for this audio complaint? The system will check if verification has been done.')) {
-            e.preventDefault();
-        }
+    if (!navigator.geolocation) {
+        if (statusEl) statusEl.textContent = "GPS not supported in this browser.";
+        return;
     }
-});
-{% endif %}
+    if (statusEl) statusEl.textContent = "Fetching GPS...";
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            latEl.value = String(pos.coords.latitude);
+            lngEl.value = String(pos.coords.longitude);
+            if (statusEl) statusEl.textContent = `GPS captured: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+        },
+        () => {
+            if (statusEl) statusEl.textContent = "GPS unavailable. Verification will be blocked.";
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+})();
+
 </script>
 
 </body>

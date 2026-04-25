@@ -3,31 +3,38 @@
 // Uses Firebase Firestore directly with Django sync
 // Primary: Firebase Firestore, Secondary: Django/Railway PostgreSQL
 
+import { villagesService, gapsService, uploadService } from "./firestore";
 import {
-  villagesService,
-  gapsService,
-  uploadService,
-  voiceService,
-} from './firestore';
-import { loginUser, logoutUser, getCurrentUser, onAuthStateChange } from './authService';
-import { API_CONFIG } from '../config/api';
-import { addToSyncQueue, processSyncQueue, getSyncQueueStatus } from './syncQueue';
+  loginUser,
+  logoutUser,
+  getCurrentUser,
+  onAuthStateChange,
+} from "./authService";
+import { API_CONFIG } from "../config/api";
+import {
+  addToSyncQueue,
+  processSyncQueue,
+  getSyncQueueStatus,
+} from "./syncQueue";
 
 // Helper to get Firebase auth token for Django API calls
-const getFirebaseAuthHeaders = async () => {
+const getFirebaseAuthHeaders = async ({ includeContentType = true } = {}) => {
+  const headers = {};
+  if (includeContentType) {
+    headers["Content-Type"] = "application/json";
+  }
+
   try {
     const currentUser = getCurrentUser();
     if (currentUser) {
       const token = await currentUser.getIdToken();
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Firebase ${token}`,
-      };
+      headers.Authorization = `Firebase ${token}`;
     }
   } catch (error) {
-    console.warn('Could not get Firebase token:', error.message);
+    console.warn("Could not get Firebase token:", error.message);
   }
-  return { 'Content-Type': 'application/json' };
+
+  return headers;
 };
 
 // ============================================
@@ -69,11 +76,11 @@ export const gapsApi = {
     const gapPayload = {
       village_id: gapData.village_id,
       village_name: gapData.village_name,
-      description: gapData.description || '',
-      gap_type: gapData.gap_type || 'other',
-      severity: gapData.severity || 'medium',
-      input_method: gapData.input_method || 'text',
-      recommendations: gapData.recommendations || '',
+      description: gapData.description || "",
+      gap_type: gapData.gap_type || "other",
+      severity: gapData.severity || "medium",
+      input_method: gapData.input_method || "text",
+      recommendations: gapData.recommendations || "",
       audio_url: audioUrl,
       image_url: imageUrl,
       latitude: gapData.latitude || null,
@@ -103,11 +110,11 @@ export const gapsApi = {
       const response = await fetch(
         `${API_CONFIG.DJANGO_URL}/api/mobile/gaps/sync/`,
         {
-          method: 'POST',
+          method: "POST",
           headers,
           body: JSON.stringify(syncPayload),
           signal: controller.signal,
-        }
+        },
       );
       clearTimeout(timeout);
 
@@ -116,29 +123,41 @@ export const gapsApi = {
         if (syncResult.success) {
           djangoId = syncResult.django_id;
           console.log(`Gap synced to Django: ID ${djangoId}`);
+          // Write django_id back to Firestore so ClosurePhotoScreen can use it
+          try {
+            await gapsService.updateDjangoId(firestoreId, djangoId);
+          } catch (fsErr) {
+            console.warn(
+              "Could not store django_id on Firestore:",
+              fsErr.message,
+            );
+          }
         }
       } else {
         // Log response status for debugging
-        const errorText = await response.text().catch(() => 'Unknown error');
+        const errorText = await response.text().catch(() => "Unknown error");
         console.warn(`Django sync failed (${response.status}): ${errorText}`);
         // Server responded with error - add to retry queue
         await addToSyncQueue({
-          type: 'gap_create',
+          type: "gap_create",
           payload: syncPayload,
         });
       }
     } catch (syncError) {
       // Network error or timeout - add to retry queue
       await addToSyncQueue({
-        type: 'gap_create',
+        type: "gap_create",
         payload: syncPayload,
       });
-      console.warn('Django sync error, added to retry queue:', syncError.message);
+      console.warn(
+        "Django sync error, added to retry queue:",
+        syncError.message,
+      );
     }
 
     return {
       success: true,
-      message: 'Gap created successfully',
+      message: "Gap created successfully",
       id: firestoreId,
       django_id: djangoId,
       gap_type: gapData.gap_type,
@@ -150,7 +169,7 @@ export const gapsApi = {
   getAll: (filters) => gapsService.getAll(filters),
   getDetail: (id) => gapsService.getById(id),
   getById: (id) => gapsService.getById(id),
-  
+
   // Update gap status with dual-write to Django
   updateStatus: async (id, status, djangoId = null) => {
     // Step 1: Update in Firestore
@@ -166,14 +185,14 @@ export const gapsApi = {
         const response = await fetch(
           `${API_CONFIG.DJANGO_URL}/api/mobile/gaps/${id}/status/`,
           {
-            method: 'POST',
+            method: "POST",
             headers,
             body: JSON.stringify({
               status,
               django_id: djangoId,
             }),
             signal: controller.signal,
-          }
+          },
         );
         clearTimeout(timeout);
 
@@ -181,13 +200,13 @@ export const gapsApi = {
           console.log(`Gap status synced to Django: ${status}`);
         }
       } catch (syncError) {
-        console.warn('Django status sync warning:', syncError.message);
+        console.warn("Django status sync warning:", syncError.message);
       }
     }
 
     return { success: true, status };
   },
-  
+
   getStats: () => gapsService.getStats(),
 };
 
@@ -202,93 +221,189 @@ export const authApi = {
 };
 
 // ============================================
-// VOICE API
+// CLOSURE API - Close gap with geo-tagged photo proof
 // ============================================
-export const voiceApi = {
-  logVerification: (data) => voiceService.logVerification(data),
-  getLogs: (gapId) => voiceService.getLogs(gapId),
-  getVerificationLogs: (gapId) => voiceService.getLogs(gapId),
-  submitVerification: async (gapId, data) => {
-    // Try Django voice verification endpoint for real biometric comparison
-    try {
-      if (data.localUri) {
-        const formData = new FormData();
-        formData.append('audio_file', {
-          uri: data.localUri,
-          name: `verification_${gapId}_${Date.now()}.m4a`,
-          type: 'audio/mp4',
-        });
-        formData.append('verified_by', data.verified_by || 'mobile_user');
-        formData.append('notes', data.notes || '');
-
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(
-          `${API_CONFIG.DJANGO_URL}/api/voice/${gapId}/submit/`,
-          {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal,
-          }
-        );
-        clearTimeout(timeout);
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            // Django returned real voice comparison results
-            const v = result.verification || result;
-            // Also log to Firestore for offline access
-            await voiceService.logVerification({
-              gap_id: gapId,
-              audio_url: data.audio_url,
-              similarity_score: v.similarity_score || 0,
-              is_match: v.is_match || false,
-              confidence: v.confidence || 'low',
-              verified_by: data.verified_by || 'mobile_user',
-              notes: data.notes || '',
-            });
-            return {
-              success: true,
-              is_match: v.is_match || false,
-              similarity_score: v.similarity_score || 0,
-              confidence: v.confidence || 'low',
-              message: v.message || 'Voice verification complete',
-              can_resolve: result.can_resolve || false,
-            };
-          }
-        }
-      }
-    } catch (djangoError) {
-      // Django unavailable, falling back to Firestore
+export const closureApi = {
+  closeWithPhotoProof: async (
+    djangoGapId,
+    { closurePhotoUrl, closureSelfieUrl = null, latitude, longitude },
+  ) => {
+    if (!djangoGapId) {
+      throw new Error(
+        "Gap has not synced to server yet. Please wait and try again.",
+      );
+    }
+    if (!closurePhotoUrl) {
+      throw new Error("Closure photo URL is required.");
     }
 
-    // Fallback: Log to Firestore without real comparison
-    const logResult = await voiceService.logVerification({
-      gap_id: gapId,
-      audio_url: data.audio_url,
-      similarity_score: 0,
-      is_match: false,
-      confidence: 'pending',
-      verified_by: data.verified_by || '',
-      notes: data.notes || 'Pending manual review - Django backend unavailable',
-      pending_review: true,
+    const headers = await getFirebaseAuthHeaders();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    const response = await fetch(
+      `${API_CONFIG.DJANGO_URL}/api/gaps/${djangoGapId}/close-with-proof/`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          closure_photo_url: closurePhotoUrl,
+          closure_selfie_url: closureSelfieUrl,
+          closure_latitude: latitude,
+          closure_longitude: longitude,
+        }),
+        signal: controller.signal,
+      },
+    );
+    clearTimeout(timeout);
+
+    let result = null;
+    let rawText = "";
+    try {
+      result = await response.json();
+    } catch (_) {
+      result = null;
+      rawText = await response.text().catch(() => "");
+    }
+
+    if (!response.ok || !result?.success) {
+      if (response.status === 404) {
+        throw new Error(
+          `Gap closure failed (404). Gap ${djangoGapId} was not found on ${API_CONFIG.DJANGO_URL}. ` +
+            "This usually means the app is pointing to a different backend than the one where the gap was synced.",
+        );
+      }
+      throw new Error(
+        result?.error ||
+          result?.message ||
+          rawText ||
+          `Failed to close gap (${response.status})`,
+      );
+    }
+
+    return result;
+  },
+};
+
+// ============================================
+// COMPLAINT VERIFICATION API (mobile)
+// ============================================
+export const complaintsApi = {
+  submitWithVerification: async (payload) => {
+    const formData = new FormData();
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") return;
+      if (key === "complaintee_photo" || key === "audio_file") {
+        formData.append(key, value);
+      } else {
+        formData.append(key, String(value));
+      }
     });
+
+    const headers = await getFirebaseAuthHeaders({ includeContentType: false });
+    const response = await fetch(
+      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/submit/`,
+      {
+        method: "POST",
+        headers,
+        body: formData,
+      },
+    );
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error || `Complaint submit failed (${response.status})`);
+    }
+    return result;
+  },
+
+  verifyAndClose: async (complaintId, payload) => {
+    const formData = new FormData();
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") return;
+      if (key === "closure_selfie") {
+        formData.append(key, value);
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    const headers = await getFirebaseAuthHeaders({ includeContentType: false });
+    const response = await fetch(
+      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/${complaintId}/verify-close/`,
+      {
+        method: "POST",
+        headers,
+        body: formData,
+      },
+    );
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error || `Complaint verify failed (${response.status})`);
+    }
+    return result;
+  },
+
+  getInProgress: async () => {
+    const headers = await getFirebaseAuthHeaders();
+    const response = await fetch(
+      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/in-progress/`,
+      { headers },
+    );
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.success) {
+      throw new Error(
+        result?.error || `Failed to fetch in-progress complaints (${response.status})`,
+      );
+    }
+    const inProgressFromNew = result.in_progress || [];
+    const resolvedFromNew = result.resolved || [];
+
+    // Backward compatibility: older backend returned a flat `complaints` list.
+    if (
+      inProgressFromNew.length === 0 &&
+      resolvedFromNew.length === 0 &&
+      Array.isArray(result.complaints)
+    ) {
+      const all = result.complaints;
+      return {
+        inProgress: all.filter((item) => item?.status !== "case_closed"),
+        resolved: all.filter((item) => item?.status === "case_closed"),
+      };
+    }
+
     return {
-      success: true,
-      is_match: false,
-      similarity_score: 0,
-      confidence: 'pending',
-      message: 'Verification logged for manual review. Voice comparison requires backend connectivity.',
-      log_id: logResult.id,
-      pending_review: true,
-      can_resolve: false,
+      inProgress: inProgressFromNew,
+      resolved: resolvedFromNew,
     };
   },
-  resolveGap: async (gapId) => {
-    await gapsService.updateStatus(gapId, 'resolved');
-    return { success: true, message: 'Gap resolved successfully' };
+
+  resolvePhotoComplaint: async (complaintId, payload) => {
+    const formData = new FormData();
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") return;
+      if (key === "resolution_letter_image") {
+        formData.append(key, value);
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    const headers = await getFirebaseAuthHeaders({ includeContentType: false });
+    const response = await fetch(
+      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/${complaintId}/resolve-photo/`,
+      {
+        method: "POST",
+        headers,
+        body: formData,
+      },
+    );
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result?.success) {
+      throw new Error(
+        result?.error || `Photo complaint resolution failed (${response.status})`,
+      );
+    }
+    return result;
   },
 };
 
@@ -317,7 +432,7 @@ export const dashboardApi = {
 export const syncApi = {
   // Process all pending sync operations
   processQueue: () => processSyncQueue(),
-  
+
   // Get sync queue status
   getStatus: () => getSyncQueueStatus(),
 };
@@ -326,7 +441,8 @@ export default {
   villagesApi,
   gapsApi,
   authApi,
-  voiceApi,
+  closureApi,
+  complaintsApi,
   dashboardApi,
   syncApi,
 };

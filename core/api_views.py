@@ -1,150 +1,119 @@
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
-from .firebase_auth import FirebaseAuthentication
-from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
-from .permissions import (
-    CanCreateGaps,
-    CanVerifyGaps,
-    CanResolveGaps,
-    CanViewAnalytics,
-)
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-import os
 import json
 import logging
+import mimetypes
+import os
 import re
 import time
-
-from .models import Complaint, Village, QRSubmission, Gap, SurveyAgent
-from .serializers import QRSubmissionSerializer
-from django.db.models import Count, Q
-from django.db import transaction
+import math
 from urllib.parse import urlsplit
-import mimetypes
 
+from django.contrib.auth import authenticate
+from django.db import transaction
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .firebase_auth import FirebaseAuthentication
+from .models import Complaint, Gap, SurveyAgent, Village
+from .permissions import (
+    CanCreateGaps,
+    CanResolveGaps,
+    CanVerifyGaps,
+    CanViewAnalytics,
+)
 
 logger = logging.getLogger(__name__)
 
+def _haversine_m(lat1, lng1, lat2, lng2):
+    """Distance in meters between two lat/lng points."""
+    r = 6371000.0
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+    a = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return r * c
 
-class AudioPersistenceError(Exception):
-    """Raised when an audio file cannot be persisted for a gap."""
+
+def _average_hash_64(image):
+    """
+    Very lightweight similarity hash (aHash).
+    Returns 64-bit int. Not a biometric-grade face match, but works as a simple
+    "looks similar" heuristic when both images are selfies.
+    """
+    img = image.convert("L").resize((8, 8))
+    pixels = list(img.getdata())
+    avg = sum(pixels) / 64.0
+    bits = 0
+    for idx, px in enumerate(pixels):
+        if px >= avg:
+            bits |= 1 << idx
+    return bits
 
 
-def _get_gap_audio_url(gap):
-    """Return the best available audio URL for a gap."""
-    if gap.audio_file:
-        try:
-            return gap.audio_file.url
-        except Exception:
-            logger.warning("Could not resolve local audio URL for gap %s", gap.id)
-    return gap.audio_url or None
+def _hamming_distance_64(a, b):
+    return (a ^ b).bit_count()
 
 
-def _save_remote_audio_to_gap(gap, remote_url, max_audio_size=50 * 1024 * 1024):
-    """Download remote audio and attach it to gap.audio_file."""
+def _hash_image_file(file_obj):
+    """Safely hash image files with bounded decode size."""
+    from PIL import Image, ImageFile
+
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+    if hasattr(file_obj, "seek"):
+        file_obj.seek(0)
+    with Image.open(file_obj) as img:
+        img = img.convert("RGB")
+        img.thumbnail((1024, 1024))
+        hashed = _average_hash_64(img)
+    if hasattr(file_obj, "seek"):
+        file_obj.seek(0)
+    return hashed
+
+
+def _fetch_image_from_url(url):
     import requests
-    from django.core.files.base import ContentFile
+    from PIL import Image
+    from io import BytesIO
 
-    if not remote_url:
-        raise AudioPersistenceError("Audio URL is missing")
-
-    try:
-        response = requests.get(remote_url, timeout=60)
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        raise AudioPersistenceError(
-            f"Failed to download audio from URL: {str(exc)}"
-        ) from exc
-
-    content = response.content
-    if not content:
-        raise AudioPersistenceError("Downloaded audio file is empty")
-
-    if len(content) > max_audio_size:
-        raise AudioPersistenceError("Audio file too large. Maximum size is 50MB.")
-
-    content_type = (response.headers.get("Content-Type") or "").split(";")[0].strip()
-    ext = os.path.splitext(urlsplit(remote_url).path)[1]
-    if not ext:
-        ext = mimetypes.guess_extension(content_type) if content_type else None
-    if not ext:
-        ext = ".m4a"
-
-    filename = f"gap_{gap.id}_audio{ext}"
-    gap.audio_file.save(filename, ContentFile(content), save=False)
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+    return Image.open(BytesIO(resp.content))
 
 
-def _generate_voice_code_for_gap(gap):
-    """Generate and attach a unique voice code when possible."""
-    if not gap.audio_file:
+def _is_truthy(value):
+    """Normalize common truthy string/boolean values."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
         return False
-
-    try:
-        from .voice_verification import VoiceFeatureExtractor
-
-        voice_code = VoiceFeatureExtractor.generate_voice_code(gap.audio_file.path)
-        if not voice_code or voice_code == "error":
-            return False
-
-        if Gap.objects.filter(voice_code=voice_code).exclude(id=gap.id).exists():
-            logger.warning("Voice code collision detected for gap %s", gap.id)
-            return False
-
-        gap.voice_code = voice_code
-        return True
-    except Exception as exc:
-        logger.warning("Voice code generation failed for gap %s: %s", gap.id, exc)
-        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
-def _ensure_gap_has_local_audio(gap):
-    """Backfill local audio_file from audio_url when possible."""
-    if gap.audio_file:
-        return True
-
-    if not gap.audio_url:
-        return False
-
-    try:
-        _save_remote_audio_to_gap(gap, gap.audio_url)
-        update_fields = ["audio_file"]
-        if gap.input_method == "voice" and _generate_voice_code_for_gap(gap):
-            update_fields.append("voice_code")
-        gap.save(update_fields=update_fields)
-        return True
-    except AudioPersistenceError as exc:
-        logger.warning("Could not backfill local audio for gap %s: %s", gap.id, exc)
-        return False
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class QRSubmissionAPIView(APIView):
-    """
-    API endpoint for QR code submissions
-    GET /api/qr-submissions/ - List all submissions
-    POST /api/qr-submissions/ - Create new submission
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        submissions = QRSubmission.objects.all().order_by("-created_at")[:50]
-        serializer = QRSubmissionSerializer(submissions, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = QRSubmissionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def _complaint_resolution_banner(complaint):
+    if complaint.uses_resolution_letter and not complaint.resolution_letter_image:
+        return "Resolution letter upload is still pending."
+    if complaint.requires_selfie_gps_verification and not complaint.is_submission_verification_ready:
+        return complaint.verification_block_reason
+    if complaint.requires_selfie_gps_verification and not complaint.closure_selfie:
+        return "Waiting for closure selfie and on-site GPS verification."
+    return ""
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -340,7 +309,7 @@ def api_gaps_list(request):
 
     gaps_data = []
     for gap in gaps:
-        resolved_audio_url = _get_gap_audio_url(gap)
+        resolved_audio_url = gap.audio_url or (gap.audio_file.url if gap.audio_file else None)
         gaps_data.append(
             {
                 "id": gap.id,
@@ -424,7 +393,7 @@ def api_gap_detail(request, gap_id):
                 }
             )
 
-        resolved_audio_url = _get_gap_audio_url(gap)
+        resolved_audio_url = gap.audio_url or (gap.audio_file.url if gap.audio_file else None)
         data = {
             "id": gap.id,
             "village_id": gap.village_id if gap.village_id else None,
@@ -435,7 +404,6 @@ def api_gap_detail(request, gap_id):
             "status": gap.status,
             "input_method": gap.input_method,
             "recommendations": gap.recommendations,
-            "voice_code": gap.voice_code if hasattr(gap, "voice_code") else None,
             "created_at": gap.created_at.isoformat() if gap.created_at else None,
             "start_date": gap.start_date.isoformat() if gap.start_date else None,
             "expected_completion": (
@@ -461,8 +429,8 @@ def api_gap_detail(request, gap_id):
 @permission_classes([CanVerifyGaps])
 def api_update_gap_status(request, gap_id):
     """JSON API endpoint to update gap status (Manager+ can update, Admin can resolve)"""
-    from .permissions import can_resolve_gaps
     from .models import GapStatusAuditLog
+    from .permissions import can_resolve_gaps
 
     try:
         gap = Gap.objects.get(id=gap_id)
@@ -482,6 +450,13 @@ def api_update_gap_status(request, gap_id):
 
         if new_status and new_status in ["open", "in_progress", "resolved"]:
             gap.status = new_status
+            if new_status == "resolved":
+                from django.utils import timezone
+
+                gap.resolved_at = timezone.now()
+                gap.actual_completion = timezone.now().date()
+                if request.user.is_authenticated:
+                    gap.resolved_by = request.user
             gap.save()
 
             # Create audit log entry
@@ -502,6 +477,7 @@ def api_update_gap_status(request, gap_id):
             except Exception as fb_err:
                 # ✅ IMPROVED: Enhanced Firebase sync with retry mechanism
                 import logging
+
                 from django.core.cache import cache
 
                 logger = logging.getLogger(__name__)
@@ -572,8 +548,9 @@ class GapUploadAPIView(APIView):
 
     def post(self, request):
         try:
-            import google.generativeai as genai
             import os
+
+            import google.generativeai as genai
 
             village_id = request.data.get("village")
             description = request.data.get("description", "")
@@ -609,7 +586,9 @@ class GapUploadAPIView(APIView):
                 and not audio_url
             ):
                 return Response(
-                    {"error": "audio_file or audio_url is required for audio submission"},
+                    {
+                        "error": "audio_file or audio_url is required for audio submission"
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -638,7 +617,7 @@ class GapUploadAPIView(APIView):
                             translation_prompt = f"""
                             Translate the following text to English and categorize it. Respond ONLY with valid JSON:
                             Text: "{description}"
-                            
+
                             {{
                               "translated_text": "English translation of the text",
                               "gap_type": "Choose ONLY ONE from [{categories_list}]",
@@ -653,7 +632,18 @@ class GapUploadAPIView(APIView):
                                 .replace("```", "")
                                 .strip()
                             )
-                            ai_data = json.loads(clean_response)
+                            try:
+                                ai_data = json.loads(clean_response)
+                            except json.JSONDecodeError as json_err:
+                                print(f"JSON parsing error: {json_err}")
+                                print(f"Response text: {clean_response[:200]}")
+                                # Fallback to defaults
+                                ai_data = {
+                                    "translated_text": description,
+                                    "gap_type": "other",
+                                    "severity": severity or "medium",
+                                    "recommendations": "",
+                                }
 
                             processed_description = ai_data.get(
                                 "translated_text", description
@@ -700,6 +690,17 @@ class GapUploadAPIView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
+                # Validate audio file type
+                allowed_audio_types = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm']
+                if audio_file.content_type not in allowed_audio_types:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": f"Invalid audio file type. Allowed types: {', '.join(allowed_audio_types)}",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 try:
                     from .services import ComplaintProcessor
 
@@ -729,7 +730,7 @@ class GapUploadAPIView(APIView):
                                 translation_prompt = f"""
                                 Translate the following text to English and analyze it for gap categorization. Respond only with valid JSON:
                                 Text: "{transcribed_text}"
-                                
+
                                 {{
                                   "translated_text": "English translation of the text",
                                   "gap_type": "Choose ONLY ONE from [{categories_list}]",
@@ -748,7 +749,17 @@ class GapUploadAPIView(APIView):
                                     .replace("```", "")
                                     .strip()
                                 )
-                                ai_data = json.loads(clean_response)
+                                try:
+                                    ai_data = json.loads(clean_response)
+                                except json.JSONDecodeError as json_err:
+                                    print(f"JSON parsing error in audio translation: {json_err}")
+                                    print(f"Response text: {clean_response[:200]}")
+                                    ai_data = {
+                                        "translated_text": transcribed_text,
+                                        "gap_type": result.get("detected_type", "other"),
+                                        "severity": result.get("priority_level", "medium"),
+                                        "recommendations": "",
+                                    }
 
                                 processed_description = ai_data.get(
                                     "translated_text", transcribed_text
@@ -812,6 +823,17 @@ class GapUploadAPIView(APIView):
                         {
                             "success": False,
                             "error": "Image file too large. Maximum size is 10MB.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # Validate image file type
+                allowed_image_types = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
+                if image_file.content_type not in allowed_image_types:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": f"Invalid image file type. Allowed types: {', '.join(allowed_image_types)}",
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -891,21 +913,17 @@ class GapUploadAPIView(APIView):
                     audio_url=audio_url if audio_url else None,
                 )
 
-                # Persist audio for voice submissions (file upload or external URL)
+                # Persist audio for voice submissions (multipart upload only).
                 if "audio_file" in request.FILES:
                     audio_file = request.FILES["audio_file"]
-                    audio_file.seek(0)  # Reset file pointer after earlier processing
+                    if audio_file.size > 50 * 1024 * 1024:
+                        return Response(
+                            {"error": "Audio file too large. Maximum size is 50MB."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    audio_file.seek(0)
                     gap.audio_file = audio_file
-                    update_fields = ["audio_file"]
-                    if _generate_voice_code_for_gap(gap):
-                        update_fields.append("voice_code")
-                    gap.save(update_fields=update_fields)
-                elif audio_url:
-                    _save_remote_audio_to_gap(gap, audio_url)
-                    update_fields = ["audio_file"]
-                    if _generate_voice_code_for_gap(gap):
-                        update_fields.append("voice_code")
-                    gap.save(update_fields=update_fields)
+                    gap.save(update_fields=["audio_file"])
 
             # Sync to Firebase Firestore (outside transaction - non-critical)
             try:
@@ -924,15 +942,10 @@ class GapUploadAPIView(APIView):
                     "severity": processed_severity,
                     "description": processed_description,
                     "has_audio": bool(gap.audio_file or gap.audio_url),
-                    "audio_url": _get_gap_audio_url(gap),
-                    "has_voice_code": bool(gap.voice_code),
+                    "audio_url": gap.audio_url
+                    or (gap.audio_file.url if gap.audio_file else None),
                 },
                 status=status.HTTP_201_CREATED,
-            )
-
-        except AudioPersistenceError as audio_err:
-            return Response(
-                {"error": str(audio_err)}, status=status.HTTP_400_BAD_REQUEST
             )
 
         except Exception as e:
@@ -1157,308 +1170,6 @@ def api_public_dashboard(request):
             "recent_gaps": recent_gaps,
         }
     )
-
-
-# =============================================================================
-# VOICE VERIFICATION API ENDPOINTS
-# =============================================================================
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def api_voice_verification_logs(request, gap_id):
-    """Get voice verification logs for a gap"""
-    from .models import VoiceVerificationLog
-
-    try:
-        gap = Gap.objects.get(id=gap_id)
-        logs = VoiceVerificationLog.objects.filter(gap=gap).order_by(
-            "-verification_date"
-        )
-
-        logs_data = []
-        for log in logs:
-            logs_data.append(
-                {
-                    "id": log.id,
-                    "verified_by": log.verified_by or "Unknown",
-                    "verified_at": (
-                        log.verification_date.isoformat()
-                        if log.verification_date
-                        else None
-                    ),
-                    "is_match": log.is_match,
-                    "similarity_score": log.similarity_score,
-                    "similarity_percentage": (
-                        round(log.similarity_score * 100, 1)
-                        if log.similarity_score
-                        else 0
-                    ),
-                    "confidence": log.confidence or "unknown",
-                    "notes": log.notes or "",
-                    "used_for_closure": log.used_for_closure,
-                    "audio_url": (
-                        log.verification_audio_path
-                        if log.verification_audio_path
-                        else None
-                    ),
-                }
-            )
-
-        return Response(
-            {
-                "gap_id": gap_id,
-                "total_attempts": len(logs_data),
-                "logs": logs_data,
-                "has_original_audio": bool(gap.audio_file or gap.audio_url),
-                "original_audio_url": _get_gap_audio_url(gap),
-            }
-        )
-    except Gap.DoesNotExist:
-        return Response({"error": "Gap not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def api_gap_for_verification(request, gap_id):
-    """Get gap details needed for voice verification"""
-    try:
-        gap = Gap.objects.select_related("village").get(id=gap_id)
-        _ensure_gap_has_local_audio(gap)
-
-        resolved_audio_url = _get_gap_audio_url(gap)
-        has_any_audio = bool(gap.audio_file or gap.audio_url)
-
-        return Response(
-            {
-                "id": gap.id,
-                "village_name": gap.village.name if gap.village else "N/A",
-                "description": gap.description,
-                "gap_type": gap.gap_type,
-                "severity": gap.severity,
-                "status": gap.status,
-                "input_method": gap.input_method,
-                "has_audio": has_any_audio,
-                "audio_url": resolved_audio_url,
-                "voice_code": gap.voice_code or None,
-                "created_at": gap.created_at.isoformat() if gap.created_at else None,
-                "can_verify": gap.status != "resolved" and bool(gap.audio_file),
-            }
-        )
-    except Gap.DoesNotExist:
-        return Response({"error": "Gap not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class VoiceVerificationSubmitAPIView(APIView):
-    """API endpoint for submitting voice verification using actual voice biometric verification"""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, gap_id):
-        from .models import VoiceVerificationLog
-        from .voice_verification import VoiceVerificationManager
-        import os
-
-        try:
-            gap = Gap.objects.get(id=gap_id)
-
-            # Backfill local audio file from stored audio_url when possible.
-            if not gap.audio_file and gap.audio_url:
-                _ensure_gap_has_local_audio(gap)
-
-            # Check if gap has original audio
-            if not gap.audio_file:
-                return Response(
-                    {
-                        "success": False,
-                        "error": "This gap has no original audio to verify against",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Check if audio file provided
-            if "audio_file" not in request.FILES:
-                return Response(
-                    {
-                        "success": False,
-                        "error": "Verification audio file is required",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            verification_audio = request.FILES["audio_file"]
-
-            # ✅ SECURITY: Validate verification audio file size
-            MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
-            if verification_audio.size > MAX_AUDIO_SIZE:
-                return Response(
-                    {
-                        "success": False,
-                        "error": "Verification audio file too large. Maximum size is 50MB.",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            verified_by = request.data.get("verified_by", "Unknown")
-            notes = request.data.get("notes", "")
-
-            # Perform actual voice biometric verification
-            try:
-                result = VoiceVerificationManager.verify_gap_resolution(
-                    gap_obj=gap, verification_audio_file=verification_audio
-                )
-
-                # Create verification log
-                log = VoiceVerificationLog.objects.create(
-                    gap=gap,
-                    verification_audio_path=result.get("verification_audio_path", ""),
-                    similarity_score=result.get("similarity_score", 0.0),
-                    is_match=result.get("is_match", False),
-                    confidence=result.get("confidence", "very_low"),
-                    verified_by=verified_by,
-                    notes=notes,
-                    used_for_closure=False,
-                    verification_voice_code=result.get("verification_voice_code", ""),
-                )
-
-                # Update gap voice_code if not set
-                if not gap.voice_code and result.get("original_voice_code"):
-                    gap.voice_code = result.get("original_voice_code")
-                    gap.save(update_fields=["voice_code"])
-
-                return Response(
-                    {
-                        "success": True,
-                        "verification": {
-                            "is_match": result.get("is_match", False),
-                            "similarity_score": result.get("similarity_score", 0.0),
-                            "similarity_percentage": round(
-                                result.get("similarity_score", 0.0) * 100, 1
-                            ),
-                            "confidence": result.get("confidence", "very_low"),
-                            "threshold": result.get("threshold_used", 0.75),
-                            "message": result.get("message", ""),
-                        },
-                        "can_resolve": result.get("can_proceed", False),
-                        "log_id": log.id,
-                    }
-                )
-
-            except Exception as verify_error:
-                import traceback
-
-                traceback.print_exc()
-                return Response(
-                    {
-                        "success": False,
-                        "error": f"Voice verification failed: {str(verify_error)}",
-                    },
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-        except Gap.DoesNotExist:
-            return Response(
-                {"error": "Gap not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            return Response(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-@api_view(["POST"])
-@permission_classes([CanResolveGaps])  # Admin only can resolve gaps
-def api_resolve_gap_with_voice(request, gap_id):
-    """Resolve a gap after successful voice verification (Admin only)"""
-    from .models import VoiceVerificationLog
-    from .permissions import can_resolve_gaps
-
-    try:
-        gap = Gap.objects.get(id=gap_id)
-
-        # Check if user can resolve gaps (ADMIN only)
-        if request.user.is_authenticated and not can_resolve_gaps(request.user):
-            return Response(
-                {
-                    "success": False,
-                    "error": "Only Admin can resolve gaps",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        # Check if already resolved
-        if gap.status == "resolved":
-            return Response(
-                {
-                    "success": False,
-                    "error": "Gap is already resolved",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # For voice gaps, check if there's a successful verification
-        if gap.input_method == "voice" and gap.audio_file:
-            latest_verification = (
-                VoiceVerificationLog.objects.filter(gap=gap, is_match=True)
-                .order_by("-verification_date")
-                .first()
-            )
-
-            if not latest_verification:
-                return Response(
-                    {
-                        "success": False,
-                        "error": "Voice verification required before resolving. Please verify your voice first.",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Mark verification as used for closure
-            latest_verification.used_for_closure = True
-            latest_verification.save()
-
-        # Resolve the gap
-        from django.utils import timezone
-
-        gap.status = "resolved"
-        gap.resolved_at = timezone.now()
-        if request.user.is_authenticated:
-            gap.resolved_by = request.user
-        gap.save()
-
-        # Sync to Firebase Firestore
-        try:
-            from .firebase_utils import sync_gap_to_firestore
-
-            sync_gap_to_firestore(gap)
-        except Exception as fb_err:
-            print(f"Firebase sync warning (non-blocking): {fb_err}")
-
-        return Response(
-            {
-                "success": True,
-                "message": "Gap resolved successfully",
-                "gap_id": gap.id,
-                "status": gap.status,
-            }
-        )
-
-    except Gap.DoesNotExist:
-        return Response({"error": "Gap not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Workflow/Complaint API endpoints
@@ -1832,25 +1543,17 @@ class MobileGapSyncAPIView(APIView):
 
                 # Persist audio (multipart file or remote URL)
                 if uploaded_audio_file:
-                    max_audio_size = 50 * 1024 * 1024  # 50MB
-                    if uploaded_audio_file.size > max_audio_size:
-                        raise AudioPersistenceError(
-                            "Audio file too large. Maximum size is 50MB."
+                    if uploaded_audio_file.size > 50 * 1024 * 1024:
+                        return Response(
+                            {
+                                "success": False,
+                                "error": "Audio file too large. Maximum size is 50MB.",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
                         )
                     uploaded_audio_file.seek(0)
                     gap.audio_file = uploaded_audio_file
                     gap.save(update_fields=["audio_file"])
-                elif audio_url:
-                    _save_remote_audio_to_gap(gap, audio_url)
-                    gap.save(update_fields=["audio_file"])
-
-                if input_method == "voice" and not gap.audio_file:
-                    raise AudioPersistenceError(
-                        "Could not persist audio for voice submission"
-                    )
-
-                if input_method == "voice" and _generate_voice_code_for_gap(gap):
-                    gap.save(update_fields=["voice_code"])
 
                 # Create audit log for new gap creation
                 from .models import GapStatusAuditLog
@@ -1876,16 +1579,10 @@ class MobileGapSyncAPIView(APIView):
                     "gap_type": gap.gap_type,
                     "severity": gap.severity,
                     "has_audio": bool(gap.audio_file or gap.audio_url),
-                    "audio_url": _get_gap_audio_url(gap),
-                    "has_voice_code": bool(gap.voice_code),
+                    "audio_url": gap.audio_url
+                    or (gap.audio_file.url if gap.audio_file else None),
                 },
                 status=status.HTTP_201_CREATED,
-            )
-
-        except AudioPersistenceError as audio_err:
-            return Response(
-                {"success": False, "error": str(audio_err)},
-                status=status.HTTP_400_BAD_REQUEST,
             )
 
         except Exception as e:
@@ -1899,7 +1596,8 @@ class MobileGapSyncAPIView(APIView):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])  # Allow mobile submissions - validated via Firebase UID
+@permission_classes([IsAuthenticated])
+@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
 def api_mobile_gap_status_sync(request, firestore_id):
     """
     Sync gap status update from mobile app.
@@ -1909,8 +1607,12 @@ def api_mobile_gap_status_sync(request, firestore_id):
     try:
         new_status = request.data.get("status")
         django_id = request.data.get("django_id")
-        resolved_by = request.data.get("resolved_by")
-        resolved_at = request.data.get("resolved_at")
+
+        if not django_id:
+            return Response(
+                {"success": False, "error": "django_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not new_status or new_status not in ["open", "in_progress", "resolved"]:
             return Response(
@@ -1918,28 +1620,36 @@ def api_mobile_gap_status_sync(request, firestore_id):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Find gap by django_id if provided
-        gap = None
-        if django_id:
-            try:
-                gap = Gap.objects.get(id=django_id)
-            except Gap.DoesNotExist:
-                pass
-
-        if not gap:
-            # Try to find most recent gap - could add firestore_id field later for exact match
+        try:
+            gap = Gap.objects.get(id=django_id)
+        except (Gap.DoesNotExist, ValueError, TypeError):
             return Response(
                 {"success": False, "error": "Gap not found in database"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        if (
+            gap.resolved_by_id
+            and gap.resolved_by_id != request.user.id
+            and not request.user.is_staff
+        ):
+            return Response(
+                {"success": False, "error": "You are not allowed to update this gap"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Update status
         gap.status = new_status
-        if new_status == "resolved" and resolved_at:
+        update_fields = ["status"]
+        if new_status == "resolved":
             from django.utils import timezone
 
-            gap.actual_completion = timezone.now()
-        gap.save()
+            now = timezone.now()
+            gap.resolved_at = now
+            gap.actual_completion = now.date()
+            gap.resolved_by = request.user
+            update_fields.extend(["resolved_at", "actual_completion", "resolved_by"])
+        gap.save(update_fields=update_fields)
 
         # Sync back to Firestore for consistency
         try:
@@ -1969,6 +1679,554 @@ def api_mobile_gap_status_sync(request, firestore_id):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+def close_gap_with_photo_proof(request, gap_id):
+    """
+    Close a gap with geo-tagged photo proof.
+    Any authenticated field worker can submit on-site photo + GPS coordinates.
+    POST /api/gaps/<gap_id>/close-with-proof/
+    """
+    from django.utils import timezone
+    from .models import GapStatusAuditLog
+
+    gap = get_object_or_404(Gap, id=gap_id)
+
+    closure_photo_url = (request.data.get("closure_photo_url") or "").strip()
+    closure_selfie_url = (request.data.get("closure_selfie_url") or "").strip()
+    closure_latitude = request.data.get("closure_latitude")
+    closure_longitude = request.data.get("closure_longitude")
+
+    if not closure_photo_url:
+        return Response(
+            {"success": False, "error": "Closure photo URL is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not closure_photo_url.startswith(("http://", "https://")):
+        return Response(
+            {"success": False, "error": "Invalid closure photo URL format"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if closure_selfie_url and not closure_selfie_url.startswith(("http://", "https://")):
+        return Response(
+            {"success": False, "error": "Invalid closure selfie URL format"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if closure_latitude is None or closure_longitude is None:
+        return Response(
+            {
+                "success": False,
+                "error": "GPS coordinates are required (closure_latitude and closure_longitude)",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        lat = float(closure_latitude)
+        lng = float(closure_longitude)
+        if not (-90 <= lat <= 90):
+            raise ValueError("Latitude out of range (-90 to 90)")
+        if not (-180 <= lng <= 180):
+            raise ValueError("Longitude out of range (-180 to 180)")
+    except (ValueError, TypeError) as coord_err:
+        return Response(
+            {"success": False, "error": f"Invalid GPS coordinates: {coord_err}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    old_status = gap.status
+    now = timezone.now()
+
+    # GPS sanity: if the gap has a known location, ensure closure is nearby.
+    max_distance_m = 500.0
+    distance_m = None
+    if gap.latitude is None or gap.longitude is None:
+        return Response(
+            {
+                "success": False,
+                "error": "Original gap location is missing, so on-site closure cannot be verified.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        distance_m = _haversine_m(float(gap.latitude), float(gap.longitude), lat, lng)
+    except Exception as distance_err:
+        logger.warning(
+            "Failed to validate closure distance for gap %s: %s",
+            gap.id,
+            distance_err,
+        )
+        return Response(
+            {
+                "success": False,
+                "error": "Unable to validate closure location. Please retry.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if distance_m > max_distance_m:
+        return Response(
+            {
+                "success": False,
+                "error": f"Closure location too far from gap location ({distance_m:.0f}m). Please capture on-site.",
+                "distance_m": round(distance_m, 2),
+                "max_distance_m": max_distance_m,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    gap.status = "resolved"
+    gap.closure_photo_url = closure_photo_url
+    gap.closure_latitude = lat
+    gap.closure_longitude = lng
+    gap.closure_photo_timestamp = now
+    gap.closure_selfie_url = closure_selfie_url or None
+    gap.closure_selfie_match_score = None
+    gap.resolved_at = now
+    gap.actual_completion = now.date()
+    if request.user and request.user.is_authenticated:
+        gap.resolved_by = request.user
+
+    # Optional selfie similarity score (currently no baseline photo in gap flow).
+    selfie_match = None
+    if closure_selfie_url:
+        selfie_match = {"score": None, "note": "No baseline photo configured for this gap"}
+
+    gap.save(
+        update_fields=[
+            "status",
+            "closure_photo_url",
+            "closure_latitude",
+            "closure_longitude",
+            "closure_photo_timestamp",
+            "closure_selfie_url",
+            "closure_selfie_match_score",
+            "resolved_at",
+            "actual_completion",
+            "resolved_by",
+        ]
+    )
+
+    GapStatusAuditLog.objects.create(
+        gap=gap,
+        old_status=old_status,
+        new_status="resolved",
+        changed_by=request.user if (request.user and request.user.is_authenticated) else None,
+        notes=f"Closed with on-site geo-tagged photo proof. GPS: {lat:.6f}, {lng:.6f}",
+        source="photo_closure",
+    )
+
+    try:
+        from .firebase_utils import sync_gap_to_firestore
+
+        sync_gap_to_firestore(gap)
+    except Exception as fb_err:
+        logger.warning(
+            "Firebase sync warning for gap %s after photo closure: %s", gap.id, fb_err
+        )
+
+    return Response(
+        {
+            "success": True,
+            "message": "Gap successfully closed with geo-tagged photo proof",
+            "gap_id": gap.id,
+            "status": "resolved",
+            "closure_photo_url": closure_photo_url,
+            "closure_latitude": lat,
+            "closure_longitude": lng,
+            "distance_m": round(distance_m, 2) if distance_m is not None else None,
+            "selfie_match": selfie_match,
+            "resolved_at": gap.resolved_at.isoformat() if gap.resolved_at else None,
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+def api_mobile_submit_complaint(request):
+    """Mobile complaint submission with complaintee photo + GPS capture."""
+    from .models import PostOffice, WorkflowLog
+
+    villager_name = (request.data.get("villager_name") or "").strip()
+    village_id = request.data.get("village_id")
+    post_office_id = request.data.get("post_office_id")
+    complaint_text = (request.data.get("complaint_text") or "").strip()
+    submission_latitude = request.data.get("submission_latitude")
+    submission_longitude = request.data.get("submission_longitude")
+
+    if not villager_name or not village_id or not complaint_text:
+        return Response(
+            {
+                "success": False,
+                "error": "villager_name, village_id and complaint_text are required",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        village = Village.objects.get(id=village_id)
+    except Exception:
+        return Response(
+            {"success": False, "error": "Invalid village_id"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    post_office = None
+    if post_office_id:
+        try:
+            post_office = PostOffice.objects.get(id=post_office_id)
+        except Exception:
+            post_office = None
+
+    try:
+        lat = (
+            float(submission_latitude)
+            if submission_latitude not in (None, "", "null")
+            else None
+        )
+        lng = (
+            float(submission_longitude)
+            if submission_longitude not in (None, "", "null")
+            else None
+        )
+    except (ValueError, TypeError):
+        return Response(
+            {"success": False, "error": "Invalid submission latitude/longitude"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    audio_file = request.FILES.get("audio_file")
+    complaintee_photo = request.FILES.get("complaintee_photo")
+    complaint_document_image = request.FILES.get(
+        "complaint_document_image"
+    ) or request.FILES.get("supporting_image")
+    recorded_by_agent = _is_truthy(request.data.get("recorded_by_agent", True))
+    agent_name = (request.data.get("agent_name") or "").strip()
+
+    if not complaintee_photo:
+        return Response(
+            {
+                "success": False,
+                "error": "complaintee_photo is required so identity can be verified later",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if lat is None or lng is None:
+        return Response(
+            {
+                "success": False,
+                "error": "submission_latitude and submission_longitude are required for geotag verification",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    complaint = Complaint.objects.create(
+        villager_name=villager_name,
+        village=village,
+        post_office=post_office,
+        pmajay_office=post_office.pmajayoffice_set.first() if post_office else None,
+        complaint_text=complaint_text,
+        complaint_type="other",
+        priority_level="medium",
+        audio_transcription=complaint_text if audio_file else "",
+        recorded_by_agent=recorded_by_agent,
+        agent_name=agent_name,
+        status="received_post",
+        latitude=lat,
+        longitude=lng,
+        submission_latitude=lat,
+        submission_longitude=lng,
+    )
+
+    if audio_file:
+        complaint.audio_file = audio_file
+    complaint.complaintee_photo = complaintee_photo
+    if complaint_document_image:
+        complaint.complaint_document_image = complaint_document_image
+    complaint.save()
+
+    WorkflowLog.objects.create(
+        complaint=complaint,
+        from_status="",
+        to_status="received_post",
+        action_by=agent_name or "Mobile App",
+        action_type="received",
+        notes="Submitted via mobile app.",
+    )
+
+    return Response(
+        {
+            "success": True,
+            "complaint_id": complaint.complaint_id,
+            "status": complaint.status,
+            "message": "Complaint submitted successfully",
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+def api_mobile_in_progress_complaints(request):
+    """List active/resolved complaints for mobile resolution dashboard."""
+    complaints = (
+        Complaint.objects.filter(
+            status__in=["assigned_worker", "work_in_progress", "case_closed"]
+        )
+        .select_related("village")
+        .order_by("-updated_at")
+    )
+    in_progress = []
+    resolved = []
+    for complaint in complaints:
+        item = {
+            "complaint_id": complaint.complaint_id,
+            "villager_name": complaint.villager_name,
+            "complaint_text": complaint.complaint_text,
+            "status": complaint.status,
+            "village_name": complaint.village.name if complaint.village else "",
+            "resolution_mode": (
+                "resolution_letter"
+                if complaint.uses_resolution_letter
+                else "selfie_gps"
+            ),
+            "has_submission_photo": complaint.has_submission_identity_photo,
+            "has_submission_geo": complaint.has_submission_geo,
+            "resolution_ready": (
+                complaint.closure_status_is_actionable
+                and (
+                    complaint.uses_resolution_letter
+                    or complaint.is_submission_verification_ready
+                )
+            ),
+            "banner": _complaint_resolution_banner(complaint),
+        }
+        if complaint.status == "case_closed":
+            resolved.append(item)
+        else:
+            in_progress.append(item)
+    return Response(
+        {"success": True, "in_progress": in_progress, "resolved": resolved},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+def api_mobile_verify_close_complaint(request, complaint_id):
+    """Mobile verification + close for complaint (selfie + GPS)."""
+    from django.utils import timezone
+    from .models import WorkflowLog
+
+    complaint = get_object_or_404(Complaint, complaint_id=complaint_id)
+    if complaint.status not in Complaint.CLOSURE_ALLOWED_STATUSES:
+        return Response(
+            {
+                "success": False,
+                "error": "Complaint must be assigned for work before it can be resolved.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if complaint.uses_resolution_letter:
+        return Response(
+            {
+                "success": False,
+                "error": "Photo/document complaints must be resolved with resolution letter image.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not complaint.is_submission_verification_ready:
+        return Response(
+            {
+                "success": False,
+                "error": complaint.verification_block_reason
+                or "Submission proof is incomplete for selfie and GPS verification.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    closure_selfie = request.FILES.get("closure_selfie")
+    closure_latitude = request.data.get("closure_latitude")
+    closure_longitude = request.data.get("closure_longitude")
+
+    if not closure_selfie:
+        return Response(
+            {"success": False, "error": "closure_selfie is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if getattr(closure_selfie, "size", 0) > 8 * 1024 * 1024:
+        return Response(
+            {"success": False, "error": "closure_selfie exceeds 8 MB size limit"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        lat = float(closure_latitude)
+        lng = float(closure_longitude)
+    except (TypeError, ValueError):
+        return Response(
+            {"success": False, "error": "Valid closure GPS coordinates are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    min_match_score = 0.75
+    max_distance_m = 500.0
+    match_score = None
+
+    distance_m = _haversine_m(
+        float(complaint.submission_latitude),
+        float(complaint.submission_longitude),
+        lat,
+        lng,
+    )
+    if distance_m > max_distance_m:
+        return Response(
+            {
+                "success": False,
+                "error": f"Verification failed: location too far ({distance_m:.0f}m)",
+                "distance_m": round(distance_m, 2),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        if getattr(complaint.complaintee_photo, "size", 0) > 8 * 1024 * 1024:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Stored complaintee photo is too large for verification",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        with complaint.complaintee_photo.open("rb") as base_file:
+            h1 = _hash_image_file(base_file)
+        h2 = _hash_image_file(closure_selfie)
+        dist = _hamming_distance_64(h1, h2)
+        match_score = max(0.0, min(1.0, 1.0 - (dist / 64.0)))
+        if match_score < min_match_score:
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Verification failed: photo mismatch (score {match_score:.2f})",
+                    "match_score": round(match_score, 4),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    except Exception as img_err:
+        logger.exception("Mobile complaint photo verification failed: %s", img_err)
+        return Response(
+            {"success": False, "error": f"Photo verification error: {img_err}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    old_status = complaint.status
+    complaint.closure_selfie = closure_selfie
+    complaint.closure_latitude = lat
+    complaint.closure_longitude = lng
+    complaint.closure_timestamp = timezone.now()
+    complaint.closure_distance_m = distance_m
+    complaint.closure_selfie_match_score = match_score
+    complaint.status = "case_closed"
+    complaint.save(
+        update_fields=[
+            "closure_selfie",
+            "closure_latitude",
+            "closure_longitude",
+            "closure_timestamp",
+            "closure_distance_m",
+            "closure_selfie_match_score",
+            "status",
+            "updated_at",
+        ]
+    )
+
+    WorkflowLog.objects.create(
+        complaint=complaint,
+        from_status=old_status,
+        to_status="case_closed",
+        action_by="Mobile App",
+        action_type="case_closed",
+        notes="Closed via mobile verification (photo + GPS).",
+    )
+
+    return Response(
+        {
+            "success": True,
+            "complaint_id": complaint.complaint_id,
+            "status": complaint.status,
+            "distance_m": round(distance_m, 2) if distance_m is not None else None,
+            "match_score": round(match_score, 4) if match_score is not None else None,
+            "message": "Complaint verified and closed successfully",
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+def api_mobile_resolve_photo_complaint(request, complaint_id):
+    """Resolve photo/document complaint with resolution letter image."""
+    from .models import WorkflowLog
+
+    complaint = get_object_or_404(Complaint, complaint_id=complaint_id)
+    if complaint.status not in Complaint.CLOSURE_ALLOWED_STATUSES:
+        return Response(
+            {
+                "success": False,
+                "error": "Complaint must be assigned for work before it can be resolved.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not complaint.uses_resolution_letter:
+        return Response(
+            {
+                "success": False,
+                "error": "This complaint requires selfie + GPS verification, not resolution letter.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    resolution_letter = request.FILES.get("resolution_letter_image")
+    if not resolution_letter:
+        return Response(
+            {"success": False, "error": "resolution_letter_image is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    old_status = complaint.status
+    complaint.resolution_letter_image = resolution_letter
+    complaint.status = "case_closed"
+    complaint.save(update_fields=["resolution_letter_image", "status", "updated_at"])
+
+    WorkflowLog.objects.create(
+        complaint=complaint,
+        from_status=old_status,
+        to_status="case_closed",
+        action_by="Mobile App",
+        action_type="case_closed",
+        notes="Closed via mobile resolution letter upload.",
+    )
+
+    return Response(
+        {
+            "success": True,
+            "complaint_id": complaint.complaint_id,
+            "status": complaint.status,
+            "message": "Photo complaint closed with resolution letter",
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
 @permission_classes(
     [AllowAny]
 )  # Mobile app sends Firebase token; Django AI endpoint is public for now
@@ -1993,9 +2251,10 @@ def api_analyze_media(request):
         "confidence": 0.85
     }
     """
+    import tempfile
+
     import google.generativeai as genai
     import requests
-    import tempfile
 
     try:
         # Accept either a direct file upload or a media URL
@@ -2022,7 +2281,16 @@ def api_analyze_media(request):
         suffix = ".jpg" if media_type == "image" else ".m4a"
         tmp_path = None
 
+        allowed_audio_exts = {".m4a", ".mp3", ".wav", ".ogg", ".webm", ".aac", ".mp4"}
+        allowed_image_exts = {".jpg", ".jpeg", ".png", ".webp"}
+
         if uploaded_file:
+            uploaded_ext = os.path.splitext((uploaded_file.name or "").lower())[1]
+            if media_type == "audio" and uploaded_ext in allowed_audio_exts:
+                suffix = uploaded_ext
+            elif media_type == "image" and uploaded_ext in allowed_image_exts:
+                suffix = uploaded_ext
+
             # Direct file upload from mobile app
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
                 for chunk in uploaded_file.chunks():
@@ -2051,7 +2319,7 @@ def api_analyze_media(request):
 - electricity: Power supply, street lights, electrical issues
 - education: School infrastructure, teacher needs
 - health: Medical facilities, healthcare access
-- housing: Housing infrastructure, building issues  
+- housing: Housing infrastructure, building issues
 - agriculture: Irrigation, farming equipment, crop issues
 - connectivity: Internet, mobile network issues
 - employment: Job opportunities, skill training
@@ -2131,22 +2399,98 @@ Response must be valid JSON only, no additional text."""
                 # Process audio using existing service
                 processor = ComplaintProcessor()
 
-                # Transcribe audio
-                transcription = processor.speech_service.transcribe_audio(
-                    tmp_path, language
-                )
+                def _score_transcription(transcription_payload):
+                    text = (transcription_payload.get("text") or "").strip()
+                    confidence = float(transcription_payload.get("confidence") or 0)
+                    word_count = len([w for w in re.split(r"\s+", text) if w])
+                    alpha_count = len(
+                        re.findall(
+                            r"[A-Za-z\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]",
+                            text,
+                        )
+                    )
 
-                if not transcription["success"]:
+                    is_too_short = len(text) <= 2 or alpha_count <= 1
+                    is_low_signal = (
+                        word_count <= 1 and len(text) < 8 and confidence < 0.45
+                    )
+                    usable = bool(text) and not is_too_short and not is_low_signal
+
+                    score = len(text) + (word_count * 8) + (confidence * 25)
+                    if not usable:
+                        score -= 20
+
+                    return {
+                        "text": text,
+                        "confidence": confidence,
+                        "word_count": word_count,
+                        "usable": usable,
+                        "score": score,
+                    }
+
+                requested_language = (language or "hi").strip().lower()
+                candidate_languages = []
+                for lang_code in [requested_language, "hi", "en"]:
+                    if lang_code and lang_code not in candidate_languages:
+                        candidate_languages.append(lang_code)
+
+                best_transcription = None
+                attempt_errors = []
+
+                for lang_code in candidate_languages:
+                    attempt = processor.speech_service.transcribe_audio(
+                        tmp_path, lang_code
+                    )
+                    if not attempt.get("success"):
+                        attempt_errors.append(
+                            f"{lang_code}: {attempt.get('error', 'unknown')}"
+                        )
+                        continue
+
+                    quality = _score_transcription(attempt)
+                    candidate = {
+                        "language": lang_code,
+                        "payload": attempt,
+                        "quality": quality,
+                    }
+
+                    if (
+                        best_transcription is None
+                        or quality["score"] > best_transcription["quality"]["score"]
+                    ):
+                        best_transcription = candidate
+
+                    # Stop early once a usable transcript is found.
+                    if quality["usable"]:
+                        break
+
+                if not best_transcription:
+                    error_message = (
+                        "; ".join(attempt_errors) if attempt_errors else "Unknown error"
+                    )
+                    return Response(
+                        {"error": f"Transcription failed: {error_message}"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+                transcription_text = best_transcription["quality"]["text"]
+                transcription_confidence = best_transcription["quality"]["confidence"]
+                transcription_language = best_transcription["language"]
+
+                if not best_transcription["quality"]["usable"]:
                     return Response(
                         {
-                            "error": f"Transcription failed: {transcription.get('error', 'Unknown error')}"
+                            "error": "Transcription quality is too low. Please record again in a quieter place and speak clearly.",
+                            "transcription": transcription_text,
+                            "transcription_confidence": transcription_confidence,
+                            "transcription_language": transcription_language,
                         },
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     )
 
                 # Build deterministic fallback so transcription still succeeds
                 # even when Gemini is rate-limited/unavailable.
-                heuristic = processor.analyze_complaint(transcription["text"])
+                heuristic = processor.analyze_complaint(transcription_text)
                 priority_to_severity = {
                     "urgent": "high",
                     "high": "high",
@@ -2155,8 +2499,10 @@ Response must be valid JSON only, no additional text."""
                 }
                 fallback_payload = {
                     "success": True,
-                    "transcription": transcription["text"],
-                    "description": transcription["text"],
+                    "transcription": transcription_text,
+                    "description": transcription_text,
+                    "transcription_confidence": transcription_confidence,
+                    "transcription_language": transcription_language,
                     "gap_type": heuristic.get("gap_type", "other"),
                     "severity": priority_to_severity.get(
                         heuristic.get("priority", "medium"), "medium"
@@ -2166,9 +2512,12 @@ Response must be valid JSON only, no additional text."""
 
                 # Analyze transcribed text with Gemini
                 try:
-                    prompt = f"""Analyze this transcribed complaint from a villager:
+                    prompt = f"""Analyze this transcribed complaint from a villager.
+The transcript may be in Hindi, English, or another Indian language (including transliterated text).
+Understand the original meaning first, then respond in English JSON.
 
-"{transcription['text']}"
+Transcript:
+"{transcription_text}"
 
 Gap types to choose from:
 {gap_types_list}
@@ -2203,7 +2552,9 @@ Response must be valid JSON only, no additional text."""
                         {
                             "success": True,
                             "analysis_source": "gemini",
-                            "transcription": transcription["text"],
+                            "transcription": transcription_text,
+                            "transcription_confidence": transcription_confidence,
+                            "transcription_language": transcription_language,
                             "description": analysis.get("description", ""),
                             "gap_type": analysis.get("gap_type", "other"),
                             "severity": analysis.get("severity", "medium"),
@@ -2217,9 +2568,9 @@ Response must be valid JSON only, no additional text."""
                         gemini_err,
                     )
                     fallback_payload["analysis_source"] = "heuristic"
-                    fallback_payload[
-                        "warning"
-                    ] = "Gemini analysis unavailable; used rule-based fallback."
+                    fallback_payload["warning"] = (
+                        "Gemini analysis unavailable; used rule-based fallback."
+                    )
                     return Response(fallback_payload, status=status.HTTP_200_OK)
 
             finally:

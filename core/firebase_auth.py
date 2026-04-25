@@ -7,15 +7,20 @@ Django API endpoints using their Firebase ID token.
 Mobile app sends: Authorization: Firebase <id_token>
 """
 
+import logging
+
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.models import User
 
 
+logger = logging.getLogger(__name__)
+
+
 class FirebaseAuthentication(BaseAuthentication):
     """
     DRF authentication backend that verifies Firebase ID tokens.
-    If Firebase is not configured, authentication is skipped (returns None).
+    If a Firebase header is provided, verification must succeed.
     """
 
     keyword = "Firebase"
@@ -27,7 +32,7 @@ class FirebaseAuthentication(BaseAuthentication):
 
         token = auth_header[len(f"{self.keyword} ") :]
         if not token:
-            return None
+            raise AuthenticationFailed("Missing Firebase token")
 
         try:
             from firebase_admin import auth as firebase_auth
@@ -35,10 +40,10 @@ class FirebaseAuthentication(BaseAuthentication):
 
             app = get_firebase_app()
             if not app:
-                # Firebase not configured - skip auth instead of failing
-                # This allows the request to proceed without Firebase verification
-                # The view will validate submitted_by field instead
-                return None
+                logger.error(
+                    "Firebase app unavailable while Firebase Authorization header was provided"
+                )
+                raise AuthenticationFailed("Firebase authentication service unavailable")
 
             decoded_token = firebase_auth.verify_id_token(token, app=app)
             uid = decoded_token.get("uid")
@@ -71,8 +76,6 @@ class FirebaseAuthentication(BaseAuthentication):
 
         except AuthenticationFailed:
             raise
-        except Exception as e:
-            # If Firebase verification fails for any reason, skip auth
-            # Let the view handle validation via submitted_by field
-            print(f"Firebase auth skipped: {e}")
-            return None
+        except Exception as exc:
+            logger.warning("Firebase token verification failed: %s", exc)
+            raise AuthenticationFailed("Firebase token verification failed")

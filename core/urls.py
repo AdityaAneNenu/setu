@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, workflow_views, voice_views
+from . import views, workflow_views
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -33,6 +33,21 @@ urlpatterns = [
         workflow_views.update_complaint_status,
         name="update_complaint_status",
     ),
+    path(
+        "workflow/complaint/<str:complaint_id>/verify-close/",
+        workflow_views.verify_and_close_complaint,
+        name="verify_and_close_complaint",
+    ),
+    path(
+        "workflow/complaint/<str:complaint_id>/resolve-photo/",
+        workflow_views.resolve_photo_complaint_with_letter,
+        name="resolve_photo_complaint_with_letter",
+    ),
+    path(
+        "workflow/complaint/<str:complaint_id>/force-resolve/",
+        workflow_views.force_resolve_complaint,
+        name="force_resolve_complaint",
+    ),
     path("workflow/agents/", workflow_views.agent_dashboard, name="agent_dashboard"),
     # API endpoints for SMS integration
     path(
@@ -41,57 +56,4 @@ urlpatterns = [
         name="api_complaint_status",
     ),
     path("api/sms-update/", workflow_views.api_update_via_sms, name="api_sms_update"),
-    # QR Submissions Management
-    path(
-        "qr-submissions/",
-        views.qr_submissions_management,
-        name="qr_submissions_management",
-    ),
-    path(
-        "qr-submissions/<int:submission_id>/",
-        views.qr_submission_detail,
-        name="qr_submission_detail",
-    ),
-    # Voice Verification URLs
-    path(
-        "voice-verification/<str:complaint_id>/",
-        voice_views.voice_verification_dashboard,
-        name="voice_verification_dashboard",
-    ),
-    path(
-        "api/voice/verify/",
-        voice_views.verify_voice_for_closure,
-        name="verify_voice_for_closure",
-    ),
-    path(
-        "api/voice/close-complaint/",
-        voice_views.close_complaint_with_voice,
-        name="close_complaint_with_voice",
-    ),
-    path(
-        "api/voice/history/<str:complaint_id>/",
-        voice_views.get_verification_history,
-        name="get_verification_history",
-    ),
-    path(
-        "api/voice/check-quality/",
-        voice_views.check_audio_quality,
-        name="check_audio_quality",
-    ),
-    path(
-        "api/voice/test-comparison/",
-        voice_views.test_voice_comparison,
-        name="test_voice_comparison",
-    ),
-    # Gap Voice Verification URLs
-    path(
-        "voice-verification/gap/<int:gap_id>/",
-        voice_views.gap_voice_verification_dashboard,
-        name="gap_voice_verification_dashboard",
-    ),
-    path(
-        "api/voice/verify-gap/",
-        voice_views.verify_voice_for_gap_resolution,
-        name="verify_voice_for_gap_resolution",
-    ),
 ]

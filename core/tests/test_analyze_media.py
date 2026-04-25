@@ -118,3 +118,88 @@ class AnalyzeMediaAudioTests(TestCase):
         self.assertEqual(response.data["gap_type"], "water")
         self.assertEqual(response.data["severity"], "high")
         self.assertEqual(response.data["description"], "Water pipeline is broken")
+
+    def test_audio_analysis_retries_language_when_transcription_is_low_signal(self):
+        fake_modules = self._fake_genai_modules(
+            response_text='{"description": "The handpump is broken and water is unavailable", "gap_type": "water", "severity": "high", "confidence": 0.91}'
+        )
+
+        with patch.dict("sys.modules", fake_modules):
+            with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=False):
+                with patch("core.services.ComplaintProcessor") as mock_processor_cls:
+                    processor = Mock()
+                    processor.speech_service.transcribe_audio.side_effect = [
+                        {
+                            "success": True,
+                            "text": "h",
+                            "language": "bn",
+                            "confidence": 0.05,
+                        },
+                        {
+                            "success": True,
+                            "text": "Gaon mein handpump kharab hai aur paani nahi aa raha",
+                            "language": "hi",
+                            "confidence": 0.89,
+                        },
+                    ]
+                    processor.analyze_complaint.return_value = {
+                        "gap_type": "water",
+                        "priority": "high",
+                        "analysis_confidence": 0.85,
+                    }
+                    mock_processor_cls.return_value = processor
+
+                    response = self.client.post(
+                        self.url,
+                        {
+                            "file": self._audio_file(),
+                            "media_type": "audio",
+                            "language": "bn",
+                        },
+                        format="multipart",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["analysis_source"], "gemini")
+        self.assertEqual(response.data["transcription_language"], "hi")
+        self.assertIn("handpump", response.data["description"].lower())
+        self.assertEqual(processor.speech_service.transcribe_audio.call_count, 2)
+
+    def test_audio_analysis_returns_422_when_all_transcriptions_are_low_signal(self):
+        fake_modules = self._fake_genai_modules(
+            response_text='{"description": "", "gap_type": "other", "severity": "low", "confidence": 0.1}'
+        )
+
+        with patch.dict("sys.modules", fake_modules):
+            with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=False):
+                with patch("core.services.ComplaintProcessor") as mock_processor_cls:
+                    processor = Mock()
+                    processor.speech_service.transcribe_audio.side_effect = [
+                        {
+                            "success": True,
+                            "text": "h",
+                            "language": "hi",
+                            "confidence": 0.05,
+                        },
+                        {
+                            "success": True,
+                            "text": "i",
+                            "language": "en",
+                            "confidence": 0.04,
+                        },
+                    ]
+                    mock_processor_cls.return_value = processor
+
+                    response = self.client.post(
+                        self.url,
+                        {
+                            "file": self._audio_file(),
+                            "media_type": "audio",
+                            "language": "hi",
+                        },
+                        format="multipart",
+                    )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("Transcription quality is too low", response.data["error"])

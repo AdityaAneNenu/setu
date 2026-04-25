@@ -26,10 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    raise ValueError(
-        "SECRET_KEY environment variable is not set. "
-        "Please set it in your .env file or environment variables."
-    )
+    # Generate a secure random key for development if not set
+    import secrets
+    SECRET_KEY = secrets.token_urlsafe(50)
+    print("⚠️  WARNING: SECRET_KEY not set. Generated a temporary one for development.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Default to False for safer behavior when env vars are missing.
@@ -169,11 +169,6 @@ UNFOLD = {
                         "title": "Workflow Logs",
                         "icon": "receipt_long",
                         "link": "/admin/core/workflowlog/",
-                    },
-                    {
-                        "title": "Voice Verifications",
-                        "icon": "mic",
-                        "link": "/admin/core/voiceverificationlog/",
                     },
                 ],
             },
@@ -354,6 +349,54 @@ EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@example.com")
+SMS_WEBHOOK_SECRET = os.getenv("SMS_WEBHOOK_SECRET", "")
+
+# Logging configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "django.log"),
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "core": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+# Create logs directory if it doesn't exist
+logs_dir = BASE_DIR / "logs"
+logs_dir.mkdir(exist_ok=True)
 
 
 # Database
@@ -445,8 +488,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS settings for mobile app
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
     "http://192.168.1.100:8000",
 ]
 if RAILWAY_PUBLIC_DOMAIN:

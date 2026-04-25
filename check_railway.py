@@ -128,7 +128,6 @@ def check_ui_templates():
         "core/templates/core/manage_gaps.html",
         "core/templates/core/agent_dashboard.html",
         "core/templates/core/upload.html",
-        "core/templates/core/voice_verification_dashboard.html",
     ]
 
     all_good = True

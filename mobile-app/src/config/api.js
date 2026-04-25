@@ -45,7 +45,9 @@ const DEV_MACHINE_IP = '192.168.1.114';
 const DEV_PORT = '8000';
 
 const getDjangoUrl = () => {
-  if (__DEV__ && USE_LOCAL_BACKEND_IN_DEV) {
+  // If a production URL is configured, always prefer it to avoid accidental
+  // local/dev-server drift in mobile complaint and closure flows.
+  if (__DEV__ && USE_LOCAL_BACKEND_IN_DEV && !PRODUCTION_URL) {
     if (Platform.OS === 'android') {
       return `http://10.0.2.2:${DEV_PORT}`;
     }

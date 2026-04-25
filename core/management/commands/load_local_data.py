@@ -9,11 +9,11 @@ import shutil
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.conf import settings
-from core.models import Gap, Village, Submission, VoiceVerificationLog
+from core.models import Gap, Village, Submission
 
 
 class Command(BaseCommand):
-    help = "Load local data fixture (gaps, submissions, villages, voice logs)"
+    help = "Load local data fixture (gaps, submissions, villages)"
 
     # Map of local user PKs to usernames (from original local DB)
     LOCAL_USER_MAP = {
@@ -23,9 +23,34 @@ class Command(BaseCommand):
         18: "ground1",
     }
 
+    ALLOWED_FIXTURE_MODELS = {
+        "core.village",
+        "core.submission",
+        "core.gap",
+    }
+
+    DEPRECATED_MODELS = {
+        "core.voiceverificationlog",
+    }
+
+    DEPRECATED_FIELDS = {
+        "core.gap": {"voice_code"},
+        "core.complaint": {"voice_code"},
+    }
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--with-media-bundle",
+            action="store_true",
+            help="Copy media bundle files after loading fixture data.",
+        )
+
     def handle(self, *args, **options):
-        self._load_media_files()
         self._load_fixture_data()
+        if options.get("with_media_bundle"):
+            self._load_media_files()
+        else:
+            self.stdout.write("Skipping media bundle copy (use --with-media-bundle to enable).")
 
     def _load_media_files(self):
         """Copy bundled media files to MEDIA_ROOT"""
@@ -69,6 +94,47 @@ class Command(BaseCommand):
         with open("core/fixtures/local_data.json", "r", encoding="utf-8") as f:
             data = json.load(f)
 
+        if not isinstance(data, list):
+            self.stdout.write(self.style.ERROR("Fixture must be a JSON list of objects."))
+            return
+
+        cleaned_data = []
+        dropped_models = 0
+        for obj in data:
+            model_name = obj.get("model")
+            if model_name in self.DEPRECATED_MODELS:
+                dropped_models += 1
+                continue
+            if model_name not in self.ALLOWED_FIXTURE_MODELS:
+                dropped_models += 1
+                continue
+
+            fields = obj.get("fields", {})
+            deprecated_fields = self.DEPRECATED_FIELDS.get(model_name, set())
+            for field_name in deprecated_fields:
+                fields.pop(field_name, None)
+            cleaned_data.append(obj)
+
+        data = cleaned_data
+
+        if dropped_models:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Dropped {dropped_models} deprecated/unsupported fixture records."
+                )
+            )
+
+        if not data:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Fixture is empty after cleanup. No local test data was loaded."
+                )
+            )
+            fixed_path = "core/fixtures/local_data_fixed.json"
+            if os.path.exists(fixed_path):
+                os.remove(fixed_path)
+            return
+
         # Build username->pk map for current Railway users
         username_to_pk = {}
         for username in self.LOCAL_USER_MAP.values():
@@ -102,6 +168,5 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"Loaded: {Gap.objects.count()} gaps, "
-            f"{Submission.objects.count()} submissions, "
-            f"{VoiceVerificationLog.objects.count()} voice logs"
+            f"{Submission.objects.count()} submissions"
         ))

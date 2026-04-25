@@ -30,6 +30,23 @@ class SpeechToTextService:
             "pa": "Punjabi",
             "as": "Assamese",
         }
+        self.keyterms_prompt = self._load_keyterms_prompt()
+
+    def _load_keyterms_prompt(self):
+        """
+        Read optional key terms from env for underrepresented vocabulary.
+        Comma-separated terms can be set in ASSEMBLYAI_KEYTERMS_PROMPT.
+        """
+        raw_terms = os.getenv("ASSEMBLYAI_KEYTERMS_PROMPT", "")
+        if not raw_terms:
+            return None
+
+        terms = [term.strip() for term in raw_terms.split(",") if term.strip()]
+        if not terms:
+            return None
+
+        # Preserve insertion order while removing duplicates.
+        return list(dict.fromkeys(terms))
 
     def transcribe_audio(self, audio_file_path, language_code="hi"):
         """
@@ -53,14 +70,19 @@ class SpeechToTextService:
             if not language_code or language_code not in self.supported_languages:
                 language_code = "hi"  # Default to Hindi
 
-            # Configuration for multilingual transcription
-            config = aai.TranscriptionConfig(
-                language_code=language_code,
-                punctuate=True,
-                format_text=True,
-                speaker_labels=True,  # Identify different speakers
-                auto_chapters=False,  # Don't break into chapters
-            )
+            # Configuration for multilingual transcription.
+            # Do not use deprecated word_boost (removed by AssemblyAI in May 2026).
+            config_kwargs = {
+                "language_code": language_code,
+                "punctuate": True,
+                "format_text": True,
+                "speaker_labels": True,
+                "auto_chapters": False,
+            }
+            if self.keyterms_prompt:
+                config_kwargs["keyterms_prompt"] = self.keyterms_prompt
+
+            config = aai.TranscriptionConfig(**config_kwargs)
 
             transcriber = aai.Transcriber()
             transcript = transcriber.transcribe(audio_file_path, config=config)
