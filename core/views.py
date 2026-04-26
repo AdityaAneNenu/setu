@@ -25,9 +25,9 @@ try:
         print("Gemini AI initialized successfully with gemini-2.5-flash")
 except Exception as e:
     print(f"Error initializing Gemini AI: {e}")
-    print(f"   Common issues:")
+    print("   Common issues:")
     print(
-        f"   - API key is leaked/disabled (get new key from https://aistudio.google.com/apikey)"
+        "   - API key is leaked/disabled (get new key from https://aistudio.google.com/apikey)"
     )
     print(f"   - API quota exceeded (wait or upgrade plan)")
     print(f"   - Network connectivity issues")
@@ -159,7 +159,7 @@ def upload_form(request):
                     }
 
                     # Log success
-                    print(f"✅ Translation successful: {language_code} -> English")
+                    print(f"INFO: Translation successful: {language_code} -> English")
 
                 except Exception as e:
                     # Log the error for debugging
@@ -571,7 +571,11 @@ def update_gap_status(request, gap_id):
                 gap.resolution_proof_number = resolution_proof_number
                 print(f"✅ DEBUG: Resolution proof number: {resolution_proof_number}")
 
+<<<<<<< HEAD
         # Voice verification module removed: resolving no longer requires voice checks.
+=======
+        # Verification now uses photo/geotag flow; keep status update path generic.
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
         # Proceed with status update
         print(

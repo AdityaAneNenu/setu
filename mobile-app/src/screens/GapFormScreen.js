@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { fonts } from '../theme';
 import { villagesApi, gapsApi } from '../services/api';
@@ -22,7 +21,6 @@ import { analyzeMedia } from '../services/aiService';
 import { uploadService } from '../services/cloudinaryService';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { parseArray } from '../utils/safeJSON';
 import { formatErrorForDisplay } from '../utils/errorDisplay';
 
 // Gap Type Categories - matching backend API
@@ -73,6 +71,8 @@ export default function GapFormScreen({ route, navigation }) {
   // GPS states
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
+  const [gpsSamples, setGpsSamples] = useState([]);
   const [gpsLoading, setGpsLoading] = useState(false);
   
   // Success Modal states
@@ -199,9 +199,30 @@ export default function GapFormScreen({ route, navigation }) {
         console.warn('Location permission denied');
         return;
       }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setLatitude(loc.coords.latitude);
-      setLongitude(loc.coords.longitude);
+
+      const samples = [];
+      for (let i = 0; i < 3; i += 1) {
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        samples.push({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+          accuracy: loc.coords.accuracy,
+          captured_at: new Date().toISOString(),
+        });
+      }
+
+      const avgLat = samples.reduce((sum, s) => sum + s.latitude, 0) / samples.length;
+      const avgLng = samples.reduce((sum, s) => sum + s.longitude, 0) / samples.length;
+      const avgAccuracy =
+        samples.reduce((sum, s) => sum + (Number.isFinite(s.accuracy) ? s.accuracy : 0), 0) /
+        samples.length;
+
+      setLatitude(avgLat);
+      setLongitude(avgLng);
+      setGpsAccuracy(avgAccuracy);
+      setGpsSamples(samples);
     } catch (error) {
       console.warn('GPS capture failed:', error.message);
     } finally {
@@ -219,6 +240,14 @@ export default function GapFormScreen({ route, navigation }) {
       Alert.alert(t('gapForm.requiredField'), t('gapForm.selectGapType'));
       return;
     }
+    if (!mediaUri || mediaType !== 'image') {
+      Alert.alert('Photo required', 'Surrounding photo is mandatory for offline complaint capture.');
+      return;
+    }
+    if (latitude == null || longitude == null) {
+      Alert.alert('GPS required', 'GPS location is mandatory before saving complaint offline.');
+      return;
+    }
 
     setLoading(true);
 
@@ -233,37 +262,33 @@ export default function GapFormScreen({ route, navigation }) {
 
     // Prepare submission data
     const submissionData = {
+      local_id: `cmp_${Date.now()}`,
       village_id: selectedVillage,
       village_name: villageName,
       gap_type: selectedGapType,
       severity: selectedSeverity,
       description: description.trim() || '',
       input_method: inputMethod,
+      imageUri: mediaUri,
       latitude: latitude,
       longitude: longitude,
+      gps_accuracy: gpsAccuracy,
+      gps_samples_json: JSON.stringify(gpsSamples),
     };
 
     try {
       
-      // If media was already uploaded during AI processing, use that URL
-      // Otherwise upload now (fallback if AI processing failed)
-      if (uploadedMediaUrl) {
-        if (mediaType === 'audio') {
-          submissionData.audioUrl = uploadedMediaUrl;
-        } else if (mediaType === 'image') {
-          submissionData.imageUrl = uploadedMediaUrl;
-        }
-      } else if (mediaUri) {
-        // Upload media if not already uploaded
-        if (mediaType === 'audio') {
-          submissionData.audioUri = mediaUri;
-        } else if (mediaType === 'image') {
-          submissionData.imageUri = mediaUri;
-        }
+      // Audio is optional/recommended and is queued as raw file for backend processing.
+      if (mediaType === 'audio' && mediaUri) {
+        submissionData.audioUri = mediaUri;
       }
 
       // Submit to Firebase Firestore (and Django via dual-write)
       const result = await gapsApi.submit(submissionData);
+
+      if (result?.warning) {
+        Alert.alert('Warning', result.warning);
+      }
 
       // Show custom success modal
       setSuccessData({
@@ -291,32 +316,11 @@ export default function GapFormScreen({ route, navigation }) {
       ]).start();
     } catch (error) {
       console.error('Submission error:', error);
-      // Save to offline queue for later sync
-      try {
-        const pending = await AsyncStorage.getItem('pendingSubmissions');
-        const queue = parseArray(pending);
-        queue.push({
-          ...submissionData,
-          _savedAt: new Date().toISOString(),
-          _mediaUri: mediaUri || null,
-          _mediaType: mediaType || null,
-        });
-        await AsyncStorage.setItem('pendingSubmissions', JSON.stringify(queue));
-        Alert.alert(
-          t('gapForm.savedOffline'),
-          t('gapForm.savedOfflineMsg'),
-          [{ text: t('common.ok'), onPress: () => navigation.navigate('Home') }]
-        );
-      } catch (saveError) {
-        const friendly = formatErrorForDisplay(error, {
-          action: 'submit your report',
-          fallback: t('gapForm.submitFailed'),
-        });
-        Alert.alert(
-          t('common.error'),
-          friendly.message
-        );
-      }
+      const friendly = formatErrorForDisplay(error, {
+        action: 'save complaint offline',
+        fallback: t('gapForm.submitFailed'),
+      });
+      Alert.alert(t('common.error'), friendly.message);
     } finally {
       setLoading(false);
     }

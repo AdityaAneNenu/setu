@@ -385,9 +385,15 @@ export default function GapDetailScreen({ route, navigation }) {
                 onPress={() => {
                   if (!gap.django_id) {
                     Alert.alert(
+<<<<<<< HEAD
                       "Sync Required",
                       "This gap has not synced to the server yet. Please wait a moment and try again.",
                       [{ text: "OK" }],
+=======
+                      t("gapDetail.syncRequiredTitle"),
+                      t("gapDetail.syncRequiredMessage"),
+                      [{ text: t("common.ok") }],
+>>>>>>> 6a0a424 (Many changes in verification modules.)
                     );
                     return;
                   }
@@ -405,7 +411,11 @@ export default function GapDetailScreen({ route, navigation }) {
                   color="#FFF"
                   style={{ marginRight: 8 }}
                 />
+<<<<<<< HEAD
                 <Text style={styles.actionBtnText}>Close with Photo Proof</Text>
+=======
+                <Text style={styles.actionBtnText}>{t("gapDetail.closeWithPhotoProof")}</Text>
+>>>>>>> 6a0a424 (Many changes in verification modules.)
               </TouchableOpacity>
             )}
           </View>

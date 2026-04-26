@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useCallback } from "react";
+=======
+import React, { useCallback, useEffect } from "react";
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 import { StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -46,10 +50,20 @@ import {
   TTSSettingsScreen,
   GapDetailScreen,
   ClosurePhotoScreen,
+<<<<<<< HEAD
   ComplaintSubmissionScreen,
   ComplaintVerificationScreen,
 } from "./src/screens";
 import CustomDrawer from "./src/components/CustomDrawer";
+=======
+  GapVerificationScreen,
+} from "./src/screens";
+import CustomDrawer from "./src/components/CustomDrawer";
+import {
+  startOfflineSyncEngine,
+  stopOfflineSyncEngine,
+} from "./src/services/offlineSyncEngine";
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -107,12 +121,17 @@ function DrawerNavigator() {
       <Drawer.Screen name="TTSSettings" component={TTSSettingsScreen} />
       <Drawer.Screen name="GapDetail" component={GapDetailScreen} />
       <Drawer.Screen
+<<<<<<< HEAD
         name="ComplaintSubmission"
         component={ComplaintSubmissionScreen}
       />
       <Drawer.Screen
         name="ComplaintVerification"
         component={ComplaintVerificationScreen}
+=======
+        name="GapVerification"
+        component={GapVerificationScreen}
+>>>>>>> 6a0a424 (Many changes in verification modules.)
       />
     </Drawer.Navigator>
   );
@@ -131,6 +150,15 @@ function AppContent() {
   });
 
   const isLoggedIn = !!user;
+
+  useEffect(() => {
+    startOfflineSyncEngine().catch((err) => {
+      console.warn("Offline sync engine failed to start:", err?.message || err);
+    });
+    return () => {
+      stopOfflineSyncEngine();
+    };
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded && !isAuthLoading) {

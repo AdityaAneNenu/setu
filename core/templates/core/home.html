@@ -2,100 +2,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Adarsh Gram - PM-AJAY Initiative for Rural Healthcare Excellence">
-    <meta name="keywords" content="PM-AJAY, Pradhan Mantri Ayushman Yojana, Rural Healthcare, Government Initiative">
-    <title>Adarsh Gram - PM-AJAY Initiative</title>
-    
-    <!-- Modern CSS Framework -->
-    <link rel="stylesheet" href="{% static 'css/modern.css' %}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* Enhanced Hero Section */
-        .hero-section {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: linear-gradient(135deg, 
-                rgba(139, 92, 246, 0.1) 0%, 
-                rgba(124, 58, 237, 0.05) 50%, 
-                transparent 100%
-            ), var(--bg-primary);
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Adarsh Gram - PM-AJAY Initiative</title>
+
+<link rel="stylesheet" href="{% static 'css/modern.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root { color-scheme: dark; }
+
+body {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+
+        .section {
+            padding: 4rem 1.5rem;
         }
 
-        .hero-content {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            padding: 2rem 1.5rem;
+        .section-hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: visible;                               /* fixed: overflow:hidden breaks background-attachment:fixed */
+    background: url("{% static 'hero-section.png' %}") center / cover no-repeat fixed;
+}
+.hero-bg {
+    display: none;
+}
+
+/* DARK OVERLAY */
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1;
+}
+        .section-muted {
+            background: var(--bg-secondary);
+        }
+
+        .section-accent {
+            background: linear-gradient(180deg, var(--bg-secondary), var(--bg-primary));
+        }
+
+        .section-cta {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .container {
+            width: 100%;
             max-width: 80rem;
             margin: 0 auto;
         }
 
-        .hero-title {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            line-height: 1.2;
-        }
+        /* AFTER */
+.hero-wrap {
+    max-width: 56rem;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;   /* ← add this */
+    z-index: 2;           /* ← add this — sits above the overlay */
+}
 
-        .hero-title-white {
-            color: white;
-        }
-
-        /* Enhanced Hero Elements */
         .hero-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(139, 92, 246, 0.1);
-            backdrop-filter: blur(12px);
-            border-radius: 9999px;
-            border: 2px solid rgba(139, 92, 246, 0.3);
-            margin-bottom: 2rem;
-            transition: all var(--transition-base);
-        }
-
-        .hero-badge:hover {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: rgba(139, 92, 246, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .badge-icon {
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: var(--accent-purple);
-        }
-
-        .badge-text {
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
             font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 1.25rem;
         }
 
         .hero-title {
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 1.5rem;
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 3.5rem);
             line-height: 1.1;
             letter-spacing: -0.02em;
+            color: var(--text-primary);
         }
 
-        .hero-title-highlight {
+        .hero-highlight {
             background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -103,1278 +103,438 @@
         }
 
         .hero-subtitle {
-            font-size: clamp(1.125rem, 2.5vw, 1.25rem);
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
+            margin: 1rem auto 0;
             max-width: 48rem;
-            margin-left: auto;
-            margin-right: auto;
-            line-height: 1.6;
+            color: var(--text-secondary);
+            font-size: 1.0625rem;
         }
 
-        .cta-buttons {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
+        .button-row {
             margin-top: 2rem;
+            display: flex;
+            gap: 0.875rem;
+            justify-content: center;
             flex-wrap: wrap;
         }
 
-        .btn-hero-primary {
+        .btn-primary,
+        .btn-secondary {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
-            padding: 1rem 2rem;
-            background: var(--gradient-primary);
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
-            border-radius: var(--radius-lg);
+            gap: 0.5rem;
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.75rem;
             text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: all var(--transition-base);
-            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
         }
 
-        .btn-hero-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4);
+        .btn-primary {
+            color: #fff;
+            background: var(--gradient-primary);
+            border: 1px solid transparent;
         }
 
-        .btn-hero-secondary {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 2rem;
+        .btn-secondary {
+            color: var(--text-primary);
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            color: var(--text-primary);
-            font-weight: 600;
-            font-size: 1rem;
-            text-decoration: none;
-            transition: all var(--transition-base);
         }
 
-        .btn-hero-secondary:hover {
-            background: var(--bg-card-hover);
+        .btn-primary:hover,
+        .btn-secondary:hover {
+            transform: translateY(-1px);
             border-color: var(--border-hover);
-            transform: translateY(-2px);
-        }
-
-        /* Scroll Indicator */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: bounce 2s infinite;
-        }
-
-        .scroll-icon {
-            width: 2.5rem;
-            height: 2.5rem;
-            background: var(--accent-purple);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.25rem;
-        }
-
-        @keyframes bounce {
-            0%, 100% {
-                transform: translateX(-50%) translateY(0);
-            }
-            50% {
-                transform: translateX(-50%) translateY(-10px);
-            }
-        }
-
-        /* Section Layouts */
-        .section {
-            padding: 4rem 1.5rem;
-        }
-
-        .section-primary {
-            background: var(--bg-primary);
-        }
-
-        .section-secondary {
-            background: var(--bg-secondary);
-        }
-
-        .section-accent {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
         }
 
         .section-header {
             text-align: center;
-            margin-bottom: 3rem;
+            max-width: 52rem;
+            margin: 0 auto 2.5rem;
         }
 
         .section-title {
-            font-size: clamp(2rem, 4vw, 2.5rem);
-            font-weight: 600;
+            margin: 0;
+            font-size: clamp(1.75rem, 3.4vw, 2.5rem);
             color: var(--text-primary);
-            margin-bottom: 1rem;
+            font-weight: 700;
+            line-height: 1.2;
         }
 
         .section-description {
-            font-size: 1.125rem;
+            margin: 1rem 0 0;
             color: var(--text-secondary);
-            max-width: 48rem;
-            margin: 0 auto;
+            font-size: 1rem;
         }
 
-        /* Feature Grid */
-        .features-grid {
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            text-align: center;
-            transition: all var(--transition-base);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--border-hover);
-            box-shadow: var(--glow-purple);
-        }
-
-        .feature-icon {
-            width: 4rem;
-            height: 4rem;
-            background: var(--gradient-primary);
-            border-radius: var(--radius-xl);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .feature-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-        }
-
-        .feature-description {
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        /* Stats Section */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 1.5rem;
-        }
-
-        .stat-number {
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .hero-content {
-                padding: 1.5rem 1rem;
-            }
-            
-            .cta-buttons {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .btn-hero-primary,
-            .btn-hero-secondary {
-                width: 100%;
-                max-width: 300px;
-                justify-content: center;
-            }
-            
-            .section {
-                padding: 2.5rem 1rem;
-            }
-            
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .stats-container {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-        }
-
-        .btn-secondary:hover {
-            background: white;
-            color: #1f2937;
-            text-decoration: none;
-        }
-
-        /* Spotlight Effect */
-        .spotlight-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.98);
-            z-index: 5000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
-
-        .spotlight-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .btn-secondary.spotlight-active {
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            right: auto !important;
-            transform: translate(-50%, -50%) scale(1.2) !important;
-            z-index: 5001 !important;
-            box-shadow: 0 0 100px #fbbf24, 0 0 150px #fbbf24, 0 0 200px rgba(251, 191, 36, 0.5) !important;
-            background: #fbbf24 !important;
-            color: #000000 !important;
-            border: 3px solid #ffffff !important;
-            backdrop-filter: none !important;
-            opacity: 1 !important;
-            padding: 1rem 2rem !important;
-            font-size: 1.125rem !important;
-            font-weight: 700 !important;
-            text-decoration: none !important;
-        }
-
-        .btn-secondary.spotlight-active span {
-            color: #000000 !important;
-            font-weight: 700 !important;
-            font-size: 1.125rem !important;
-        }
-
-        /* Spotlight Trigger Button */
-        .btn-spotlight-trigger {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            border: 2px solid rgba(251, 191, 36, 0.3);
-            background: rgba(251, 191, 36, 0.1);
-            color: #fbbf24;
-            backdrop-filter: blur(12px);
-        }
-
-        .btn-spotlight-trigger:hover {
-            background: rgba(251, 191, 36, 0.2);
-            border-color: rgba(251, 191, 36, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .btn-icon {
-            width: 1.25rem;
-            height: 1.25rem;
-            background: #000;
-            border-radius: 0.375rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.75rem;
-        }
-
-        .scroll-indicator {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: bounce 2s infinite;
-        }
-
-        .scroll-icon {
-            width: 2.5rem;
-            height: 2.5rem;
-            background: #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        @keyframes bounce {
-            0%, 100% {
-                transform: translateX(-50%) translateY(0);
-            }
-            50% {
-                transform: translateX(-50%) translateY(-25%);
-            }
-        }
-
-        /* About Section */
-        .section {
-            padding: 4rem 1.5rem;
-        }
-
-        .section-white {
-            background: white;
-        }
-
-        .section-gray {
-            background: #f9fafb;
-        }
-
-        .section-dark {
-            background: linear-gradient(to bottom right, #111827, #1f2937, #111827);
-            color: white;
-        }
-
-        .container {
-            max-width: 80rem;
-            margin: 0 auto;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: flex-start;
             gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .section-icon {
-            width: 3rem;
-            height: 3rem;
-            background: #000;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .section-title {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 1rem;
-        }
-
-        .section-title-white {
-            color: white;
-        }
-
-        .section-text {
-            font-size: 1.125rem;
-            color: #374151;
-            line-height: 1.75;
-            margin-bottom: 1rem;
-        }
-
-        .section-text-gray {
-            color: #9ca3af;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 2rem;
         }
 
         .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         }
 
         .grid-4 {
-            display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
 
-        /* Focus Area Cards */
-        .focus-card {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            text-align: center;
-            transition: all 0.3s ease;
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.25rem;
         }
 
-        .focus-card:hover {
-            border-color: #000;
+        .card h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.125rem;
+            color: var(--text-primary);
         }
 
-        .focus-icon {
-            width: 3rem;
-            height: 3rem;
-            background: #000;
-            border-radius: 0.5rem;
-            margin: 0 auto 0.5rem;
-            display: flex;
+        .card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .icon-pill {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.25rem;
+            margin-bottom: 0.85rem;
+            font-size: 1.35rem;
         }
 
-        .focus-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #1f2937;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
         }
 
-        /* Step Cards */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            margin: 0;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            margin: 0.35rem 0 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
         .step-card {
             position: relative;
-            height: 100%;
-            background: white;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 1rem;
-            border: 2px solid #e5e7eb;
-            padding: 2rem;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
+            padding: 1.5rem 1.25rem 1.25rem;
         }
 
-        .step-card:hover {
-            border-color: #000;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        .step-number {
+        .step-index {
             position: absolute;
-            top: -1rem;
-            left: -1rem;
-            width: 3rem;
-            height: 3rem;
-            background: #000;
-            border-radius: 50%;
-            display: flex;
+            top: -0.75rem;
+            left: 1rem;
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 999px;
+            background: var(--accent-purple);
+            color: #fff;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .step-number-text {
-            color: white;
+            font-size: 0.85rem;
             font-weight: 700;
-            font-size: 1.25rem;
         }
 
-        .step-icon {
-            width: 4rem;
-            height: 4rem;
-            background: #000;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            margin-top: 1rem;
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .step-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.75rem;
-        }
-
-        .step-text {
-            color: #4b5563;
-            flex-grow: 1;
-        }
-
-        /* Feature Cards */
-        .feature-card {
-            padding: 2rem;
-            background: linear-gradient(to bottom right, #f9fafb, white);
-            border-radius: 1rem;
-            border: 2px solid #f3f4f6;
-            transition: all 0.3s ease;
-        }
-
-        .feature-card:hover {
-            border-color: #1f2937;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .feature-icon {
-            width: 4rem;
-            height: 4rem;
-            background: #000;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            transition: transform 0.3s ease;
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .feature-card:hover .feature-icon {
-            transform: scale(1.1);
-        }
-
-        .feature-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 1rem;
-        }
-
-        .feature-text {
-            color: #4b5563;
-            line-height: 1.75;
-        }
-
-        /* Role Cards */
-        .role-card {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .role-card:hover {
-            border-color: #000;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .role-icon {
-            width: 3.5rem;
-            height: 3.5rem;
-            background: #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
-            color: white;
-            font-size: 1.25rem;
-        }
-
-        .role-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-
-        .role-text {
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
-
-        /* Footer */
         .footer {
             padding: 3rem 1.5rem;
-            background: white;
-            border-top: 1px solid #e5e7eb;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
         }
 
         .footer-grid {
             display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
         }
 
-        .footer-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 1rem;
+        .footer h3 {
+            margin: 0 0 0.75rem;
+            color: var(--text-primary);
+            font-size: 1rem;
         }
 
-        .footer-text {
-            font-size: 0.875rem;
-            color: #4b5563;
-            line-height: 1.75;
-        }
-
-        .footer-links {
+        .footer p,
+        .footer li,
+        .footer a {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-decoration: none;
             list-style: none;
         }
 
-        .footer-link {
-            font-size: 0.875rem;
-            color: #4b5563;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .footer-link:hover {
-            color: #1f2937;
+        .footer ul {
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 0.5rem;
         }
 
         .footer-bottom {
+            margin-top: 2rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-color);
             text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid #e5e7eb;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
         }
 
-        .footer-bottom-text {
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .max-w-4xl {
-            max-width: 56rem;
-            margin: 0 auto;
-        }
-
-        .max-w-3xl {
-            max-width: 48rem;
-            margin: 0 auto;
-        }
-
-        /* Responsive Design */
-        @media (min-width: 640px) {
-            .grid-4 {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (min-width: 768px) {
-            .hero-title {
-                font-size: 4.5rem;
+        @media (max-width: 768px) {
+            .section {
+                padding: 3rem 1rem;
             }
 
-            .hero-subtitle {
-                font-size: 1.5rem;
+            .button-row {
+                flex-direction: column;
+                align-items: stretch;
+                max-width: 320px;
+                margin-left: auto;
+                margin-right: auto;
             }
 
-            .section-title {
-                font-size: 3rem;
-            }
-
-            .grid-2 {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
-            .footer-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .grid-4 {
-                grid-template-columns: repeat(4, 1fr);
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
             }
         }
     </style>
 </head>
-<body class="bg-primary text-primary">
-    
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="hero-content">
-            <!-- Hero Badge -->
-            <div class="hero-badge">
-                <div class="badge-icon">🏛️</div>
-                <span class="badge-text">Pradhan Mantri Anusuchit Jaati Abhyudaya Yojana (PM-AJAY)</span>
-            </div>
+<body>
+    <!-- 🔥 UPDATED HERO -->
+<section class="section section-hero">
 
-            <!-- Hero Title -->
-            <h1 class="hero-title">
-                Transform SC-Majority Villages into 
-                <span class="hero-title-highlight">Adarsh Grams</span>
-            </h1>
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
 
-            <!-- Hero Subtitle -->
-            <p class="hero-subtitle">
-                Supporting PM-AJAY's mission to holistically develop Scheduled Caste majority villages through data-driven gap identification and systematic infrastructure development.
-            </p>
+    <div class="container hero-wrap">
+        <div class="hero-badge">🏛️ PM-AJAY</div>
 
-            <!-- CTA Buttons -->
-            <div class="cta-buttons">
-                <a href="{% url 'login' %}" class="btn-hero-primary">
-                    <span>Get Started</span>
-                    <span>→</span>
-                </a>
-                <a href="{% url 'public_dashboard' %}" class="btn-hero-secondary">
-                    <span>Explore Public Dashboard</span>
-                    <span>📊</span>
-                </a>
-            </div>
+        <h1 class="hero-title">
+            Transform SC-Majority Villages into
+            <span class="hero-highlight">Adarsh Grams</span>
+        </h1>
+
+        <p class="hero-subtitle">
+            Supporting PM-AJAY's mission to holistically develop villages through data-driven infrastructure development.
+        </p>
+
+        <div class="button-row">
+            <a href="{% url 'login' %}" class="btn-primary">Get Started</a>
+            <a href="{% url 'public_dashboard' %}" class="btn-secondary">Explore Dashboard</a>
         </div>
+    </div>
 
-        <!-- Scroll Indicator -->
-        <div class="scroll-indicator">
-            <div class="scroll-icon">↓</div>
-        </div>
-    </section>
+</section>
 
-    <!-- About Section -->
-    <section class="section section-secondary">
+    <section class="section section-muted">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">About the Initiative</h2>
                 <p class="section-description">
-                    The Pradhan Mantri Anusuchit Jaati Abhyudaya Yojana (PM-AJAY) aims to holistically develop 
-                    Scheduled Caste (SC) majority villages into Adarsh Grams (Model Villages) by addressing 
-                    critical gaps in infrastructure and services.
+                    The Pradhan Mantri Anusuchit Jaati Abhyudaya Yojana (PM-AJAY) aims to holistically develop Scheduled Caste majority villages into Adarsh Grams by identifying and resolving infrastructure and service gaps.
                 </p>
             </div>
-
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3 class="feature-title">Gap Identification</h3>
-                    <p class="feature-description">
-                        Comprehensive assessment of infrastructure and service gaps through systematic data collection and analysis.
-                    </p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Progress Tracking</h3>
-                    <p class="feature-description">
-                        Real-time monitoring of development projects and initiatives across all focus areas.
-                    </p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🤝</div>
-                    <h3 class="feature-title">Community Engagement</h3>
-                    <p class="feature-description">
-                        Direct involvement of community members in identifying needs and tracking development progress.
-                    </p>
-                </div>
+            <div class="grid grid-3">
+                <article class="card">
+                    <div class="icon-pill">🎯</div>
+                    <h3>Gap Identification</h3>
+                    <p>Comprehensive assessments identify critical deficits across public services and infrastructure.</p>
+                </article>
+                <article class="card">
+                    <div class="icon-pill">📊</div>
+                    <h3>Progress Tracking</h3>
+                    <p>Live monitoring helps teams prioritize interventions and track implementation outcomes.</p>
+                </article>
+                <article class="card">
+                    <div class="icon-pill">🤝</div>
+                    <h3>Community Engagement</h3>
+                    <p>Local participation ensures development reflects real village needs and priorities.</p>
+                </article>
             </div>
         </div>
     </section>
 
-    <!-- Focus Areas Section -->
-    <section class="section section-primary">
+    <section class="section">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Focus Areas</h2>
-                <p class="section-description">
-                    Comprehensive development across key infrastructure and service sectors
-                </p>
+                <p class="section-description">Core domains that define Adarsh Gram readiness.</p>
             </div>
-
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎓</div>
-                    <h3 class="feature-title">Education</h3>
-                    <p class="feature-description">School infrastructure, teacher training, and educational resources</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🏥</div>
-                    <h3 class="feature-title">Healthcare</h3>
-                    <p class="feature-description">Primary health centers, medical facilities, and health awareness programs</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🚿</div>
-                    <h3 class="feature-title">Sanitation</h3>
-                    <p class="feature-description">Clean toilets, waste management, and hygiene infrastructure</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">📡</div>
-                    <h3 class="feature-title">Connectivity</h3>
-                    <p class="feature-description">Road networks, internet access, and communication infrastructure</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">💧</div>
-                    <h3 class="feature-title">Drinking Water</h3>
-                    <p class="feature-description">Clean water access, water treatment, and supply systems</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">Electricity</h3>
-                    <p class="feature-description">Power supply, street lighting, and electrical infrastructure</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🛠️</div>
-                    <h3 class="feature-title">Skill Development</h3>
-                    <p class="feature-description">Vocational training, capacity building, and employment programs</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">💼</div>
-                    <h3 class="feature-title">Livelihood</h3>
-                    <p class="feature-description">Economic opportunities, entrepreneurship support, and income generation</p>
-                </div>
+            <div class="grid grid-4">
+                <article class="card"><div class="icon-pill">🎓</div><h3>Education</h3><p>Schools, teachers, and learning resources.</p></article>
+                <article class="card"><div class="icon-pill">🏥</div><h3>Healthcare</h3><p>Primary care access and public health support.</p></article>
+                <article class="card"><div class="icon-pill">🚿</div><h3>Sanitation</h3><p>Toilets, hygiene, and waste systems.</p></article>
+                <article class="card"><div class="icon-pill">📡</div><h3>Connectivity</h3><p>Road and communication infrastructure.</p></article>
+                <article class="card"><div class="icon-pill">💧</div><h3>Drinking Water</h3><p>Safe access and reliable supply.</p></article>
+                <article class="card"><div class="icon-pill">⚡</div><h3>Electricity</h3><p>Power availability and safety.</p></article>
+                <article class="card"><div class="icon-pill">🛠️</div><h3>Skill Development</h3><p>Training and employability initiatives.</p></article>
+                <article class="card"><div class="icon-pill">💼</div><h3>Livelihood</h3><p>Income opportunities and local enterprise.</p></article>
             </div>
         </div>
     </section>
 
-    <!-- Statistics Section -->
+    <section class="section section-muted">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Platform Features</h2>
+                <p class="section-description">Tools designed for village-level planning, execution, and oversight.</p>
+            </div>
+            <div class="grid grid-3">
+                <article class="card"><h3>Village Tracking</h3><p>Register and monitor village status with structured baseline data.</p></article>
+                <article class="card"><h3>Gap Assessment</h3><p>Run detailed assessments across all PM-AJAY focus categories.</p></article>
+                <article class="card"><h3>Analytics & Reports</h3><p>Use dashboards and reports to guide interventions and reviews.</p></article>
+                <article class="card"><h3>Problem Reporting</h3><p>Capture local issues quickly and follow progress to resolution.</p></article>
+                <article class="card"><h3>Project Management</h3><p>Track tasks, milestones, and implementation status by village.</p></article>
+                <article class="card"><h3>Role-Based Access</h3><p>Secure workflows for viewers, assessors, coordinators, and admins.</p></article>
+            </div>
+        </div>
+    </section>
+
     <section class="section section-accent">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Impact by Numbers</h2>
-                <p class="section-description">
-                    Measuring our progress in transforming communities
-                </p>
+                <p class="section-description">A snapshot of ongoing transformation.</p>
             </div>
-
-            <div class="stats-container">
-                <div class="stat-item">
-                    <div class="stat-number">500+</div>
-                    <div class="stat-label">Villages Covered</div>
-                </div>
-                
-                <div class="stat-item">
-                    <div class="stat-number">2,500+</div>
-                    <div class="stat-label">Gaps Identified</div>
-                </div>
-                
-                <div class="stat-item">
-                    <div class="stat-number">1,200+</div>
-                    <div class="stat-label">Projects Completed</div>
-                </div>
-                
-                <div class="stat-item">
-                    <div class="stat-number">85%</div>
-                    <div class="stat-label">Community Satisfaction</div>
-                </div>
+            <div class="stats-grid">
+                <article class="stat-card"><p class="stat-number">500+</p><p class="stat-label">Villages Covered</p></article>
+                <article class="stat-card"><p class="stat-number">2,500+</p><p class="stat-label">Gaps Identified</p></article>
+                <article class="stat-card"><p class="stat-number">1,200+</p><p class="stat-label">Projects Completed</p></article>
+                <article class="stat-card"><p class="stat-number">85%</p><p class="stat-label">Community Satisfaction</p></article>
             </div>
         </div>
     </section>
 
-    <!-- Call to Action Section -->
-    <section class="section section-secondary" style="text-align: center;">
+    <section class="section">
         <div class="container">
-            <h2 class="section-title mb-4">Ready to Make a Difference?</h2>
-            <p class="section-description mb-8">
-                Join us in transforming communities and building a better future for all.
-            </p>
-            
-            <div class="flex justify-center gap-4 flex-wrap">
-                <a href="{% url 'login' %}" class="btn-hero-primary">
-                    Start Contributing Today
-                </a>
-                <a href="{% url 'public_dashboard' %}" class="btn-hero-secondary">
-                    View Progress Dashboard
-                </a>
-            </div>
-        </div>
-    </section>
-                    <div class="focus-icon">🚽</div>
-                    <p class="focus-title">Sanitation</p>
-                </div>
-                <div class="focus-card">
-                    <div class="focus-icon">⚡</div>
-                    <p class="focus-title">Electricity</p>
-                </div>
-                <div class="focus-card">
-                    <div class="focus-icon">🛣️</div>
-                    <p class="focus-title">Connectivity</p>
-                </div>
-                <div class="focus-card">
-                    <div class="focus-icon">💧</div>
-                    <p class="focus-title">Water Supply</p>
-                </div>
-                <div class="focus-card">
-                    <div class="focus-icon">🏭</div>
-                    <p class="focus-title">Skill Dev.</p>
-                </div>
-                <div class="focus-card">
-                    <div class="focus-icon">🌾</div>
-                    <p class="focus-title">Livelihood</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works Section -->
-    <section class="section section-white">
-        <div class="container">
-            <div class="text-center" style="margin-bottom: 4rem;">
+            <div class="section-header">
                 <h2 class="section-title">How It Works</h2>
-                <p class="section-text max-w-3xl">
-                    A simple 4-step process to identify gaps and transform your village into an Adarsh Gram
-                </p>
+                <p class="section-description">A practical four-step process from registration to measurable outcomes.</p>
             </div>
-            
-            <div class="grid-4">
-                <!-- Step 1 -->
-                <div class="step-card">
-                    <div class="step-number">
-                        <span class="step-number-text">1</span>
-                    </div>
-                    <h3 class="step-title">Register Village</h3>
-                    <p class="step-text">
-                        Create an account and register your SC-majority village with basic demographic and geographic information.
-                    </p>
-                </div>
-                
-                <!-- Step 2 -->
-                <div class="step-card">
-                    <div class="step-number">
-                        <span class="step-number-text">2</span>
-                    </div>
-                    <h3 class="step-title">Conduct Assessment</h3>
-                    <p class="step-text">
-                        Complete comprehensive gap assessments across 10+ categories covering all PM-AJAY focus areas.
-                    </p>
-                </div>
-                
-                <!-- Step 3 -->
-                <div class="step-card">
-                    <div class="step-number">
-                        <span class="step-number-text">3</span>
-                    </div>
-                    <h3 class="step-title">Analyze Data</h3>
-                    <p class="step-text">
-                        View real-time analytics, gap reports, and prioritized recommendations for infrastructure development.
-                    </p>
-                </div>
-                
-                <!-- Step 4 -->
-                <div class="step-card">
-                    <div class="step-number">
-                        <span class="step-number-text">4</span>
-                    </div>
-                    <h3 class="step-title">Track Progress</h3>
-                    <p class="step-text">
-                        Monitor project execution, report problems, and track village transformation towards Adarsh Gram status.
-                    </p>
-                </div>
+            <div class="steps-grid">
+                <article class="step-card">
+                    <span class="step-index">1</span>
+                    <h3>Register Village</h3>
+                    <p>Create an account and add baseline village details.</p>
+                </article>
+                <article class="step-card">
+                    <span class="step-index">2</span>
+                    <h3>Conduct Assessment</h3>
+                    <p>Identify gaps across all relevant development categories.</p>
+                </article>
+                <article class="step-card">
+                    <span class="step-index">3</span>
+                    <h3>Analyze Findings</h3>
+                    <p>Review reports and prioritize actionable interventions.</p>
+                </article>
+                <article class="step-card">
+                    <span class="step-index">4</span>
+                    <h3>Track Progress</h3>
+                    <p>Monitor implementation and readiness over time.</p>
+                </article>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="section section-gray">
+    <section class="section section-muted">
         <div class="container">
-            <div class="text-center" style="margin-bottom: 4rem;">
-                <h2 class="section-title">Comprehensive Platform Features</h2>
-                <p class="section-text max-w-3xl">
-                    Everything you need to identify gaps, plan interventions, and achieve Adarsh Gram declaration
-                </p>
+            <div class="section-header">
+                <h2 class="section-title">Who Uses This Platform</h2>
+                <p class="section-description">Role-based access for transparent and coordinated development.</p>
             </div>
-
-            <div class="grid-3">
-                <!-- Feature 1 -->
-                <div class="feature-card">
-                    <h3 class="feature-title">Village Tracking</h3>
-                    <p class="feature-text">
-                        Register and monitor villages with comprehensive data on infrastructure, demographics, and development status.
-                    </p>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="feature-card">
-                    <h3 class="feature-title">Gap Assessment</h3>
-                    <p class="feature-text">
-                        Conduct detailed assessments across 10+ categories to identify development gaps and prioritize interventions.
-                    </p>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="feature-card">
-                    <h3 class="feature-title">Real-time Analytics & Reports</h3>
-                    <p class="feature-text">
-                        Track progress with dynamic dashboards, gap analysis reports, and data visualizations to monitor Adarsh Gram readiness.
-                    </p>
-                </div>
-
-                <!-- Feature 4 -->
-                <div class="feature-card">
-                    <h3 class="feature-title">Problem Reporting</h3>
-                    <p class="feature-text">
-                        Enable villagers and coordinators to report issues instantly and track resolution in real-time.
-                    </p>
-                </div>
-
-                <!-- Feature 5 -->
-                <div class="feature-card">
-                    <h3 class="feature-title">Project Management</h3>
-                    <p class="feature-text">
-                        Plan, execute, and monitor development projects with milestones and progress tracking.
-                    </p>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="feature-card">
-                    <h3 class="feature-title">Role-Based Access</h3>
-                    <p class="feature-text">
-                        Secure, role-based system for viewers, assessors, coordinators, and administrators with proper permissions.
-                    </p>
-                </div>
+            <div class="grid grid-4">
+                <article class="card"><h3>Viewer</h3><p>Access village status, reports, and key progress indicators.</p></article>
+                <article class="card"><h3>Assessor</h3><p>Conduct and update structured gap assessments.</p></article>
+                <article class="card"><h3>Coordinator</h3><p>Manage projects and resolve local implementation issues.</p></article>
+                <article class="card"><h3>Administrator</h3><p>Oversee users, approvals, and overall platform governance.</p></article>
             </div>
         </div>
     </section>
 
-    <!-- User Roles Section -->
-    <section class="section section-white">
-        <div class="container">
-            <div class="text-center" style="margin-bottom: 4rem;">
-                <h2 class="section-title">Who Can Use This Platform?</h2>
-                <p class="section-text max-w-3xl">
-                    Role-based access for different stakeholders in the village development ecosystem
-                </p>
-            </div>
-            
-            <div class="grid-4">
-                <div class="role-card">
-                    <h3 class="role-title">Viewer</h3>
-                    <p class="role-text">
-                        View village data, reports, and progress. Ideal for monitoring and research purposes.
-                    </p>
-                </div>
-                
-                <div class="role-card">
-                    <h3 class="role-title">Assessor</h3>
-                    <p class="role-text">
-                        Conduct gap assessments, update village data, and generate evaluation reports.
-                    </p>
-                </div>
-                
-                <div class="role-card">
-                    <h3 class="role-title">Coordinator</h3>
-                    <p class="role-text">
-                        Manage projects, report problems, coordinate development activities and track implementation.
-                    </p>
-                </div>
-                
-                <div class="role-card">
-                    <h3 class="role-title">Administrator</h3>
-                    <p class="role-text">
-                        Full system access, user management, village approval, and comprehensive oversight.
-                    </p>
-                </div>
+    <section class="section section-cta">
+        <div class="container" style="text-align: center; max-width: 56rem;">
+            <h2 class="section-title">Ready to Build an Adarsh Gram?</h2>
+            <p class="section-description">Join the PM-AJAY initiative and start tracking village-level transformation.</p>
+            <div class="button-row" style="margin-top: 1.5rem;">
+                <a href="{% url 'login' %}" class="btn-primary">Get Started</a>
+                <a href="{% url 'public_dashboard' %}" class="btn-secondary">View Public Dashboard</a>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="section section-dark">
-        <div class="container max-w-4xl text-center">
-            <h2 class="section-title section-title-white" style="margin-bottom: 1.5rem;">
-                Ready to Transform Your Village into an Adarsh Gram?
-            </h2>
-            <p class="section-text section-text-gray" style="margin-bottom: 2.5rem;">
-                Join the PM-AJAY initiative and be part of India's holistic rural development mission.
-            </p>
-            <div class="cta-buttons">
-                <a href="{% url 'login' %}" class="btn" style="padding: 1.25rem 2.5rem; background: #f59e0b; color: #1f2937; font-weight: 700; font-size: 1.125rem; border-radius: 0.75rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-                    Get Started
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div>
-                    <h3 class="footer-title">About PM-AJAY</h3>
-                    <p class="footer-text">
-                        Pradhan Mantri Anusuchit Jaati Abhyudaya Yojana aims to develop SC-majority villages into Adarsh Grams through holistic infrastructure development.
-                    </p>
+                    <h3>About PM-AJAY</h3>
+                    <p>PM-AJAY supports holistic development of SC-majority villages into Adarsh Grams through structured planning and implementation.</p>
                 </div>
                 <div>
-                    <h3 class="footer-title">Quick Links</h3>
-                    <ul class="footer-links">
-                        <li class="footer-link">
-                            <a href="{% url 'login' %}" style="color: inherit; text-decoration: none;">Register Village</a>
-                        </li>
-                        <li class="footer-link">
-                            <a href="{% url 'login' %}" style="color: inherit; text-decoration: none;">Sign In</a>
-                        </li>
-                        <li class="footer-link">Features</li>
-                        <li class="footer-link">How It Works</li>
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="{% url 'login' %}">Register Village</a></li>
+                        <li><a href="{% url 'login' %}">Sign In</a></li>
+                        <li><a href="{% url 'public_dashboard' %}">Public Dashboard</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="footer-title">Contact</h3>
-                    <p class="footer-text">
-                        For support and queries regarding the platform, please contact your district coordinator or administrator.
-                    </p>
+                    <h3>Contact</h3>
+                    <p>For support and operational help, connect with your district coordinator or platform administrator.</p>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p class="footer-bottom-text">
-                    ┬⌐ 2025 PM-AJAY Adarsh Gram Platform. Building a better tomorrow, one village at a time.
-                </p>
-            </div>
+            <div class="footer-bottom">&copy; 2025 PM-AJAY Adarsh Gram Platform. Building a better tomorrow, one village at a time.</div>
         </div>
     </footer>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const dashboardBtn = document.getElementById('publicDashboardBtn');
-            const overlay = document.getElementById('spotlightOverlay');
-            const spotlightTriggerBtn = document.getElementById('spotlightTriggerBtn');
-            let isSpotlightActive = false;
-            let originalParent = null;
-            let originalNextSibling = null;
+        document.addEventListener("DOMContentLoaded", function () {
+            var heroButtons = document.querySelectorAll(".btn-primary, .btn-secondary");
 
-            console.log('Spotlight script loaded');
-            console.log('Dashboard button:', dashboardBtn);
-            console.log('Overlay:', overlay);
-            console.log('Trigger button:', spotlightTriggerBtn);
-
-            // Spotlight trigger button functionality
-            spotlightTriggerBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log('Trigger button clicked');
-                
-                if (!isSpotlightActive) {
-                    console.log('Activating spotlight');
-                    
-                    // Save original position
-                    originalParent = dashboardBtn.parentNode;
-                    originalNextSibling = dashboardBtn.nextSibling;
-                    
-                    // Move button to body (outside all stacking contexts)
-                    document.body.appendChild(dashboardBtn);
-                    
-                    // Activate spotlight effect
-                    overlay.classList.add('active');
-                    dashboardBtn.classList.add('spotlight-active');
-                    isSpotlightActive = true;
-                    console.log('Spotlight activated - overlay classes:', overlay.className);
-                    console.log('Button classes:', dashboardBtn.className);
-                } else {
-                    console.log('Deactivating spotlight');
-                    
-                    // Deactivate spotlight effect
-                    overlay.classList.remove('active');
-                    dashboardBtn.classList.remove('spotlight-active');
-                    
-                    // Move button back to original position
-                    if (originalParent) {
-                        if (originalNextSibling) {
-                            originalParent.insertBefore(dashboardBtn, originalNextSibling);
-                        } else {
-                            originalParent.appendChild(dashboardBtn);
-                        }
-                    }
-                    
-                    isSpotlightActive = false;
-                }
-            });
-
-            // Click overlay to deactivate spotlight
-            overlay.addEventListener('click', function() {
-                console.log('Overlay clicked');
-                overlay.classList.remove('active');
-                dashboardBtn.classList.remove('spotlight-active');
-                
-                // Move button back to original position
-                if (originalParent && isSpotlightActive) {
-                    if (originalNextSibling) {
-                        originalParent.insertBefore(dashboardBtn, originalNextSibling);
-                    } else {
-                        originalParent.appendChild(dashboardBtn);
-                    }
-                }
-                
-                isSpotlightActive = false;
-            });
-
-            // ESC key to deactivate spotlight
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && isSpotlightActive) {
-                    console.log('ESC pressed');
-                    overlay.classList.remove('active');
-                    dashboardBtn.classList.remove('spotlight-active');
-                    
-    <!-- Optional: Add smooth scrolling JavaScript -->
-    <script>
-        // Smooth scrolling for scroll indicator
-        document.querySelector('.scroll-indicator')?.addEventListener('click', function() {
-            const nextSection = document.querySelector('.section');
-            if (nextSection) {
-                nextSection.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-
-        // Add loading animation for CTA buttons
-        document.querySelectorAll('.btn-hero-primary, .btn-hero-secondary').forEach(button => {
-            button.addEventListener('click', function(e) {
-                if (!this.classList.contains('loading')) {
-                    this.classList.add('loading');
-                    this.style.opacity = '0.8';
-                    this.style.cursor = 'wait';
-                    
-                    // Reset after navigation or timeout
-                    setTimeout(() => {
-                        this.classList.remove('loading');
-                        this.style.opacity = '1';
-                        this.style.cursor = 'pointer';
-                    }, 2000);
-                }
+            heroButtons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                    button.style.opacity = "0.85";
+                    setTimeout(function () {
+                        button.style.opacity = "1";
+                    }, 250);
+                });
             });
         });
     </script>
-
 </body>
 </html>

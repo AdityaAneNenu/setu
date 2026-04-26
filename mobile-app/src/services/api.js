@@ -3,7 +3,11 @@
 // Uses Firebase Firestore directly with Django sync
 // Primary: Firebase Firestore, Secondary: Django/Railway PostgreSQL
 
+<<<<<<< HEAD
 import { villagesService, gapsService, uploadService } from "./firestore";
+=======
+import { villagesService, gapsService } from "./firestore";
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 import {
   loginUser,
   logoutUser,
@@ -12,10 +16,20 @@ import {
 } from "./authService";
 import { API_CONFIG } from "../config/api";
 import {
+<<<<<<< HEAD
   addToSyncQueue,
   processSyncQueue,
   getSyncQueueStatus,
 } from "./syncQueue";
+=======
+  createOfflineComplaint,
+  createOfflineResolution,
+  getOfflineSyncSummary,
+  findComplaintByPhotoHash,
+} from "./offlineDb";
+import { persistCaptureFile } from "./offlineFileStore";
+import { triggerOfflineSyncNow } from "./offlineSyncEngine";
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
 // Helper to get Firebase auth token for Django API calls
 const getFirebaseAuthHeaders = async ({ includeContentType = true } = {}) => {
@@ -50,35 +64,45 @@ export const villagesApi = {
 // GAPS API
 // ============================================
 export const gapsApi = {
-  // Submit a new gap (with optional media upload)
-  // Dual-write: Creates in Firestore first, then syncs to Django/Railway PostgreSQL
+  // Offline-first complaint capture.
+  // Captures locally first and syncs in background when network is available.
   submit: async (gapData) => {
-    let audioUrl = null;
-    let imageUrl = null;
-    const tempId = `temp_${Date.now()}`;
-
-    // Use already uploaded URLs if provided (from AI processing)
-    if (gapData.audioUrl) {
-      audioUrl = gapData.audioUrl;
-    } else if (gapData.audioUri) {
-      // Upload audio file if URI provided and not already uploaded
-      audioUrl = await uploadService.uploadAudio(gapData.audioUri, tempId);
+    if (!gapData?.imageUri) {
+      throw new Error("Surrounding photo is required before saving complaint offline.");
+    }
+    if (gapData?.latitude == null || gapData?.longitude == null) {
+      throw new Error("GPS location is required before saving complaint offline.");
     }
 
-    if (gapData.imageUrl) {
-      imageUrl = gapData.imageUrl;
-    } else if (gapData.imageUri) {
-      // Upload image file if URI provided and not already uploaded
-      imageUrl = await uploadService.uploadImage(gapData.imageUri, tempId);
+    const offlineLocalId = gapData.local_id || `cmp_${Date.now()}`;
+
+    const persistedPhoto = await persistCaptureFile({
+      sourceUri: gapData.imageUri,
+      bucket: "complaint_photos",
+      localId: `${offlineLocalId}_photo`,
+      fallbackExt: "jpg",
+    });
+
+    let persistedAudio = null;
+    if (gapData.audioUri) {
+      persistedAudio = await persistCaptureFile({
+        sourceUri: gapData.audioUri,
+        bucket: "complaint_audio",
+        localId: `${offlineLocalId}_audio`,
+        fallbackExt: "m4a",
+      });
     }
 
-    // Prepare gap data
-    const gapPayload = {
+    const duplicatePhoto = await findComplaintByPhotoHash(persistedPhoto.md5);
+
+    const capture = await createOfflineComplaint({
+      local_id: offlineLocalId,
       village_id: gapData.village_id,
       village_name: gapData.village_name,
       description: gapData.description || "",
       gap_type: gapData.gap_type || "other",
       severity: gapData.severity || "medium",
+<<<<<<< HEAD
       input_method: gapData.input_method || "text",
       recommendations: gapData.recommendations || "",
       audio_url: audioUrl,
@@ -160,6 +184,28 @@ export const gapsApi = {
       message: "Gap created successfully",
       id: firestoreId,
       django_id: djangoId,
+=======
+      input_method: gapData.input_method || "image",
+      photo_uri: persistedPhoto.uri,
+      photo_md5: persistedPhoto.md5,
+      audio_uri: persistedAudio?.uri || null,
+      latitude: gapData.latitude,
+      longitude: gapData.longitude,
+      gps_accuracy: gapData.gps_accuracy ?? null,
+      gps_samples_json: gapData.gps_samples_json || null,
+    });
+
+    triggerOfflineSyncNow().catch(() => {});
+
+    return {
+      success: true,
+      message: "Captured offline. Will sync automatically when internet is available.",
+      local_id: capture.local_id,
+      sync_status: capture.sync_status,
+      warning: duplicatePhoto
+        ? "Same image appears to be reused from a previous complaint."
+        : null,
+>>>>>>> 6a0a424 (Many changes in verification modules.)
       gap_type: gapData.gap_type,
       severity: gapData.severity,
       description: gapData.description,
@@ -207,6 +253,96 @@ export const gapsApi = {
     return { success: true, status };
   },
 
+<<<<<<< HEAD
+=======
+  getMobileGaps: async () => {
+    const headers = await getFirebaseAuthHeaders();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const endpoint = `${API_CONFIG.DJANGO_URL}/api/mobile/gaps/`;
+    console.log("Fetching mobile gaps from:", endpoint);
+    const response = await fetch(endpoint, {
+      headers,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const result = await response.json().catch(() => ({}));
+    console.log("API RESPONSE:", result);
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error || `Failed to fetch gaps (${response.status})`);
+    }
+
+    return {
+      open: result.open || [],
+      in_progress: result.in_progress || [],
+      inProgress: result.in_progress || [],
+      resolved: result.resolved || [],
+    };
+  },
+
+  resolveMobileGap: async (
+    gapId,
+    {
+      proofPhotoUri,
+      latitude,
+      longitude,
+      personPhotoUri = null,
+      gpsAccuracy = null,
+      gpsSamples = null,
+      complaintLocalId = null,
+    } = {},
+  ) => {
+    if (!proofPhotoUri) {
+      throw new Error("Proof photo is required before resolving a gap.");
+    }
+    if (latitude == null || longitude == null) {
+      throw new Error("GPS coordinates are required before resolving a gap.");
+    }
+
+    const localId = `res_${Date.now()}`;
+    const closurePhoto = await persistCaptureFile({
+      sourceUri: proofPhotoUri,
+      bucket: "resolution_photos",
+      localId: `${localId}_proof`,
+      fallbackExt: "jpg",
+    });
+
+    let personPhoto = null;
+    if (personPhotoUri) {
+      personPhoto = await persistCaptureFile({
+        sourceUri: personPhotoUri,
+        bucket: "resolution_people",
+        localId: `${localId}_person`,
+        fallbackExt: "jpg",
+      });
+    }
+
+    const capture = await createOfflineResolution({
+      local_id: localId,
+      complaint_local_id: complaintLocalId || null,
+      complaint_server_id: gapId || null,
+      closure_photo_uri: closurePhoto.uri,
+      closure_photo_md5: closurePhoto.md5,
+      person_photo_uri: personPhoto?.uri || null,
+      latitude,
+      longitude,
+      gps_accuracy: gpsAccuracy,
+      gps_samples_json: gpsSamples ? JSON.stringify(gpsSamples) : null,
+    });
+
+    triggerOfflineSyncNow().catch(() => {});
+
+    return {
+      success: true,
+      status: "PENDING_UPLOAD",
+      message: "Resolution captured offline and queued for sync.",
+      local_id: capture.local_id,
+      sync_status: capture.sync_status,
+    };
+  },
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
   getStats: () => gapsService.getStats(),
 };
 
@@ -282,6 +418,7 @@ export const closureApi = {
     }
 
     return result;
+<<<<<<< HEAD
   },
 };
 
@@ -404,6 +541,8 @@ export const complaintsApi = {
       );
     }
     return result;
+=======
+>>>>>>> 6a0a424 (Many changes in verification modules.)
   },
 };
 
@@ -430,11 +569,17 @@ export const dashboardApi = {
 // SYNC API - Process pending Django syncs
 // ============================================
 export const syncApi = {
+<<<<<<< HEAD
   // Process all pending sync operations
   processQueue: () => processSyncQueue(),
 
   // Get sync queue status
   getStatus: () => getSyncQueueStatus(),
+=======
+  processQueue: () => triggerOfflineSyncNow(),
+
+  getStatus: () => getOfflineSyncSummary(),
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 };
 
 export default {
@@ -442,7 +587,10 @@ export default {
   gapsApi,
   authApi,
   closureApi,
+<<<<<<< HEAD
   complaintsApi,
+=======
+>>>>>>> 6a0a424 (Many changes in verification modules.)
   dashboardApi,
   syncApi,
 };

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SETU
 
 SETU is a Django-based rural infrastructure gap management platform. It supports mobile submissions, AI-assisted media analysis, workflow tracking, and closure verification using geo-tagged photos and user selfies.
@@ -77,14 +78,103 @@ SETU is a Django-based rural infrastructure gap management platform. It supports
 - Git
 
 ### Install
+=======
+﻿# SETU
+
+SETU is a rural infrastructure and complaint lifecycle platform with a Django backend and an Expo React Native mobile app.
+
+It supports:
+- Gap reporting and lifecycle tracking (open -> in progress -> resolved)
+- Complaint workflow management for post office and PM-AJAY operations
+- Mobile-first sync between Firestore and Django APIs
+- Geo-tagged closure proof for gaps
+- Complaint closure verification using submission-time complaintee photo + GPS
+- AI-assisted media analysis for image/audio submissions
+
+## Tech Stack
+
+Backend:
+- Django 4.2
+- Django REST Framework
+- SQLite (default local), PostgreSQL via DATABASE_URL (production)
+- Firebase Admin SDK for auth + Firestore sync
+- Gemini + AssemblyAI integrations for AI/media processing
+
+Mobile:
+- Expo + React Native
+- Firebase Auth + Firestore
+- Camera, location, and media upload flows
+
+## Repository Structure
+
+- config/: Django project configuration (settings, root URLs, WSGI/ASGI)
+- core/: Main app (models, views, workflow, APIs, templates, tests)
+- core/api_urls.py: REST API routes used by web/mobile
+- core/urls.py: Web routes and workflow pages
+- mobile-app/: Expo React Native app
+- locale/: Django translation files
+- docs/: Project documentation (if present)
+
+## Key Domain Flows
+
+### 1. Gap Flow
+- Gaps can be submitted from web or mobile.
+- Mobile stores first in Firestore and then syncs to Django via /api/mobile/gaps/sync/.
+- Gap status updates can sync to Django and are tracked with GapStatusAuditLog.
+- Closing a gap with proof uses:
+  - POST /api/gaps/<gap_id>/close-with-proof/
+  - Required: closure photo URL + closure GPS
+  - Optional: closure selfie URL
+  - Distance validation checks closure GPS against original gap GPS.
+
+### 2. Mobile Gap Flow
+- Mobile app uses Gap as the only source of truth.
+- Mobile gap list endpoint returns grouped buckets:
+  - GET /api/mobile/gaps/
+  - Response keys: open, in_progress, resolved
+- Mobile gap resolve endpoint:
+  - POST /api/mobile/gaps/<gap_id>/resolve/
+
+### 3. AI Media Analysis
+- Unified endpoint: POST /api/analyze-media/
+- Supports image/audio analysis and returns structured suggestion fields.
+
+## Local Backend Setup
+
+Prerequisites:
+- Python 3.10+ (project currently works with newer versions too)
+- pip
+
+Create environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate:
+- Windows PowerShell: .venv\Scripts\Activate.ps1
+- Windows CMD: .venv\Scripts\activate.bat
+- macOS/Linux: source .venv/bin/activate
+
+Install dependencies:
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
 ```bash
 python -m venv .venv
 pip install -r requirements.txt
+<<<<<<< HEAD
+=======
+```
+
+Run migrations and checks:
+
+```bash
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 python manage.py migrate
 python manage.py check
 ```
 
+<<<<<<< HEAD
 Activate the virtual environment before installing packages:
 
 - Windows PowerShell: `.venv\Scripts\Activate.ps1`
@@ -127,3 +217,92 @@ python manage.py runserver
 - The repository includes Railway deployment guidance and helper scripts.
 - `manage.py check` currently passes cleanly.
 - Legacy voice-specific documentation and test data should not be used for current deployments.
+=======
+Start server:
+
+```bash
+python manage.py runserver
+```
+
+Backend base URL (local):
+- http://127.0.0.1:8000/
+
+## Environment Variables
+
+Create a .env file in repository root.
+
+Important variables used by the backend:
+- SECRET_KEY
+- DEBUG
+- DATABASE_URL (for PostgreSQL production)
+- GEMINI_API_KEY
+- ASSEMBLYAI_API_KEY
+- FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS_PATH
+- EMAIL_* settings (if email notifications are used)
+
+Optional deployment-related variables may also be used in settings.
+
+## Mobile App Setup
+
+Prerequisites:
+- Node.js 18+
+- npm
+- Expo tooling (via npx)
+
+Install mobile dependencies:
+
+```bash
+cd mobile-app
+npm install
+```
+
+Run mobile app:
+
+```bash
+npm run start
+```
+
+Platform shortcuts:
+
+```bash
+npm run android
+npm run ios
+npm run web
+```
+
+API configuration is controlled in mobile-app/src/config/api.js.
+
+## Testing and Validation
+
+Run Django checks:
+
+```bash
+python manage.py check
+```
+
+Run backend tests:
+
+```bash
+python manage.py test
+```
+
+Run specific test modules:
+
+```bash
+python manage.py test core.tests.test_complaint_verification_flows
+python manage.py test core.tests.test_firebase_init core.tests.test_firebase_sync_privacy
+python manage.py test core.tests.test_analyze_media core.tests.test_speech_to_text_service
+```
+
+## Deployment Notes
+
+- The repo includes Railway-oriented files (Procfile, runtime, helper scripts).
+- Static/media serving differs between local and production; verify storage and media routing before go-live.
+- Firestore sync should be monitored in production to avoid drift between mobile and backend records.
+
+## Current Product Direction
+
+- Voice-verification-based closure is deprecated/removed from active flow.
+- Active verification model is photo + GPS based closure evidence for gaps and complaints.
+- SMS integration endpoints are not part of active routed functionality.
+>>>>>>> 6a0a424 (Many changes in verification modules.)

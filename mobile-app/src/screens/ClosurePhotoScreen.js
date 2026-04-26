@@ -130,6 +130,15 @@ export default function ClosurePhotoScreen({ route, navigation }) {
       );
       return;
     }
+<<<<<<< HEAD
+=======
+    if (!djangoGapId) {
+      const msg = 'This gap is not synced to the server yet. Please wait and try again.';
+      setErrorMessage(msg);
+      Alert.alert('Sync Required', msg);
+      return;
+    }
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
     setScreenState('processing');
     setErrorMessage('');

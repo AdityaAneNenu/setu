@@ -3,8 +3,14 @@ import logging
 import mimetypes
 import os
 import re
+<<<<<<< HEAD
 import time
 import math
+=======
+import threading
+import time
+from io import BytesIO
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 from urllib.parse import urlsplit
 
 from django.contrib.auth import authenticate
@@ -33,6 +39,7 @@ from .permissions import (
     CanVerifyGaps,
     CanViewAnalytics,
 )
+<<<<<<< HEAD
 
 logger = logging.getLogger(__name__)
 
@@ -87,14 +94,59 @@ def _hash_image_file(file_obj):
     return hashed
 
 
+=======
+from .utils.verification import (
+    hamming_distance_64 as _hamming_distance_64,
+    hash_image_file as _hash_image_file,
+    haversine_m as _haversine_m,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def _sync_gap_to_firestore_async(gap_id):
+    """Best-effort Firestore sync that must never block request responses."""
+    try:
+        from .firebase_utils import sync_gap_to_firestore
+
+        gap = Gap.objects.filter(id=gap_id).first()
+        if gap is None:
+            return
+        sync_gap_to_firestore(gap)
+    except Exception as fb_err:
+        logger.warning("Firebase async sync warning for gap %s: %s", gap_id, fb_err)
+
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 def _fetch_image_from_url(url):
     import requests
     from PIL import Image
     from io import BytesIO
 
+<<<<<<< HEAD
     resp = requests.get(url, timeout=10)
     resp.raise_for_status()
     return Image.open(BytesIO(resp.content))
+=======
+    max_image_bytes = 5 * 1024 * 1024
+    resp = requests.get(url, timeout=10, stream=True)
+    resp.raise_for_status()
+
+    content_length = resp.headers.get("Content-Length")
+    if content_length and int(content_length) > max_image_bytes:
+        raise ValueError("Image too large. Maximum supported size is 5 MB.")
+
+    chunks = []
+    total_bytes = 0
+    for chunk in resp.iter_content(chunk_size=64 * 1024):
+        if not chunk:
+            continue
+        total_bytes += len(chunk)
+        if total_bytes > max_image_bytes:
+            raise ValueError("Image too large. Maximum supported size is 5 MB.")
+        chunks.append(chunk)
+
+    return Image.open(BytesIO(b"".join(chunks)))
 
 
 def _is_truthy(value):
@@ -114,6 +166,189 @@ def _complaint_resolution_banner(complaint):
     if complaint.requires_selfie_gps_verification and not complaint.closure_selfie:
         return "Waiting for closure selfie and on-site GPS verification."
     return ""
+
+
+MOBILE_OPEN_STATUSES = {
+    "open",
+    "pending",
+    "received_post",
+    "sent_to_office",
+    "under_analysis",
+    "escalated",
+    "villager_unsatisfied",
+}
+MOBILE_IN_PROGRESS_STATUSES = {
+    "in_progress",
+    "needs_review",
+    "assigned_worker",
+    "work_in_progress",
+    "work_completed",
+    "sent_to_villager",
+}
+MOBILE_RESOLVED_STATUSES = {
+    "resolved",
+    "closed",
+    "villager_satisfied",
+    "case_closed",
+}
+
+
+def _mobile_ui_status(raw_status):
+    status_value = (raw_status or "").strip().lower()
+    if status_value in MOBILE_IN_PROGRESS_STATUSES:
+        return "IN_PROGRESS"
+    if status_value in MOBILE_RESOLVED_STATUSES:
+        return "RESOLVED"
+    return "OPEN"
+
+
+def _mobile_gap_status(raw_status):
+    normalized = str(raw_status or "").strip().lower().replace(" ", "_")
+    if normalized in {
+        "in_progress",
+        "in-progress",
+        "work_in_progress",
+        "needs_review",
+        "needs_retry",
+    }:
+        return "IN_PROGRESS"
+    if normalized in {"resolved", "closed", "case_closed"}:
+        return "RESOLVED"
+    return "OPEN"
+
+
+def _load_gap_image_for_ai(gap, closure_photo_url=""):
+    from PIL import Image
+
+    initial_img = None
+    closure_img = None
+
+    if gap.initial_photo_url:
+        try:
+            initial_img = _fetch_image_from_url(gap.initial_photo_url).convert("RGB")
+        except Exception as initial_err:
+            logger.warning("Could not load initial photo for gap %s: %s", gap.id, initial_err)
+
+    if closure_photo_url:
+        try:
+            closure_img = _fetch_image_from_url(closure_photo_url).convert("RGB")
+        except Exception as closure_err:
+            logger.warning("Could not load closure photo URL for gap %s: %s", gap.id, closure_err)
+
+    if closure_img is None and gap.resolution_proof:
+        try:
+            with gap.resolution_proof.open("rb") as proof_file:
+                closure_img = Image.open(BytesIO(proof_file.read())).convert("RGB")
+        except Exception as proof_err:
+            logger.warning("Could not load proof file for gap %s: %s", gap.id, proof_err)
+
+    return initial_img, closure_img
+
+
+def _compute_resolution_ai_score(gap, closure_photo_url=""):
+    """Return (score, method, note) where score is normalized in [0, 1]."""
+    initial_img, closure_img = _load_gap_image_for_ai(gap, closure_photo_url=closure_photo_url)
+    if initial_img is None or closure_img is None:
+        return None, "unavailable", "Initial or closure image not available for AI comparison"
+
+    try:
+        import cv2
+        import numpy as np
+
+        before = cv2.cvtColor(np.array(initial_img.resize((256, 256))), cv2.COLOR_RGB2BGR)
+        after = cv2.cvtColor(np.array(closure_img.resize((256, 256))), cv2.COLOR_RGB2BGR)
+
+        gray_before = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
+        gray_after = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
+
+        pixel_diff_score = float(cv2.absdiff(gray_before, gray_after).mean() / 255.0)
+
+        hist_before = cv2.calcHist([gray_before], [0], None, [64], [0, 256])
+        hist_after = cv2.calcHist([gray_after], [0], None, [64], [0, 256])
+        cv2.normalize(hist_before, hist_before)
+        cv2.normalize(hist_after, hist_after)
+        correlation = float(cv2.compareHist(hist_before, hist_after, cv2.HISTCMP_CORREL))
+        hist_change_score = max(0.0, min(1.0, (1.0 - correlation) / 2.0))
+>>>>>>> 6a0a424 (Many changes in verification modules.)
+
+        edge_before = cv2.Canny(gray_before, 80, 160)
+        edge_after = cv2.Canny(gray_after, 80, 160)
+        edge_change_score = float(cv2.absdiff(edge_before, edge_after).mean() / 255.0)
+
+<<<<<<< HEAD
+def _is_truthy(value):
+    """Normalize common truthy string/boolean values."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _complaint_resolution_banner(complaint):
+    if complaint.uses_resolution_letter and not complaint.resolution_letter_image:
+        return "Resolution letter upload is still pending."
+    if complaint.requires_selfie_gps_verification and not complaint.is_submission_verification_ready:
+        return complaint.verification_block_reason
+    if complaint.requires_selfie_gps_verification and not complaint.closure_selfie:
+        return "Waiting for closure selfie and on-site GPS verification."
+    return ""
+=======
+        score = (
+            0.55 * pixel_diff_score
+            + 0.30 * hist_change_score
+            + 0.15 * edge_change_score
+        )
+        return max(0.0, min(1.0, score)), "opencv", ""
+    except Exception as cv_err:
+        logger.warning("OpenCV AI scoring failed for gap %s: %s", gap.id, cv_err)
+
+    try:
+        from PIL import ImageChops, ImageStat
+
+        before_small = initial_img.resize((256, 256)).convert("RGB")
+        after_small = closure_img.resize((256, 256)).convert("RGB")
+        diff = ImageChops.difference(before_small, after_small)
+        stat = ImageStat.Stat(diff)
+        channel_mean = sum(stat.mean) / max(1.0, len(stat.mean))
+        score = float(channel_mean / 255.0)
+        return max(0.0, min(1.0, score)), "pillow_fallback", ""
+    except Exception as pil_err:
+        logger.warning("Pillow fallback AI scoring failed for gap %s: %s", gap.id, pil_err)
+
+    return None, "unavailable", "AI image scoring unavailable"
+
+
+def _serialize_mobile_gap(gap):
+    resolved_audio = gap.audio_url or (gap.audio_file.url if gap.audio_file else None)
+    resolved_photo = gap.closure_photo_url or (
+        gap.resolution_proof.url if gap.resolution_proof else None
+    )
+    resolution_type = gap.resolution_type or (
+        "auto" if str(gap.status).strip().lower() == "resolved" else "retry"
+    )
+    return {
+        "id": gap.id,
+        "client_local_id": gap.client_local_id,
+        "village": gap.village.name if gap.village else "",
+        "description": gap.description,
+        "severity": gap.severity,
+        "raw_status": gap.status,
+        "status": _mobile_gap_status(gap.status),
+        "created_date": gap.created_at.isoformat() if gap.created_at else None,
+        "distance_m": gap.closure_distance_m,
+        "resolution_time_minutes": gap.resolution_time_minutes,
+        "ai_score": gap.resolution_ai_score,
+        "ai_method": gap.resolution_ai_method,
+        "resolution_type": resolution_type,
+        "review_reason": gap.resolution_review_reason,
+        "media": {
+            "audio": resolved_audio,
+            "photo": resolved_photo,
+            "initial_photo": gap.initial_photo_url,
+        },
+    }
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -1361,6 +1596,7 @@ class MobileGapSyncAPIView(APIView):
         try:
             # Input validation - handle None values safely
             firestore_id = request.data.get("firestore_id")
+            local_id = (request.data.get("local_id") or request.data.get("idempotency_key") or "").strip()
             village_id = request.data.get("village_id")
             village_name = (request.data.get("village_name") or "").strip()
             description = (request.data.get("description") or "").strip()
@@ -1370,11 +1606,35 @@ class MobileGapSyncAPIView(APIView):
             recommendations = (request.data.get("recommendations") or "").strip()
             latitude = request.data.get("latitude")
             longitude = request.data.get("longitude")
+            gps_accuracy_raw = request.data.get("gps_accuracy")
             audio_url = (request.data.get("audio_url") or "").strip()
             image_url = (request.data.get("image_url") or "").strip()
             submitted_by = request.data.get("submitted_by")
             submitted_by_email = request.data.get("submitted_by_email")
             uploaded_audio_file = request.FILES.get("audio_file")
+            uploaded_image_file = request.FILES.get("image_file")
+
+            if local_id:
+                existing_gap = Gap.objects.filter(client_local_id=local_id).first()
+                if existing_gap:
+                    return Response(
+                        {
+                            "success": True,
+                            "message": "Gap already synced",
+                            "django_id": existing_gap.id,
+                            "firestore_id": firestore_id,
+                            "gap_type": existing_gap.gap_type,
+                            "severity": existing_gap.severity,
+                            "has_audio": bool(existing_gap.audio_file or existing_gap.audio_url),
+                            "audio_url": existing_gap.audio_url
+                            or (
+                                existing_gap.audio_file.url
+                                if existing_gap.audio_file
+                                else None
+                            ),
+                        },
+                        status=status.HTTP_200_OK,
+                    )
 
             # Validate Firebase UID for mobile submissions (required for anonymous access)
             if not request.user.is_authenticated and not submitted_by:
@@ -1500,6 +1760,18 @@ class MobileGapSyncAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            gps_accuracy = None
+            if gps_accuracy_raw not in (None, "", "null"):
+                try:
+                    gps_accuracy = float(gps_accuracy_raw)
+                    if gps_accuracy < 0:
+                        raise ValueError("gps_accuracy cannot be negative")
+                except (TypeError, ValueError):
+                    return Response(
+                        {"success": False, "error": "Invalid gps_accuracy format"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
             # Find or create village (with atomic operation to prevent race condition)
             village = None
             if village_id:
@@ -1530,6 +1802,7 @@ class MobileGapSyncAPIView(APIView):
             with transaction.atomic():
                 gap = Gap.objects.create(
                     village=village,
+                    client_local_id=local_id or None,
                     description=description,
                     gap_type=gap_type,
                     severity=severity,
@@ -1538,8 +1811,38 @@ class MobileGapSyncAPIView(APIView):
                     recommendations=recommendations,
                     latitude=latitude if latitude else None,
                     longitude=longitude if longitude else None,
+                    initial_gps_accuracy_m=gps_accuracy,
                     audio_url=audio_url if audio_url else None,
+                    initial_photo_url=image_url if image_url else None,
                 )
+
+                if uploaded_image_file and not gap.initial_photo_url:
+                    if uploaded_image_file.size > 25 * 1024 * 1024:
+                        return Response(
+                            {
+                                "success": False,
+                                "error": "Image file too large. Maximum size is 25MB.",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    try:
+                        from django.core.files.storage import default_storage
+
+                        uploaded_image_file.seek(0)
+                        saved_path = default_storage.save(
+                            f"initial_photos/{gap.id}_{uploaded_image_file.name}",
+                            uploaded_image_file,
+                        )
+                        gap.initial_photo_url = request.build_absolute_uri(
+                            default_storage.url(saved_path)
+                        )
+                        gap.save(update_fields=["initial_photo_url"])
+                    except Exception as upload_url_err:
+                        logger.warning(
+                            "Could not build initial photo URL for gap %s: %s",
+                            gap.id,
+                            upload_url_err,
+                        )
 
                 # Persist audio (multipart file or remote URL)
                 if uploaded_audio_file:
@@ -1845,6 +2148,361 @@ def close_gap_with_photo_proof(request, gap_id):
     )
 
 
+<<<<<<< HEAD
+=======
+@csrf_exempt
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def api_mobile_gaps(request):
+    """List gaps for mobile dashboard grouped by canonical mobile states."""
+    gaps = (
+        Gap.objects.select_related("village")
+        .only(
+            "id",
+            "village__name",
+            "description",
+            "severity",
+            "status",
+            "client_local_id",
+            "created_at",
+            "audio_url",
+            "audio_file",
+            "closure_photo_url",
+            "resolution_proof",
+            "closure_distance_m",
+            "resolution_time_minutes",
+            "resolution_ai_score",
+            "resolution_ai_method",
+            "resolution_type",
+            "resolution_review_reason",
+            "initial_photo_url",
+        )
+        .order_by("-created_at")
+    )
+
+    open_items = []
+    in_progress_items = []
+    resolved_items = []
+
+    for gap in gaps:
+        item = _serialize_mobile_gap(gap)
+        if item["status"] == "IN_PROGRESS":
+            in_progress_items.append(item)
+        elif item["status"] == "RESOLVED":
+            resolved_items.append(item)
+        else:
+            open_items.append(item)
+
+    return Response(
+        {
+            "success": True,
+            "open": open_items,
+            "in_progress": in_progress_items,
+            "resolved": resolved_items,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@csrf_exempt
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def api_mobile_resolve_gap(request, gap_id):
+    """Resolve a gap only after rule checks and free AI image validation."""
+    from django.utils import timezone
+    from .models import GapStatusAuditLog
+
+    max_distance_m = 150.0
+    max_gps_accuracy_m = 60.0
+    ai_change_threshold = 0.22
+
+    gap = get_object_or_404(Gap, id=gap_id)
+    old_status = gap.status
+
+    if str(old_status).strip().lower() == "resolved":
+        return Response(
+            {
+                "success": True,
+                "gap_id": gap.id,
+                "status": "RESOLVED",
+                "message": "Gap is already resolved",
+                "resolution_type": gap.resolution_type or "auto",
+                "ai_score": gap.resolution_ai_score,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    proof_photo = (
+        request.FILES.get("photo")
+        or request.FILES.get("closure_photo")
+        or request.FILES.get("resolution_proof")
+    )
+    resolution_local_id = (
+        request.data.get("local_id")
+        or request.data.get("idempotency_key")
+        or ""
+    ).strip()
+    closure_photo_url = (request.data.get("closure_photo_url") or "").strip()
+    person_photo_url = (
+        (request.data.get("person_photo_url") or "").strip()
+        or (request.data.get("closure_selfie_url") or "").strip()
+    )
+
+    lat_raw = request.data.get("latitude")
+    lng_raw = request.data.get("longitude")
+    if lat_raw in (None, "", "null"):
+        lat_raw = request.data.get("closure_latitude")
+    if lng_raw in (None, "", "null"):
+        lng_raw = request.data.get("closure_longitude")
+    gps_accuracy_raw = request.data.get("gps_accuracy")
+
+    if resolution_local_id and gap.resolution_client_id == resolution_local_id:
+        return Response(
+            {
+                "success": True,
+                "gap_id": gap.id,
+                "status": "RESOLVED" if gap.status == "resolved" else "NEEDS_RETRY",
+                "message": "Resolution already captured for this offline record",
+                "resolution_type": gap.resolution_type or "retry",
+                "ai_score": gap.resolution_ai_score,
+                "ai_method": gap.resolution_ai_method,
+                "review_reason": gap.resolution_review_reason,
+                "distance_m": gap.closure_distance_m,
+                "resolution_time_minutes": gap.resolution_time_minutes,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    if not proof_photo and not closure_photo_url:
+        return Response(
+            {
+                "success": False,
+                "error": "Proof photo is required before resolving a gap",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if closure_photo_url and not closure_photo_url.startswith(("http://", "https://")):
+        return Response(
+            {
+                "success": False,
+                "error": "Invalid closure_photo_url format",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if lat_raw in (None, "", "null") or lng_raw in (None, "", "null"):
+        return Response(
+            {
+                "success": False,
+                "error": "latitude and longitude are required before resolving a gap",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        lat = float(lat_raw)
+        lng = float(lng_raw)
+        if not (-90 <= lat <= 90):
+            raise ValueError("Latitude out of range (-90 to 90)")
+        if not (-180 <= lng <= 180):
+            raise ValueError("Longitude out of range (-180 to 180)")
+    except (TypeError, ValueError) as coord_err:
+        return Response(
+            {
+                "success": False,
+                "error": f"Invalid GPS coordinates: {coord_err}",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    closure_gps_accuracy = None
+    if gps_accuracy_raw not in (None, "", "null"):
+        try:
+            closure_gps_accuracy = float(gps_accuracy_raw)
+            if closure_gps_accuracy < 0:
+                raise ValueError("gps_accuracy cannot be negative")
+        except (TypeError, ValueError) as gps_err:
+            return Response(
+                {
+                    "success": False,
+                    "error": f"Invalid gps_accuracy: {gps_err}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    if gap.latitude is None or gap.longitude is None:
+        return Response(
+            {
+                "success": False,
+                "error": "Initial complaint location is missing; resolution cannot be validated",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        distance_m = _haversine_m(float(gap.latitude), float(gap.longitude), lat, lng)
+    except Exception as distance_err:
+        return Response(
+            {
+                "success": False,
+                "error": f"Failed to validate closure location: {distance_err}",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    now = timezone.now()
+    elapsed_minutes = max(0.0, (now - gap.created_at).total_seconds() / 60.0)
+
+    if proof_photo is not None:
+        gap.resolution_proof = proof_photo
+    if closure_photo_url:
+        gap.closure_photo_url = closure_photo_url
+    if person_photo_url:
+        gap.closure_selfie_url = person_photo_url
+    gap.closure_latitude = lat
+    gap.closure_longitude = lng
+    gap.closure_photo_timestamp = now
+    gap.closure_distance_m = float(distance_m)
+    gap.resolution_time_minutes = float(elapsed_minutes)
+    gap.closure_gps_accuracy_m = closure_gps_accuracy
+    gap.resolution_client_id = resolution_local_id or None
+
+    base_update_fields = [
+        "closure_photo_url",
+        "closure_selfie_url",
+        "closure_latitude",
+        "closure_longitude",
+        "closure_photo_timestamp",
+        "closure_distance_m",
+        "resolution_time_minutes",
+        "closure_gps_accuracy_m",
+        "resolution_client_id",
+    ]
+    if proof_photo is not None:
+        base_update_fields.append("resolution_proof")
+    gap.save(update_fields=base_update_fields)
+
+    if proof_photo is not None and not gap.closure_photo_url:
+        try:
+            gap.closure_photo_url = request.build_absolute_uri(gap.resolution_proof.url)
+            gap.save(update_fields=["closure_photo_url"])
+        except Exception as url_err:
+            logger.warning(
+                "Could not build closure photo URL for gap %s: %s", gap.id, url_err
+            )
+
+    ai_score, ai_method, ai_note = _compute_resolution_ai_score(
+        gap,
+        closure_photo_url=gap.closure_photo_url or closure_photo_url,
+    )
+    gap.resolution_ai_score = ai_score
+    gap.resolution_ai_method = ai_method
+
+    failure_reasons = []
+    if distance_m > max_distance_m:
+        failure_reasons.append("Too far from original location")
+    if closure_gps_accuracy is not None and closure_gps_accuracy > max_gps_accuracy_m:
+        failure_reasons.append("Poor GPS accuracy")
+
+    # AI scoring is best-effort. Keep hard validation on GPS/time/accuracy,
+    # but do not block closure when visual scoring is unavailable.
+    if ai_score is not None and ai_score < ai_change_threshold:
+        failure_reasons.append("Low visual change detected")
+
+    if not failure_reasons:
+        decision_status = "resolved"
+        resolution_type = "auto"
+        review_reason = ""
+    else:
+        decision_status = "needs_review"
+        resolution_type = "retry"
+        review_reason = ", ".join(failure_reasons)
+
+    gap.status = decision_status
+    gap.resolution_type = resolution_type
+    gap.resolution_review_reason = review_reason
+    gap.resolved_at = now if decision_status == "resolved" else None
+    gap.actual_completion = now.date() if decision_status == "resolved" else None
+    if request.user and request.user.is_authenticated:
+        gap.resolved_by = request.user
+
+    gap.save(
+        update_fields=[
+            "status",
+            "resolution_type",
+            "resolution_review_reason",
+            "resolution_ai_score",
+            "resolution_ai_method",
+            "resolved_at",
+            "actual_completion",
+            "resolved_by",
+        ]
+    )
+
+    GapStatusAuditLog.objects.create(
+        gap=gap,
+        old_status=old_status,
+        new_status=decision_status,
+        changed_by=request.user if (request.user and request.user.is_authenticated) else None,
+        notes=(
+            f"Rule-based resolution check. distance_m={distance_m:.2f}, "
+            f"time_minutes={elapsed_minutes:.2f}, ai_score={ai_score}, "
+            f"gps_accuracy={closure_gps_accuracy}, ai_method={ai_method}, "
+            f"decision={decision_status}. {review_reason}".strip()
+        ),
+        source="mobile_app",
+    )
+
+    try:
+        sync_thread = threading.Thread(
+            target=_sync_gap_to_firestore_async,
+            args=(gap.id,),
+            daemon=True,
+            name=f"sync-gap-{gap.id}",
+        )
+        sync_thread.start()
+    except Exception as sync_err:
+        logger.warning(
+            "Could not start Firebase sync thread for resolved gap %s: %s",
+            gap.id,
+            sync_err,
+        )
+
+    return Response(
+        {
+            "success": True,
+            "gap_id": gap.id,
+            "status": "RESOLVED" if gap.status == "resolved" else "NEEDS_RETRY",
+            "message": (
+                "AI verified. Gap marked as resolved"
+                if gap.status == "resolved"
+                else "Resolution proof captured. Retry capture required"
+            ),
+            "closure_latitude": float(gap.closure_latitude)
+            if gap.closure_latitude is not None
+            else None,
+            "closure_longitude": float(gap.closure_longitude)
+            if gap.closure_longitude is not None
+            else None,
+            "gps_accuracy": closure_gps_accuracy,
+            "max_gps_accuracy_m": max_gps_accuracy_m,
+            "closure_photo_url": gap.closure_photo_url,
+            "distance_m": round(distance_m, 2),
+            "resolution_time_minutes": round(elapsed_minutes, 2),
+            "ai_score": ai_score,
+            "ai_threshold": ai_change_threshold,
+            "ai_method": ai_method,
+            "resolution_type": resolution_type,
+            "review_reason": review_reason,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
@@ -1859,11 +2517,19 @@ def api_mobile_submit_complaint(request):
     submission_latitude = request.data.get("submission_latitude")
     submission_longitude = request.data.get("submission_longitude")
 
+<<<<<<< HEAD
     if not villager_name or not village_id or not complaint_text:
         return Response(
             {
                 "success": False,
                 "error": "villager_name, village_id and complaint_text are required",
+=======
+    if not villager_name or not village_id:
+        return Response(
+            {
+                "success": False,
+                "error": "villager_name and village_id are required",
+>>>>>>> 6a0a424 (Many changes in verification modules.)
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -1901,6 +2567,18 @@ def api_mobile_submit_complaint(request):
         )
 
     audio_file = request.FILES.get("audio_file")
+<<<<<<< HEAD
+=======
+    if not complaint_text and not audio_file:
+        return Response(
+            {
+                "success": False,
+                "error": "Provide either complaint_text or audio_file",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
     complaintee_photo = request.FILES.get("complaintee_photo")
     complaint_document_image = request.FILES.get(
         "complaint_document_image"
@@ -1917,6 +2595,12 @@ def api_mobile_submit_complaint(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+<<<<<<< HEAD
+=======
+    if not complaint_text and audio_file:
+        complaint_text = "Audio complaint submitted"
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
     if lat is None or lng is None:
         return Response(
             {
@@ -1934,7 +2618,11 @@ def api_mobile_submit_complaint(request):
         complaint_text=complaint_text,
         complaint_type="other",
         priority_level="medium",
+<<<<<<< HEAD
         audio_transcription=complaint_text if audio_file else "",
+=======
+        audio_transcription=(complaint_text if audio_file else ""),
+>>>>>>> 6a0a424 (Many changes in verification modules.)
         recorded_by_agent=recorded_by_agent,
         agent_name=agent_name,
         status="received_post",
@@ -1964,7 +2652,11 @@ def api_mobile_submit_complaint(request):
         {
             "success": True,
             "complaint_id": complaint.complaint_id,
+<<<<<<< HEAD
             "status": complaint.status,
+=======
+            "status": _mobile_ui_status(complaint.status),
+>>>>>>> 6a0a424 (Many changes in verification modules.)
             "message": "Complaint submitted successfully",
         },
         status=status.HTTP_201_CREATED,
@@ -1975,6 +2667,7 @@ def api_mobile_submit_complaint(request):
 @permission_classes([AllowAny])
 @authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
 def api_mobile_in_progress_complaints(request):
+<<<<<<< HEAD
     """List active/resolved complaints for mobile resolution dashboard."""
     complaints = (
         Complaint.objects.filter(
@@ -1991,6 +2684,40 @@ def api_mobile_in_progress_complaints(request):
             "villager_name": complaint.villager_name,
             "complaint_text": complaint.complaint_text,
             "status": complaint.status,
+=======
+    """List complaints for mobile dashboard using canonical statuses."""
+    complaints = (
+        Complaint.objects.all()
+        .select_related("village")
+        .only(
+            "id",
+            "complaint_id",
+            "villager_name",
+            "complaint_text",
+            "status",
+            "village__name",
+            "complaint_document_image",
+            "resolution_letter_image",
+            "complaintee_photo",
+            "submission_latitude",
+            "submission_longitude",
+            "closure_selfie",
+            "updated_at",
+        )
+        .order_by("-updated_at")
+    )
+    open_items = []
+    in_progress = []
+    resolved = []
+    for complaint in complaints:
+        ui_status = _mobile_ui_status(complaint.status)
+        item = {
+            "id": complaint.id,
+            "complaint_id": complaint.complaint_id,
+            "villager_name": complaint.villager_name,
+            "complaint_text": complaint.complaint_text,
+            "status": ui_status,
+>>>>>>> 6a0a424 (Many changes in verification modules.)
             "village_name": complaint.village.name if complaint.village else "",
             "resolution_mode": (
                 "resolution_letter"
@@ -2000,7 +2727,11 @@ def api_mobile_in_progress_complaints(request):
             "has_submission_photo": complaint.has_submission_identity_photo,
             "has_submission_geo": complaint.has_submission_geo,
             "resolution_ready": (
+<<<<<<< HEAD
                 complaint.closure_status_is_actionable
+=======
+                ui_status == "IN_PROGRESS"
+>>>>>>> 6a0a424 (Many changes in verification modules.)
                 and (
                     complaint.uses_resolution_letter
                     or complaint.is_submission_verification_ready
@@ -2008,12 +2739,27 @@ def api_mobile_in_progress_complaints(request):
             ),
             "banner": _complaint_resolution_banner(complaint),
         }
+<<<<<<< HEAD
         if complaint.status == "case_closed":
+=======
+        if ui_status == "OPEN":
+            open_items.append(item)
+        elif ui_status == "RESOLVED":
+>>>>>>> 6a0a424 (Many changes in verification modules.)
             resolved.append(item)
         else:
             in_progress.append(item)
     return Response(
+<<<<<<< HEAD
         {"success": True, "in_progress": in_progress, "resolved": resolved},
+=======
+        {
+            "success": True,
+            "open": open_items,
+            "in_progress": in_progress,
+            "resolved": resolved,
+        },
+>>>>>>> 6a0a424 (Many changes in verification modules.)
         status=status.HTTP_200_OK,
     )
 
@@ -2161,7 +2907,11 @@ def api_mobile_verify_close_complaint(request, complaint_id):
         {
             "success": True,
             "complaint_id": complaint.complaint_id,
+<<<<<<< HEAD
             "status": complaint.status,
+=======
+            "status": _mobile_ui_status(complaint.status),
+>>>>>>> 6a0a424 (Many changes in verification modules.)
             "distance_m": round(distance_m, 2) if distance_m is not None else None,
             "match_score": round(match_score, 4) if match_score is not None else None,
             "message": "Complaint verified and closed successfully",
@@ -2219,7 +2969,11 @@ def api_mobile_resolve_photo_complaint(request, complaint_id):
         {
             "success": True,
             "complaint_id": complaint.complaint_id,
+<<<<<<< HEAD
             "status": complaint.status,
+=======
+            "status": _mobile_ui_status(complaint.status),
+>>>>>>> 6a0a424 (Many changes in verification modules.)
             "message": "Photo complaint closed with resolution letter",
         },
         status=status.HTTP_200_OK,

@@ -2,6 +2,7 @@
 Views for the PM-AJAY Post Office Workflow System.
 """
 
+<<<<<<< HEAD
 import json
 import logging
 import math
@@ -9,12 +10,19 @@ import hmac
 import os
 
 from django.conf import settings
+=======
+import logging
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+<<<<<<< HEAD
 from django.views.decorators.csrf import csrf_exempt
+=======
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 from django.views.decorators.http import require_POST
 
 from .models import (
@@ -27,6 +35,34 @@ from .models import (
 )
 from .permissions import Role, get_user_role
 from .services import ComplaintProcessor
+from .utils.verification import (
+    hamming_distance_64 as _hamming_distance_64,
+    hash_image_file as _hash_image_file,
+    haversine_m as _haversine_m,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def _submit_complaint_context():
+    from .models import Village
+
+    return {
+        "villages": Village.objects.all().order_by("name"),
+        "post_offices": PostOffice.objects.all().order_by("name"),
+        "language_choices": [
+            ("hi", "Hindi"),
+            ("en", "English"),
+            ("bn", "Bengali"),
+            ("te", "Telugu"),
+            ("mr", "Marathi"),
+            ("ta", "Tamil"),
+        ],
+    }
+
+
+def _render_submit_complaint(request):
+    return render(request, "core/submit_complaint.html", _submit_complaint_context())
 
 logger = logging.getLogger(__name__)
 
@@ -630,6 +666,7 @@ def agent_dashboard(request):
         "core/agent_dashboard.html",
         {"agents": agents, "recent_visits": recent_visits},
     )
+<<<<<<< HEAD
 
 
 @csrf_exempt
@@ -716,3 +753,5 @@ def api_update_via_sms(request):
         return JsonResponse({"error": "Complaint not found"}, status=404)
     except Exception as exc:
         return JsonResponse({"error": str(exc)}, status=500)
+=======
+>>>>>>> 6a0a424 (Many changes in verification modules.)

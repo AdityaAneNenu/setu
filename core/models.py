@@ -169,6 +169,7 @@ class Gap(models.Model):
     STATUS_CHOICES = [
         ("open", "Open"),
         ("in_progress", "In Progress"),
+        ("needs_review", "Needs Review"),
         ("resolved", "Resolved"),
     ]
 
@@ -228,6 +229,23 @@ class Gap(models.Model):
         null=True,
         help_text="External audio URL (Cloudinary) - will be downloaded to audio_file",
     )
+<<<<<<< HEAD
+=======
+    client_local_id = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        help_text="Client-generated local ID used for offline idempotent complaint sync",
+    )
+    initial_photo_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Initial complaint photo URL captured at submission time",
+    )
+>>>>>>> 6a0a424 (Many changes in verification modules.)
     recommendations = models.TextField(blank=True, null=True, default="None")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -254,6 +272,11 @@ class Gap(models.Model):
         blank=True,
         null=True,
         help_text="Longitude coordinate",
+    )
+    initial_gps_accuracy_m = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="GPS accuracy in meters at complaint capture time",
     )
 
     # Resolution proof (required for closure by ADMIN)
@@ -307,6 +330,20 @@ class Gap(models.Model):
         null=True,
         help_text="Timestamp when the closure photo was captured on-site",
     )
+<<<<<<< HEAD
+=======
+    closure_gps_accuracy_m = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="GPS accuracy in meters at closure capture time",
+    )
+    resolution_client_id = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        help_text="Client-generated local ID used for idempotent resolution sync",
+    )
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
     # Optional: closure-time selfie for "same person" verification
     closure_selfie_url = models.URLField(
@@ -321,6 +358,43 @@ class Gap(models.Model):
         help_text="Selfie similarity score vs original person photo (0-1)",
     )
 
+<<<<<<< HEAD
+=======
+    # Rule and AI validation telemetry for resolution decisions
+    closure_distance_m = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Distance in meters between initial and closure locations",
+    )
+    resolution_time_minutes = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Minutes between complaint creation and resolution attempt",
+    )
+    resolution_ai_score = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="AI-derived change score between initial and closure photos (0-1)",
+    )
+    resolution_ai_method = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Method used for AI score (opencv or pillow_fallback)",
+    )
+    resolution_type = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="Resolution outcome category: auto or review",
+    )
+    resolution_review_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Reason captured when resolution is routed to manual review",
+    )
+
+>>>>>>> 6a0a424 (Many changes in verification modules.)
     def __str__(self):
         return f"{self.village.name} - {self.gap_type} - {self.created_at}"
 
@@ -426,7 +500,15 @@ class PMAJAYOffice(models.Model):
 class Complaint(models.Model):
     """Main complaint/grievance from villager"""
 
+<<<<<<< HEAD
     CLOSURE_ALLOWED_STATUSES = ("assigned_worker", "work_in_progress")
+=======
+    CLOSURE_ALLOWED_STATUSES = (
+        "assigned_worker",
+        "work_in_progress",
+        "work_completed",
+    )
+>>>>>>> 6a0a424 (Many changes in verification modules.)
 
     COMPLAINT_STATUS = [
         ("received_post", "Received at Post Office"),

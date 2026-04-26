@@ -20,6 +20,8 @@ assemblyai==0.48.1
 
 # Image Processing
 Pillow==11.0.0
+numpy==2.2.6
+opencv-python-headless==4.10.0.84
 qrcode==8.2
 
 # HTTP

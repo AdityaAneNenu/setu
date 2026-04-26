@@ -7,14 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useDrawerProgress } from '@react-navigation/drawer';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { fonts } from '../theme';
-import { authApi, gapsApi } from '../services/api';
+import { authApi, gapsApi, syncApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { parseArray } from '../utils/safeJSON';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +35,7 @@ export default function HomeScreen({ navigation }) {
   const [statusUpdates, setStatusUpdates] = useState([]);
   const [nearbyGaps, setNearbyGaps] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [failedSyncCount, setFailedSyncCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTip, setCurrentTip] = useState(0);
@@ -56,11 +55,12 @@ export default function HomeScreen({ navigation }) {
   // ─── Check pending offline submissions ──────────────────
   const checkPendingSync = async () => {
     try {
-      const pending = await AsyncStorage.getItem('pendingSubmissions');
-      const items = parseArray(pending);
-      setPendingCount(Array.isArray(items) ? items.length : 0);
+      const summary = await syncApi.getStatus();
+      setPendingCount(summary?.pendingTotal || 0);
+      setFailedSyncCount(summary?.FAILED || 0);
     } catch {
       setPendingCount(0);
+      setFailedSyncCount(0);
     }
   };
 
@@ -227,6 +227,12 @@ export default function HomeScreen({ navigation }) {
             </View>
             <Text style={[styles.quickLabel, { color: colors.text }]}>{t('home.myHistory')}</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction} onPress={() => navigation.navigate('GapVerification')} activeOpacity={0.7}>
+            <View style={[styles.quickIcon, { backgroundColor: isDark ? '#1B3D1F' : '#E8F5E9' }]}>
+              <Ionicons name="checkmark-done-outline" size={24} color="#4CAF50" />
+            </View>
+            <Text style={[styles.quickLabel, { color: colors.text }]}>Resolve Complaints</Text>
+          </TouchableOpacity>
         </View>
 
         {loading ? (
@@ -264,7 +270,11 @@ export default function HomeScreen({ navigation }) {
                   {pendingCount > 0 ? t('home.pendingSync', { count: pendingCount }) : t('home.allSynced')}
                 </Text>
                 <Text style={[styles.syncSubtext, { color: colors.textLight }]}>
-                  {pendingCount > 0 ? t('home.willUpload') : t('home.upToDate')}
+                  {pendingCount > 0
+                    ? failedSyncCount > 0
+                      ? `${failedSyncCount} failed item(s). Auto-retry is active.`
+                      : t('home.willUpload')
+                    : t('home.upToDate')}
                 </Text>
               </View>
               {pendingCount > 0 && (
@@ -447,8 +457,8 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
 
   // Quick Actions
-  quickActionsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 },
-  quickAction: { alignItems: 'center', width: (width - 64) / 4 },
+  quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, marginBottom: 16 },
+  quickAction: { alignItems: 'center', width: '33.33%', marginBottom: 12 },
   quickIcon: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   quickLabel: { fontSize: 12, fontFamily: fonts.medium, color: '#333', textAlign: 'center', lineHeight: 16 },
 

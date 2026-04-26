@@ -398,6 +398,53 @@ LOGGING = {
 logs_dir = BASE_DIR / "logs"
 logs_dir.mkdir(exist_ok=True)
 
+# Logging configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "logs", "django.log"),
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "core": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+# Create logs directory if it doesn't exist
+logs_dir = BASE_DIR / "logs"
+logs_dir.mkdir(exist_ok=True)
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
