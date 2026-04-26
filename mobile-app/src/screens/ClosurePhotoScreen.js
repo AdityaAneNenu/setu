@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -130,15 +130,12 @@ export default function ClosurePhotoScreen({ route, navigation }) {
       );
       return;
     }
-<<<<<<< HEAD
-=======
     if (!djangoGapId) {
       const msg = 'This gap is not synced to the server yet. Please wait and try again.';
       setErrorMessage(msg);
       Alert.alert('Sync Required', msg);
       return;
     }
->>>>>>> 6a0a424 (Many changes in verification modules.)
 
     setScreenState('processing');
     setErrorMessage('');
@@ -207,7 +204,7 @@ export default function ClosurePhotoScreen({ route, navigation }) {
   const formatGapType = (type) =>
     (type || 'gap').replace(/_/g, ' ');
 
-  // ─── Loading permissions ───
+  // â”€â”€â”€ Loading permissions â”€â”€â”€
   if (!cameraPermission) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
@@ -216,7 +213,7 @@ export default function ClosurePhotoScreen({ route, navigation }) {
     );
   }
 
-  // ─── Camera permission denied ───
+  // â”€â”€â”€ Camera permission denied â”€â”€â”€
   if (!cameraPermission.granted) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
@@ -242,7 +239,7 @@ export default function ClosurePhotoScreen({ route, navigation }) {
     );
   }
 
-  // ─── Success state ───
+  // â”€â”€â”€ Success state â”€â”€â”€
   if (screenState === 'success') {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
@@ -296,7 +293,7 @@ export default function ClosurePhotoScreen({ route, navigation }) {
     );
   }
 
-  // ─── Preview / Processing state ───
+  // â”€â”€â”€ Preview / Processing state â”€â”€â”€
   if (screenState === 'preview' || screenState === 'processing') {
     const isProcessing = screenState === 'processing';
     const previewUri =
@@ -326,7 +323,7 @@ export default function ClosurePhotoScreen({ route, navigation }) {
             </View>
             <Text style={styles.stampTime}>{new Date().toLocaleString('en-IN')}</Text>
             <Text style={styles.stampGap} numberOfLines={1}>
-              {formatGapType(gapType)} · {villageName || ''}
+              {formatGapType(gapType)} Â· {villageName || ''}
             </Text>
           </View>
 
@@ -395,7 +392,7 @@ export default function ClosurePhotoScreen({ route, navigation }) {
     );
   }
 
-  // ─── Camera state (default) ───
+  // â”€â”€â”€ Camera state (default) â”€â”€â”€
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#000' }]}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />

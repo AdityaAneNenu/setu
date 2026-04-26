@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   View,
   Text,
@@ -22,12 +22,7 @@ const menuItems = [
   { icon: 'mic-outline', labelKey: 'drawer.recordAudio', screen: 'UploadAudio' },
   { icon: 'time-outline', labelKey: 'drawer.history', screen: 'History' },
   { icon: 'search-outline', labelKey: 'drawer.search', screen: 'Search' },
-<<<<<<< HEAD
-  { icon: 'camera-outline', labelKey: 'Register Complaint', screen: 'ComplaintSubmission' },
-  { icon: 'checkmark-done-circle-outline', labelKey: 'Resolve Complaints', screen: 'ComplaintVerification' },
-=======
   { icon: 'checkmark-done-circle-outline', labelKey: 'drawer.resolveComplaints', screen: 'GapVerification' },
->>>>>>> 6a0a424 (Many changes in verification modules.)
   { icon: 'settings-outline', labelKey: 'drawer.settings', screen: 'Settings' },
 ];
 

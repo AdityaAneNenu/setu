@@ -1,4 +1,4 @@
-export { default as WelcomeScreen } from "./WelcomeScreen";
+﻿export { default as WelcomeScreen } from "./WelcomeScreen";
 export { default as LoginScreen } from "./LoginScreen";
 export { default as HomeScreen } from "./HomeScreen";
 export { default as ScanDocumentScreen } from "./ScanDocumentScreen";
@@ -23,9 +23,4 @@ export { default as AccessibilitySettingsScreen } from "./AccessibilitySettingsS
 export { default as TTSSettingsScreen } from "./TTSSettingsScreen";
 export { default as GapDetailScreen } from "./GapDetailScreen";
 export { default as ClosurePhotoScreen } from "./ClosurePhotoScreen";
-<<<<<<< HEAD
-export { default as ComplaintSubmissionScreen } from "./ComplaintSubmissionScreen";
-export { default as ComplaintVerificationScreen } from "./ComplaintVerificationScreen";
-=======
 export { default as GapVerificationScreen } from "./GapVerificationScreen";
->>>>>>> 6a0a424 (Many changes in verification modules.)

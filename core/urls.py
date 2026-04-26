@@ -49,14 +49,4 @@ urlpatterns = [
         name="force_resolve_complaint",
     ),
     path("workflow/agents/", workflow_views.agent_dashboard, name="agent_dashboard"),
-<<<<<<< HEAD
-    # API endpoints for SMS integration
-    path(
-        "api/complaint/<str:complaint_id>/status/",
-        workflow_views.api_complaint_status,
-        name="api_complaint_status",
-    ),
-    path("api/sms-update/", workflow_views.api_update_via_sms, name="api_sms_update"),
-=======
->>>>>>> 6a0a424 (Many changes in verification modules.)
 ]

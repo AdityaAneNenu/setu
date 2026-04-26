@@ -1,13 +1,9 @@
-// API Service Layer for SETU Mobile App
+﻿// API Service Layer for SETU Mobile App
 // =======================================
 // Uses Firebase Firestore directly with Django sync
 // Primary: Firebase Firestore, Secondary: Django/Railway PostgreSQL
 
-<<<<<<< HEAD
-import { villagesService, gapsService, uploadService } from "./firestore";
-=======
 import { villagesService, gapsService } from "./firestore";
->>>>>>> 6a0a424 (Many changes in verification modules.)
 import {
   loginUser,
   logoutUser,
@@ -16,12 +12,6 @@ import {
 } from "./authService";
 import { API_CONFIG } from "../config/api";
 import {
-<<<<<<< HEAD
-  addToSyncQueue,
-  processSyncQueue,
-  getSyncQueueStatus,
-} from "./syncQueue";
-=======
   createOfflineComplaint,
   createOfflineResolution,
   getOfflineSyncSummary,
@@ -29,7 +19,6 @@ import {
 } from "./offlineDb";
 import { persistCaptureFile } from "./offlineFileStore";
 import { triggerOfflineSyncNow } from "./offlineSyncEngine";
->>>>>>> 6a0a424 (Many changes in verification modules.)
 
 // Helper to get Firebase auth token for Django API calls
 const getFirebaseAuthHeaders = async ({ includeContentType = true } = {}) => {
@@ -102,89 +91,6 @@ export const gapsApi = {
       description: gapData.description || "",
       gap_type: gapData.gap_type || "other",
       severity: gapData.severity || "medium",
-<<<<<<< HEAD
-      input_method: gapData.input_method || "text",
-      recommendations: gapData.recommendations || "",
-      audio_url: audioUrl,
-      image_url: imageUrl,
-      latitude: gapData.latitude || null,
-      longitude: gapData.longitude || null,
-    };
-
-    // Step 1: Create gap in Firestore (primary storage)
-    const result = await gapsService.create(gapPayload);
-    const firestoreId = result.id;
-
-    // Step 2: Sync to Django/Railway PostgreSQL (secondary storage)
-    // This ensures data is in the main database for analytics and web dashboard
-    let djangoId = null;
-    const currentUser = getCurrentUser();
-    const syncPayload = {
-      firestore_id: firestoreId,
-      ...gapPayload,
-      submitted_by: currentUser?.uid || null,
-      submitted_by_email: currentUser?.email || null,
-    };
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      const headers = await getFirebaseAuthHeaders();
-
-      const response = await fetch(
-        `${API_CONFIG.DJANGO_URL}/api/mobile/gaps/sync/`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify(syncPayload),
-          signal: controller.signal,
-        },
-      );
-      clearTimeout(timeout);
-
-      if (response.ok) {
-        const syncResult = await response.json();
-        if (syncResult.success) {
-          djangoId = syncResult.django_id;
-          console.log(`Gap synced to Django: ID ${djangoId}`);
-          // Write django_id back to Firestore so ClosurePhotoScreen can use it
-          try {
-            await gapsService.updateDjangoId(firestoreId, djangoId);
-          } catch (fsErr) {
-            console.warn(
-              "Could not store django_id on Firestore:",
-              fsErr.message,
-            );
-          }
-        }
-      } else {
-        // Log response status for debugging
-        const errorText = await response.text().catch(() => "Unknown error");
-        console.warn(`Django sync failed (${response.status}): ${errorText}`);
-        // Server responded with error - add to retry queue
-        await addToSyncQueue({
-          type: "gap_create",
-          payload: syncPayload,
-        });
-      }
-    } catch (syncError) {
-      // Network error or timeout - add to retry queue
-      await addToSyncQueue({
-        type: "gap_create",
-        payload: syncPayload,
-      });
-      console.warn(
-        "Django sync error, added to retry queue:",
-        syncError.message,
-      );
-    }
-
-    return {
-      success: true,
-      message: "Gap created successfully",
-      id: firestoreId,
-      django_id: djangoId,
-=======
       input_method: gapData.input_method || "image",
       photo_uri: persistedPhoto.uri,
       photo_md5: persistedPhoto.md5,
@@ -205,7 +111,6 @@ export const gapsApi = {
       warning: duplicatePhoto
         ? "Same image appears to be reused from a previous complaint."
         : null,
->>>>>>> 6a0a424 (Many changes in verification modules.)
       gap_type: gapData.gap_type,
       severity: gapData.severity,
       description: gapData.description,
@@ -253,8 +158,6 @@ export const gapsApi = {
     return { success: true, status };
   },
 
-<<<<<<< HEAD
-=======
   getMobileGaps: async () => {
     const headers = await getFirebaseAuthHeaders();
     const controller = new AbortController();
@@ -342,7 +245,6 @@ export const gapsApi = {
     };
   },
 
->>>>>>> 6a0a424 (Many changes in verification modules.)
   getStats: () => gapsService.getStats(),
 };
 
@@ -418,131 +320,6 @@ export const closureApi = {
     }
 
     return result;
-<<<<<<< HEAD
-  },
-};
-
-// ============================================
-// COMPLAINT VERIFICATION API (mobile)
-// ============================================
-export const complaintsApi = {
-  submitWithVerification: async (payload) => {
-    const formData = new FormData();
-    Object.entries(payload || {}).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === "") return;
-      if (key === "complaintee_photo" || key === "audio_file") {
-        formData.append(key, value);
-      } else {
-        formData.append(key, String(value));
-      }
-    });
-
-    const headers = await getFirebaseAuthHeaders({ includeContentType: false });
-    const response = await fetch(
-      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/submit/`,
-      {
-        method: "POST",
-        headers,
-        body: formData,
-      },
-    );
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result?.success) {
-      throw new Error(result?.error || `Complaint submit failed (${response.status})`);
-    }
-    return result;
-  },
-
-  verifyAndClose: async (complaintId, payload) => {
-    const formData = new FormData();
-    Object.entries(payload || {}).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === "") return;
-      if (key === "closure_selfie") {
-        formData.append(key, value);
-      } else {
-        formData.append(key, String(value));
-      }
-    });
-
-    const headers = await getFirebaseAuthHeaders({ includeContentType: false });
-    const response = await fetch(
-      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/${complaintId}/verify-close/`,
-      {
-        method: "POST",
-        headers,
-        body: formData,
-      },
-    );
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result?.success) {
-      throw new Error(result?.error || `Complaint verify failed (${response.status})`);
-    }
-    return result;
-  },
-
-  getInProgress: async () => {
-    const headers = await getFirebaseAuthHeaders();
-    const response = await fetch(
-      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/in-progress/`,
-      { headers },
-    );
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result?.success) {
-      throw new Error(
-        result?.error || `Failed to fetch in-progress complaints (${response.status})`,
-      );
-    }
-    const inProgressFromNew = result.in_progress || [];
-    const resolvedFromNew = result.resolved || [];
-
-    // Backward compatibility: older backend returned a flat `complaints` list.
-    if (
-      inProgressFromNew.length === 0 &&
-      resolvedFromNew.length === 0 &&
-      Array.isArray(result.complaints)
-    ) {
-      const all = result.complaints;
-      return {
-        inProgress: all.filter((item) => item?.status !== "case_closed"),
-        resolved: all.filter((item) => item?.status === "case_closed"),
-      };
-    }
-
-    return {
-      inProgress: inProgressFromNew,
-      resolved: resolvedFromNew,
-    };
-  },
-
-  resolvePhotoComplaint: async (complaintId, payload) => {
-    const formData = new FormData();
-    Object.entries(payload || {}).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === "") return;
-      if (key === "resolution_letter_image") {
-        formData.append(key, value);
-      } else {
-        formData.append(key, String(value));
-      }
-    });
-
-    const headers = await getFirebaseAuthHeaders({ includeContentType: false });
-    const response = await fetch(
-      `${API_CONFIG.DJANGO_URL}/api/mobile/complaints/${complaintId}/resolve-photo/`,
-      {
-        method: "POST",
-        headers,
-        body: formData,
-      },
-    );
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result?.success) {
-      throw new Error(
-        result?.error || `Photo complaint resolution failed (${response.status})`,
-      );
-    }
-    return result;
-=======
->>>>>>> 6a0a424 (Many changes in verification modules.)
   },
 };
 
@@ -569,17 +346,9 @@ export const dashboardApi = {
 // SYNC API - Process pending Django syncs
 // ============================================
 export const syncApi = {
-<<<<<<< HEAD
-  // Process all pending sync operations
-  processQueue: () => processSyncQueue(),
-
-  // Get sync queue status
-  getStatus: () => getSyncQueueStatus(),
-=======
   processQueue: () => triggerOfflineSyncNow(),
 
   getStatus: () => getOfflineSyncSummary(),
->>>>>>> 6a0a424 (Many changes in verification modules.)
 };
 
 export default {
@@ -587,10 +356,6 @@ export default {
   gapsApi,
   authApi,
   closureApi,
-<<<<<<< HEAD
-  complaintsApi,
-=======
->>>>>>> 6a0a424 (Many changes in verification modules.)
   dashboardApi,
   syncApi,
 };

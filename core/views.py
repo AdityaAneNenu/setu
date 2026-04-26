@@ -163,7 +163,7 @@ def upload_form(request):
 
                 except Exception as e:
                     # Log the error for debugging
-                    print(f"❌ Translation error: {str(e)}")
+                    print(f"âŒ Translation error: {str(e)}")
                     print(f"   Transcribed text: {transcribed_text[:100]}...")
 
                     # Fallback to original processing if AI translation fails
@@ -518,24 +518,24 @@ def update_gap_status(request, gap_id):
 
         # DEBUG LOGGING - Track execution flow
         print(f"\n{'='*80}")
-        print(f"🔍 DEBUG: update_gap_status() called for Gap #{gap.id}")
-        print(f"  👤 User: {request.user.username} | Role: {user_role}")
-        print(f"  📊 Current status: {gap.status}")
-        print(f"  📊 Requested new status: {new_status}")
-        print(f"  🎤 Input method: {gap.input_method}")
-        print(f"  🎤 Has audio file: {bool(gap.audio_file)}")
+        print(f"ðŸ” DEBUG: update_gap_status() called for Gap #{gap.id}")
+        print(f"  ðŸ‘¤ User: {request.user.username} | Role: {user_role}")
+        print(f"  ðŸ“Š Current status: {gap.status}")
+        print(f"  ðŸ“Š Requested new status: {new_status}")
+        print(f"  ðŸŽ¤ Input method: {gap.input_method}")
+        print(f"  ðŸŽ¤ Has audio file: {bool(gap.audio_file)}")
         if gap.audio_file:
-            print(f"  📁 Audio file path: {gap.audio_file.name}")
+            print(f"  ðŸ“ Audio file path: {gap.audio_file.name}")
         print(f"{'='*80}\n")
 
         # ROLE CHECK: Only ADMIN can mark as "resolved"
         if new_status == "resolved" and not can_resolve_gaps(request.user):
             print(
-                f"❌ DEBUG: User {request.user.username} ({user_role}) cannot resolve gaps"
+                f"âŒ DEBUG: User {request.user.username} ({user_role}) cannot resolve gaps"
             )
             messages.error(
                 request,
-                f"❌ <strong>Permission Denied!</strong><br>"
+                f"âŒ <strong>Permission Denied!</strong><br>"
                 f"Only ADMIN role can mark gaps as resolved. Your role: {user_role.upper()}",
                 extra_tags="safe",
             )
@@ -552,11 +552,11 @@ def update_gap_status(request, gap_id):
             # Require proof if not already provided
             if not gap.resolution_proof and not resolution_proof:
                 print(
-                    f"❌ DEBUG: Resolution proof required but not provided"
+                    f"âŒ DEBUG: Resolution proof required but not provided"
                 )
                 messages.error(
                     request,
-                    "❌ <strong>Resolution Proof Required!</strong><br>"
+                    "âŒ <strong>Resolution Proof Required!</strong><br>"
                     "Please upload the resolution letter/document and provide reference number before marking as resolved.<br>",
                     extra_tags="safe",
                 )
@@ -565,21 +565,17 @@ def update_gap_status(request, gap_id):
             # Save resolution proof if provided
             if resolution_proof:
                 gap.resolution_proof = resolution_proof
-                print(f"✅ DEBUG: Resolution proof uploaded: {resolution_proof.name}")
+                print(f"âœ… DEBUG: Resolution proof uploaded: {resolution_proof.name}")
 
             if resolution_proof_number:
                 gap.resolution_proof_number = resolution_proof_number
-                print(f"✅ DEBUG: Resolution proof number: {resolution_proof_number}")
+                print(f"âœ… DEBUG: Resolution proof number: {resolution_proof_number}")
 
-<<<<<<< HEAD
-        # Voice verification module removed: resolving no longer requires voice checks.
-=======
         # Verification now uses photo/geotag flow; keep status update path generic.
->>>>>>> 6a0a424 (Many changes in verification modules.)
 
         # Proceed with status update
         print(
-            f"ℹ️ DEBUG: Status change - allowing update"
+            f"â„¹ï¸ DEBUG: Status change - allowing update"
         )
         if new_status in dict(Gap.STATUS_CHOICES):
             old_status = gap.status
@@ -609,13 +605,13 @@ def update_gap_status(request, gap_id):
                 )
 
             print(
-                f"✅ DEBUG: Gap #{gap.id} status updated from {old_status} to {new_status}"
+                f"âœ… DEBUG: Gap #{gap.id} status updated from {old_status} to {new_status}"
             )
             messages.success(
-                request, f"✅ Gap status updated to {gap.get_status_display()}"
+                request, f"âœ… Gap status updated to {gap.get_status_display()}"
             )
         else:
-            messages.error(request, "❌ Invalid status selected")
+            messages.error(request, "âŒ Invalid status selected")
 
     return redirect("manage_gaps")
 

@@ -37,8 +37,6 @@ urlpatterns = [
         name="api_mobile_gap_status_sync",
     ),
     path(
-<<<<<<< HEAD
-=======
         "api/mobile/gaps/",
         api_views.api_mobile_gaps,
         name="api_mobile_gaps",
@@ -49,7 +47,6 @@ urlpatterns = [
         name="api_mobile_resolve_gap",
     ),
     path(
->>>>>>> 6a0a424 (Many changes in verification modules.)
         "api/mobile/complaints/submit/",
         api_views.api_mobile_submit_complaint,
         name="api_mobile_submit_complaint",

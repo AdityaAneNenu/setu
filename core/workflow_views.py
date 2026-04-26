@@ -2,27 +2,17 @@
 Views for the PM-AJAY Post Office Workflow System.
 """
 
-<<<<<<< HEAD
-import json
 import logging
 import math
 import hmac
 import os
 
 from django.conf import settings
-=======
-import logging
-
->>>>>>> 6a0a424 (Many changes in verification modules.)
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-<<<<<<< HEAD
-from django.views.decorators.csrf import csrf_exempt
-=======
->>>>>>> 6a0a424 (Many changes in verification modules.)
 from django.views.decorators.http import require_POST
 
 from .models import (
@@ -666,92 +656,3 @@ def agent_dashboard(request):
         "core/agent_dashboard.html",
         {"agents": agents, "recent_visits": recent_visits},
     )
-<<<<<<< HEAD
-
-
-@csrf_exempt
-def api_complaint_status(request, complaint_id):
-    """API endpoint to get complaint status (for SMS integration)."""
-    auth_error = _require_sms_webhook_secret(request)
-    if auth_error:
-        return auth_error
-
-    try:
-        complaint = Complaint.objects.get(complaint_id=complaint_id)
-        return JsonResponse(
-            {
-                "complaint_id": complaint.complaint_id,
-                "status": complaint.status,
-                "status_display": complaint.get_status_display(),
-                "villager_name": complaint.villager_name,
-                "created_at": complaint.created_at.isoformat(),
-                "last_updated": complaint.updated_at.isoformat(),
-            }
-        )
-    except Complaint.DoesNotExist:
-        return JsonResponse({"error": "Complaint not found"}, status=404)
-
-
-@csrf_exempt
-@require_POST
-def api_update_via_sms(request):
-    """API endpoint for SMS-based status updates."""
-    auth_error = _require_sms_webhook_secret(request)
-    if auth_error:
-        return auth_error
-
-    try:
-        data = json.loads(request.body)
-        complaint_id = data.get("complaint_id")
-        sms_command = (data.get("command") or "").strip().upper()
-        sender_phone = (data.get("phone") or "").strip()
-
-        if not complaint_id or not sms_command or not sender_phone:
-            return JsonResponse(
-                {"error": "complaint_id, command, and phone are required"}, status=400
-            )
-
-        complaint = Complaint.objects.get(complaint_id=complaint_id)
-
-        is_authorized = SurveyAgent.objects.filter(phone_number=sender_phone).exists()
-        if not is_authorized:
-            return JsonResponse({"error": "Unauthorized phone number"}, status=403)
-
-        command_mapping = {
-            "START": "work_in_progress",
-            "PROGRESS": "work_in_progress",
-            "DONE": "work_completed",
-            "CHECKED": "sent_to_villager",
-            "SATISFIED": "villager_satisfied",
-            "UNSATISFIED": "villager_unsatisfied",
-        }
-
-        if sms_command in command_mapping:
-            new_status = command_mapping[sms_command]
-            old_status = complaint.status
-            complaint.status = new_status
-            complaint.save()
-
-            WorkflowLog.objects.create(
-                complaint=complaint,
-                from_status=old_status,
-                to_status=new_status,
-                action_by=f"SMS from {sender_phone}",
-                action_type="sms_update",
-                notes=f"Updated via SMS command: {sms_command}",
-            )
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": f"Status updated to {complaint.get_status_display()}",
-                }
-            )
-
-        return JsonResponse({"error": "Invalid SMS command"}, status=400)
-    except Complaint.DoesNotExist:
-        return JsonResponse({"error": "Complaint not found"}, status=404)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-=======
->>>>>>> 6a0a424 (Many changes in verification modules.)

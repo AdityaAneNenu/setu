@@ -3,14 +3,9 @@ import logging
 import mimetypes
 import os
 import re
-<<<<<<< HEAD
-import time
-import math
-=======
 import threading
 import time
 from io import BytesIO
->>>>>>> 6a0a424 (Many changes in verification modules.)
 from urllib.parse import urlsplit
 
 from django.contrib.auth import authenticate
@@ -39,62 +34,6 @@ from .permissions import (
     CanVerifyGaps,
     CanViewAnalytics,
 )
-<<<<<<< HEAD
-
-logger = logging.getLogger(__name__)
-
-def _haversine_m(lat1, lng1, lat2, lng2):
-    """Distance in meters between two lat/lng points."""
-    r = 6371000.0
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lng2 - lng1)
-    a = (
-        math.sin(dphi / 2) ** 2
-        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
-    )
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return r * c
-
-
-def _average_hash_64(image):
-    """
-    Very lightweight similarity hash (aHash).
-    Returns 64-bit int. Not a biometric-grade face match, but works as a simple
-    "looks similar" heuristic when both images are selfies.
-    """
-    img = image.convert("L").resize((8, 8))
-    pixels = list(img.getdata())
-    avg = sum(pixels) / 64.0
-    bits = 0
-    for idx, px in enumerate(pixels):
-        if px >= avg:
-            bits |= 1 << idx
-    return bits
-
-
-def _hamming_distance_64(a, b):
-    return (a ^ b).bit_count()
-
-
-def _hash_image_file(file_obj):
-    """Safely hash image files with bounded decode size."""
-    from PIL import Image, ImageFile
-
-    ImageFile.LOAD_TRUNCATED_IMAGES = True
-    if hasattr(file_obj, "seek"):
-        file_obj.seek(0)
-    with Image.open(file_obj) as img:
-        img = img.convert("RGB")
-        img.thumbnail((1024, 1024))
-        hashed = _average_hash_64(img)
-    if hasattr(file_obj, "seek"):
-        file_obj.seek(0)
-    return hashed
-
-
-=======
 from .utils.verification import (
     hamming_distance_64 as _hamming_distance_64,
     hash_image_file as _hash_image_file,
@@ -117,17 +56,11 @@ def _sync_gap_to_firestore_async(gap_id):
         logger.warning("Firebase async sync warning for gap %s: %s", gap_id, fb_err)
 
 
->>>>>>> 6a0a424 (Many changes in verification modules.)
 def _fetch_image_from_url(url):
     import requests
     from PIL import Image
     from io import BytesIO
 
-<<<<<<< HEAD
-    resp = requests.get(url, timeout=10)
-    resp.raise_for_status()
-    return Image.open(BytesIO(resp.content))
-=======
     max_image_bytes = 5 * 1024 * 1024
     resp = requests.get(url, timeout=10, stream=True)
     resp.raise_for_status()
@@ -269,31 +202,11 @@ def _compute_resolution_ai_score(gap, closure_photo_url=""):
         cv2.normalize(hist_after, hist_after)
         correlation = float(cv2.compareHist(hist_before, hist_after, cv2.HISTCMP_CORREL))
         hist_change_score = max(0.0, min(1.0, (1.0 - correlation) / 2.0))
->>>>>>> 6a0a424 (Many changes in verification modules.)
 
         edge_before = cv2.Canny(gray_before, 80, 160)
         edge_after = cv2.Canny(gray_after, 80, 160)
         edge_change_score = float(cv2.absdiff(edge_before, edge_after).mean() / 255.0)
 
-<<<<<<< HEAD
-def _is_truthy(value):
-    """Normalize common truthy string/boolean values."""
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
-def _complaint_resolution_banner(complaint):
-    if complaint.uses_resolution_letter and not complaint.resolution_letter_image:
-        return "Resolution letter upload is still pending."
-    if complaint.requires_selfie_gps_verification and not complaint.is_submission_verification_ready:
-        return complaint.verification_block_reason
-    if complaint.requires_selfie_gps_verification and not complaint.closure_selfie:
-        return "Waiting for closure selfie and on-site GPS verification."
-    return ""
-=======
         score = (
             0.55 * pixel_diff_score
             + 0.30 * hist_change_score
@@ -348,7 +261,6 @@ def _serialize_mobile_gap(gap):
             "initial_photo": gap.initial_photo_url,
         },
     }
->>>>>>> 6a0a424 (Many changes in verification modules.)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -710,7 +622,7 @@ def api_update_gap_status(request, gap_id):
 
                 sync_gap_to_firestore(gap)
             except Exception as fb_err:
-                # ✅ IMPROVED: Enhanced Firebase sync with retry mechanism
+                # âœ… IMPROVED: Enhanced Firebase sync with retry mechanism
                 import logging
 
                 from django.core.cache import cache
@@ -914,7 +826,7 @@ class GapUploadAPIView(APIView):
                 input_method = "voice"
                 audio_file = request.FILES["audio_file"]
 
-                # ✅ SECURITY: Validate audio file size (max 50MB)
+                # âœ… SECURITY: Validate audio file size (max 50MB)
                 MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
                 if audio_file.size > MAX_AUDIO_SIZE:
                     return Response(
@@ -1051,7 +963,7 @@ class GapUploadAPIView(APIView):
                 input_method = "image"
                 image_file = request.FILES["image"]
 
-                # ✅ SECURITY: Validate image file size (max 10MB)
+                # âœ… SECURITY: Validate image file size (max 10MB)
                 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
                 if image_file.size > MAX_IMAGE_SIZE:
                     return Response(
@@ -1653,7 +1565,7 @@ class MobileGapSyncAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # ✅ IMPROVED: Validate description length (increased limit)
+            # âœ… IMPROVED: Validate description length (increased limit)
             if len(description) > 5000:
                 return Response(
                     {
@@ -1663,7 +1575,7 @@ class MobileGapSyncAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # ✅ NEW: Validate email format if provided
+            # âœ… NEW: Validate email format if provided
             email = (
                 request.data.get("email", "").strip()
                 if request.data.get("email")
@@ -1677,7 +1589,7 @@ class MobileGapSyncAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # ✅ NEW: Validate phone number format (Indian format) if provided
+            # âœ… NEW: Validate phone number format (Indian format) if provided
             phone = (
                 request.data.get("phone", "").strip()
                 if request.data.get("phone")
@@ -2148,8 +2060,6 @@ def close_gap_with_photo_proof(request, gap_id):
     )
 
 
-<<<<<<< HEAD
-=======
 @csrf_exempt
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -2502,7 +2412,6 @@ def api_mobile_resolve_gap(request, gap_id):
     )
 
 
->>>>>>> 6a0a424 (Many changes in verification modules.)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
@@ -2517,19 +2426,11 @@ def api_mobile_submit_complaint(request):
     submission_latitude = request.data.get("submission_latitude")
     submission_longitude = request.data.get("submission_longitude")
 
-<<<<<<< HEAD
-    if not villager_name or not village_id or not complaint_text:
-        return Response(
-            {
-                "success": False,
-                "error": "villager_name, village_id and complaint_text are required",
-=======
     if not villager_name or not village_id:
         return Response(
             {
                 "success": False,
                 "error": "villager_name and village_id are required",
->>>>>>> 6a0a424 (Many changes in verification modules.)
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -2567,8 +2468,6 @@ def api_mobile_submit_complaint(request):
         )
 
     audio_file = request.FILES.get("audio_file")
-<<<<<<< HEAD
-=======
     if not complaint_text and not audio_file:
         return Response(
             {
@@ -2578,7 +2477,6 @@ def api_mobile_submit_complaint(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
->>>>>>> 6a0a424 (Many changes in verification modules.)
     complaintee_photo = request.FILES.get("complaintee_photo")
     complaint_document_image = request.FILES.get(
         "complaint_document_image"
@@ -2595,12 +2493,9 @@ def api_mobile_submit_complaint(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-<<<<<<< HEAD
-=======
     if not complaint_text and audio_file:
         complaint_text = "Audio complaint submitted"
 
->>>>>>> 6a0a424 (Many changes in verification modules.)
     if lat is None or lng is None:
         return Response(
             {
@@ -2618,11 +2513,7 @@ def api_mobile_submit_complaint(request):
         complaint_text=complaint_text,
         complaint_type="other",
         priority_level="medium",
-<<<<<<< HEAD
-        audio_transcription=complaint_text if audio_file else "",
-=======
         audio_transcription=(complaint_text if audio_file else ""),
->>>>>>> 6a0a424 (Many changes in verification modules.)
         recorded_by_agent=recorded_by_agent,
         agent_name=agent_name,
         status="received_post",
@@ -2652,11 +2543,7 @@ def api_mobile_submit_complaint(request):
         {
             "success": True,
             "complaint_id": complaint.complaint_id,
-<<<<<<< HEAD
-            "status": complaint.status,
-=======
             "status": _mobile_ui_status(complaint.status),
->>>>>>> 6a0a424 (Many changes in verification modules.)
             "message": "Complaint submitted successfully",
         },
         status=status.HTTP_201_CREATED,
@@ -2667,24 +2554,6 @@ def api_mobile_submit_complaint(request):
 @permission_classes([AllowAny])
 @authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
 def api_mobile_in_progress_complaints(request):
-<<<<<<< HEAD
-    """List active/resolved complaints for mobile resolution dashboard."""
-    complaints = (
-        Complaint.objects.filter(
-            status__in=["assigned_worker", "work_in_progress", "case_closed"]
-        )
-        .select_related("village")
-        .order_by("-updated_at")
-    )
-    in_progress = []
-    resolved = []
-    for complaint in complaints:
-        item = {
-            "complaint_id": complaint.complaint_id,
-            "villager_name": complaint.villager_name,
-            "complaint_text": complaint.complaint_text,
-            "status": complaint.status,
-=======
     """List complaints for mobile dashboard using canonical statuses."""
     complaints = (
         Complaint.objects.all()
@@ -2717,7 +2586,6 @@ def api_mobile_in_progress_complaints(request):
             "villager_name": complaint.villager_name,
             "complaint_text": complaint.complaint_text,
             "status": ui_status,
->>>>>>> 6a0a424 (Many changes in verification modules.)
             "village_name": complaint.village.name if complaint.village else "",
             "resolution_mode": (
                 "resolution_letter"
@@ -2727,11 +2595,7 @@ def api_mobile_in_progress_complaints(request):
             "has_submission_photo": complaint.has_submission_identity_photo,
             "has_submission_geo": complaint.has_submission_geo,
             "resolution_ready": (
-<<<<<<< HEAD
-                complaint.closure_status_is_actionable
-=======
                 ui_status == "IN_PROGRESS"
->>>>>>> 6a0a424 (Many changes in verification modules.)
                 and (
                     complaint.uses_resolution_letter
                     or complaint.is_submission_verification_ready
@@ -2739,27 +2603,19 @@ def api_mobile_in_progress_complaints(request):
             ),
             "banner": _complaint_resolution_banner(complaint),
         }
-<<<<<<< HEAD
-        if complaint.status == "case_closed":
-=======
         if ui_status == "OPEN":
             open_items.append(item)
         elif ui_status == "RESOLVED":
->>>>>>> 6a0a424 (Many changes in verification modules.)
             resolved.append(item)
         else:
             in_progress.append(item)
     return Response(
-<<<<<<< HEAD
-        {"success": True, "in_progress": in_progress, "resolved": resolved},
-=======
         {
             "success": True,
             "open": open_items,
             "in_progress": in_progress,
             "resolved": resolved,
         },
->>>>>>> 6a0a424 (Many changes in verification modules.)
         status=status.HTTP_200_OK,
     )
 
@@ -2907,11 +2763,7 @@ def api_mobile_verify_close_complaint(request, complaint_id):
         {
             "success": True,
             "complaint_id": complaint.complaint_id,
-<<<<<<< HEAD
-            "status": complaint.status,
-=======
             "status": _mobile_ui_status(complaint.status),
->>>>>>> 6a0a424 (Many changes in verification modules.)
             "distance_m": round(distance_m, 2) if distance_m is not None else None,
             "match_score": round(match_score, 4) if match_score is not None else None,
             "message": "Complaint verified and closed successfully",
@@ -2969,11 +2821,7 @@ def api_mobile_resolve_photo_complaint(request, complaint_id):
         {
             "success": True,
             "complaint_id": complaint.complaint_id,
-<<<<<<< HEAD
-            "status": complaint.status,
-=======
             "status": _mobile_ui_status(complaint.status),
->>>>>>> 6a0a424 (Many changes in verification modules.)
             "message": "Photo complaint closed with resolution letter",
         },
         status=status.HTTP_200_OK,

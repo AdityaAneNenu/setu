@@ -1,2 +1,14 @@
 INFO 2026-04-26 21:27:50,198 autoreload E:\setu-pm-ajay\setu-pm-ajay-main (4)\setu-pm-ajay-main\core\workflow_views.py changed, reloading.
 INFO 2026-04-26 21:27:51,542 autoreload Watching for file changes with StatReloader
+INFO 2026-04-26 21:37:13,092 autoreload Watching for file changes with StatReloader
+INFO 2026-04-26 21:37:19,447 basehttp "GET / HTTP/1.1" 200 19142
+INFO 2026-04-26 21:37:26,425 basehttp "GET /accounts/login/ HTTP/1.1" 200 13158
+INFO 2026-04-26 21:37:26,454 basehttp "GET /static/images/dark-mode.png HTTP/1.1" 200 26438
+INFO 2026-04-26 21:37:31,337 basehttp "POST /accounts/login/ HTTP/1.1" 302 0
+INFO 2026-04-26 21:37:31,355 basehttp "GET /post-login/ HTTP/1.1" 302 0
+INFO 2026-04-26 21:37:31,501 basehttp "GET /dashboard/ HTTP/1.1" 200 20618
+INFO 2026-04-26 21:37:31,540 basehttp "GET /static/images/light-mode.png HTTP/1.1" 200 20997
+INFO 2026-04-26 21:37:33,702 basehttp "GET /manage-gaps/ HTTP/1.1" 200 58390
+INFO 2026-04-26 21:37:35,704 basehttp "GET /media/resolution_proofs/closure_ai_probe_2.jpg HTTP/1.1" 200 1651
+INFO 2026-04-26 21:37:45,288 basehttp "GET /accounts/logout/ HTTP/1.1" 302 0
+INFO 2026-04-26 21:37:45,296 basehttp "GET /accounts/login/ HTTP/1.1" 200 13158
