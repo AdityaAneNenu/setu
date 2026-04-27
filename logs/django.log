@@ -12,3 +12,24 @@ INFO 2026-04-26 21:37:33,702 basehttp "GET /manage-gaps/ HTTP/1.1" 200 58390
 INFO 2026-04-26 21:37:35,704 basehttp "GET /media/resolution_proofs/closure_ai_probe_2.jpg HTTP/1.1" 200 1651
 INFO 2026-04-26 21:37:45,288 basehttp "GET /accounts/logout/ HTTP/1.1" 302 0
 INFO 2026-04-26 21:37:45,296 basehttp "GET /accounts/login/ HTTP/1.1" 200 13158
+INFO 2026-04-27 05:51:48,217 autoreload Watching for file changes with StatReloader
+INFO 2026-04-27 05:51:52,742 basehttp "GET / HTTP/1.1" 200 19909
+WARNING 2026-04-27 05:51:53,755 log Not Found: /favicon.ico
+WARNING 2026-04-27 05:51:53,757 basehttp "GET /favicon.ico HTTP/1.1" 404 11979
+INFO 2026-04-27 05:52:01,096 basehttp "GET /accounts/login/ HTTP/1.1" 200 13158
+INFO 2026-04-27 05:52:01,133 basehttp "GET /static/images/dark-mode.png HTTP/1.1" 200 26438
+INFO 2026-04-27 05:52:02,849 basehttp "GET /public-dashboard/ HTTP/1.1" 200 64972
+INFO 2026-04-27 05:53:12,675 basehttp "GET /public-dashboard/ HTTP/1.1" 200 65086
+INFO 2026-04-27 05:54:01,409 basehttp "GET / HTTP/1.1" 200 19912
+INFO 2026-04-27 05:54:02,758 basehttp "GET / HTTP/1.1" 200 19912
+INFO 2026-04-27 05:54:02,960 basehttp "GET / HTTP/1.1" 200 19912
+INFO 2026-04-27 05:55:50,962 basehttp "GET / HTTP/1.1" 200 20243
+INFO 2026-04-27 05:55:51,106 basehttp "GET / HTTP/1.1" 200 20243
+INFO 2026-04-27 05:55:52,076 basehttp "GET / HTTP/1.1" 200 20243
+WARNING 2026-04-27 06:01:04,861 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-27 06:01:04,889 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-27 06:01:05,075 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-27 06:01:05,388 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-27 06:01:05,422 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-27 06:01:08,325 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_MzPwVIE.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-27 06:01:08,342 api_views Firebase async sync warning for gap 1: database table is locked: core_gap

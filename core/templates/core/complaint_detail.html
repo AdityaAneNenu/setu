@@ -707,11 +707,7 @@
                         </div>
                         {% endif %}
 
-<<<<<<< HEAD
-                        <form method="POST" enctype="multipart/form-data" action="{% url 'verify_and_close_complaint' complaint.complaint_id %}">
-=======
                         <form id="closureVerifyForm" method="POST" enctype="multipart/form-data" action="{% url 'verify_and_close_complaint' complaint.complaint_id %}">
->>>>>>> 6a0a424 (Many changes in verification modules.)
                             {% csrf_token %}
                             <input type="hidden" id="closure_latitude" name="closure_latitude" value="">
                             <input type="hidden" id="closure_longitude" name="closure_longitude" value="">
@@ -724,11 +720,7 @@
                                 </div>
                             </div>
 
-<<<<<<< HEAD
-                            <button type="submit" class="btn btn-primary">
-=======
                             <button type="submit" class="btn btn-primary" id="closureVerifySubmit" disabled>
->>>>>>> 6a0a424 (Many changes in verification modules.)
                                 Verify & Close Complaint
                             </button>
                         </form>
@@ -926,14 +918,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusEl = document.getElementById('closureGpsStatus');
     const latEl = document.getElementById('closure_latitude');
     const lngEl = document.getElementById('closure_longitude');
-<<<<<<< HEAD
-    if (!latEl || !lngEl) return;
-
-    if (!navigator.geolocation) {
-        if (statusEl) statusEl.textContent = "GPS not supported in this browser.";
-        return;
-    }
-=======
     const formEl = document.getElementById('closureVerifyForm');
     const submitEl = document.getElementById('closureVerifySubmit');
 
@@ -962,7 +946,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSubmitState();
         return;
     }
->>>>>>> 6a0a424 (Many changes in verification modules.)
     if (statusEl) statusEl.textContent = "Fetching GPS...";
 
     navigator.geolocation.getCurrentPosition(
@@ -970,17 +953,11 @@ document.addEventListener('DOMContentLoaded', function() {
             latEl.value = String(pos.coords.latitude);
             lngEl.value = String(pos.coords.longitude);
             if (statusEl) statusEl.textContent = `GPS captured: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-<<<<<<< HEAD
-        },
-        () => {
-            if (statusEl) statusEl.textContent = "GPS unavailable. Verification will be blocked.";
-=======
             updateSubmitState();
         },
         () => {
             if (statusEl) statusEl.textContent = "GPS unavailable. Verification will be blocked.";
             updateSubmitState();
->>>>>>> 6a0a424 (Many changes in verification modules.)
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );

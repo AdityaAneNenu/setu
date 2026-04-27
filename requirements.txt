@@ -26,5 +26,3 @@ qrcode==8.2
 
 # HTTP
 requests>=2.31.0
-
-# Audio/Scientific

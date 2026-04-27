@@ -1,308 +1,231 @@
-<<<<<<< HEAD
-# SETU
+# SETU PM-AJAY Platform
 
-SETU is a Django-based rural infrastructure gap management platform. It supports mobile submissions, AI-assisted media analysis, workflow tracking, and closure verification using geo-tagged photos and user selfies.
+SETU is a full-stack platform for rural infrastructure and complaint lifecycle management.
 
-## What The System Does
+It includes:
+- A Django web app for dashboards, workflow operations, and administration
+- A REST API consumed by web and mobile clients
+- An Expo React Native mobile app for field workflows and sync
+- AI-assisted media analysis endpoints for complaint/gap support
 
-- Tracks rural infrastructure gaps from submission through closure.
-- Supports admin, manager, and field workflows.
-- Accepts image-based submissions and processes them through the backend AI analysis pipeline.
-- Verifies gap closure with geo-tagged photo proof and optional selfie matching.
-- Syncs data to Firebase/Firestore for mobile usage and auditability.
-- Provides web dashboards for gap management, workflow review, and analytics.
+## Audit Snapshot (April 27, 2026)
 
-## Current Architecture
+This repository was audited before rewriting this README.
 
-### Backend
+### High-severity findings
+- Unresolved Git merge conflict markers exist in multiple tracked files:
+  - `README.md` (fixed by this rewrite)
+  - `core/templates/core/complaint_detail.html`
+  - `core/fixtures/local_data.json`
+- These conflict markers can break runtime behavior and data loading and should be resolved immediately.
 
-- Django 4.2.27
-- Django REST Framework 3.14.0
-- SQLite for local development
-- Firestore synchronization for mobile and reporting flows
+### Medium-severity findings
+- `requirements.txt` appears incomplete at the end (trailing section header: `# Audio/Scientific` with no packages listed).
+- `config/settings.py` contains duplicated logging configuration blocks.
 
-### Verification Model
-
-- Gap closure is based on photo proof and GPS metadata.
-- Complaint closure uses one of two verified paths:
-- `resolution_letter` for written/photo complaints that include a complaint document image.
-- `selfie_gps` for direct/audio complaints, which now require the original complaintee photo and submission GPS plus a closure-time selfie and closure GPS.
-- Legacy voice verification has been removed from the active system.
-
-### Mobile And Web Flows
-
-- Web users manage gaps, review complaints, and approve closures.
-- Mobile users submit complaints and resolve items through the sync endpoints.
-- AI analysis runs on submitted media through the media analysis API.
-
-## Key Routes
-
-### Web
-
-- `/` home
-- `/dashboard/` dashboard
-- `/manage-gaps/` gap administration
-- `/workflow/` workflow dashboard
-- `/workflow/complaint/<complaint_id>/` complaint details
-- `/workflow/complaint/<complaint_id>/verify-close/` selfie verification and closure
-- `/workflow/complaint/<complaint_id>/resolve-photo/` photo-based resolution flow
-
-### API
-
-- `/api/auth/login/`
-- `/api/dashboard/`
-- `/api/analytics/`
-- `/api/gaps/`
-- `/api/gaps/<gap_id>/status/`
-- `/api/gaps/<gap_id>/close-with-proof/`
-- `/api/mobile/gaps/sync/`
-- `/api/mobile/complaints/submit/`
-- `/api/mobile/complaints/in-progress/`
-- `/api/mobile/complaints/<complaint_id>/verify-close/`
-- `/api/mobile/complaints/<complaint_id>/resolve-photo/`
-- `/api/analyze-media/`
-
-## Data And Fixture Policy
-
-- `core/fixtures/local_data.json` is intentionally empty to avoid loading stale test data.
-- The local data loader skips deprecated models and removes removed legacy fields.
-- Use `python manage.py load_local_data` only when you explicitly want cleaned fixture data loaded.
-- Use `python manage.py load_local_data --with-media-bundle` if you also want the bundled media copied into `MEDIA_ROOT`.
-
-## Setup
-
-### Prerequisites
-
-- Python 3.8 or newer
-- Node.js 16+ for the mobile app
-- Git
-
-### Install
-=======
-﻿# SETU
-
-SETU is a rural infrastructure and complaint lifecycle platform with a Django backend and an Expo React Native mobile app.
-
-It supports:
-- Gap reporting and lifecycle tracking (open -> in progress -> resolved)
-- Complaint workflow management for post office and PM-AJAY operations
-- Mobile-first sync between Firestore and Django APIs
-- Geo-tagged closure proof for gaps
-- Complaint closure verification using submission-time complaintee photo + GPS
-- AI-assisted media analysis for image/audio submissions
+### Current health signal
+- Editor diagnostics currently report no immediate syntax/lint errors, but unresolved merge conflicts are still critical technical debt.
 
 ## Tech Stack
 
-Backend:
-- Django 4.2
-- Django REST Framework
-- SQLite (default local), PostgreSQL via DATABASE_URL (production)
-- Firebase Admin SDK for auth + Firestore sync
-- Gemini + AssemblyAI integrations for AI/media processing
+### Backend
+- Python 3.11 (runtime target)
+- Django 4.2.27
+- Django REST Framework 3.14.0
+- SQLite (local default) or PostgreSQL via `DATABASE_URL`
+- Firebase Admin SDK integration
+- WhiteNoise + Gunicorn for production serving
 
-Mobile:
-- Expo + React Native
-- Firebase Auth + Firestore
-- Camera, location, and media upload flows
+### Mobile
+- Expo SDK 54
+- React Native 0.81.5
+- Firebase client SDK
+- Camera, location, file/document capture support
 
-## Repository Structure
+### AI and Media
+- Google Generative AI SDK
+- AssemblyAI SDK
+- Pillow / OpenCV / NumPy for media handling
 
-- config/: Django project configuration (settings, root URLs, WSGI/ASGI)
-- core/: Main app (models, views, workflow, APIs, templates, tests)
-- core/api_urls.py: REST API routes used by web/mobile
-- core/urls.py: Web routes and workflow pages
-- mobile-app/: Expo React Native app
-- locale/: Django translation files
-- docs/: Project documentation (if present)
+## Repository Layout
 
-## Key Domain Flows
+- `config/`: Django project config (`settings.py`, root URLs, WSGI/ASGI)
+- `core/`: Main app (models, views, API views, workflow, templates, tests)
+- `core/api_urls.py`: REST endpoint routes
+- `core/urls.py`: Web UI routes
+- `mobile-app/`: Expo React Native app
+- `docs/`: Project documentation
+- `locale/`: Translation files
+- `media/`, `staticfiles/`, `logs/`: runtime artifacts and generated assets
 
-### 1. Gap Flow
-- Gaps can be submitted from web or mobile.
-- Mobile stores first in Firestore and then syncs to Django via /api/mobile/gaps/sync/.
-- Gap status updates can sync to Django and are tracked with GapStatusAuditLog.
-- Closing a gap with proof uses:
-  - POST /api/gaps/<gap_id>/close-with-proof/
-  - Required: closure photo URL + closure GPS
-  - Optional: closure selfie URL
-  - Distance validation checks closure GPS against original gap GPS.
+## Key Web Routes
 
-### 2. Mobile Gap Flow
-- Mobile app uses Gap as the only source of truth.
-- Mobile gap list endpoint returns grouped buckets:
-  - GET /api/mobile/gaps/
-  - Response keys: open, in_progress, resolved
-- Mobile gap resolve endpoint:
-  - POST /api/mobile/gaps/<gap_id>/resolve/
+- `/` home page
+- `/dashboard/` role-aware dashboard
+- `/public-dashboard/` public progress dashboard
+- `/manage-gaps/` gap management
+- `/workflow/` workflow dashboard
+- `/workflow/complaint/<complaint_id>/` complaint details
+- `/workflow/complaint/<complaint_id>/verify-close/` verification close flow
+- `/workflow/complaint/<complaint_id>/resolve-photo/` photo-resolution flow
 
-### 3. AI Media Analysis
-- Unified endpoint: POST /api/analyze-media/
-- Supports image/audio analysis and returns structured suggestion fields.
+## Key API Routes
 
-## Local Backend Setup
+### Auth
+- `POST /api/auth/login/`
+- `POST /api/auth/logout/`
+- `GET /api/auth/profile/`
 
-Prerequisites:
-- Python 3.10+ (project currently works with newer versions too)
+### Dashboard and analytics
+- `GET /api/dashboard/`
+- `GET /api/analytics/`
+- `GET /api/public-dashboard/`
+
+### Gaps
+- `GET /api/gaps/`
+- `GET /api/gaps/<gap_id>/`
+- `POST /api/gaps/upload/`
+- `POST /api/gaps/<gap_id>/status/`
+- `POST /api/gaps/<gap_id>/close-with-proof/`
+
+### Mobile sync and workflow
+- `POST /api/mobile/gaps/sync/`
+- `POST /api/mobile/gaps/<firestore_id>/status/`
+- `GET /api/mobile/gaps/`
+- `POST /api/mobile/gaps/<gap_id>/resolve/`
+- `POST /api/mobile/complaints/submit/`
+- `GET /api/mobile/complaints/in-progress/`
+- `POST /api/mobile/complaints/<complaint_id>/verify-close/`
+- `POST /api/mobile/complaints/<complaint_id>/resolve-photo/`
+
+### AI
+- `POST /api/analyze-media/`
+
+## Backend Setup (Local)
+
+## 1. Prerequisites
+- Python 3.10+ (3.11 recommended)
 - pip
 
-Create environment:
+## 2. Create and activate virtual environment
 
-```bash
+Windows PowerShell:
+```powershell
 python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-Activate:
-- Windows PowerShell: .venv\Scripts\Activate.ps1
-- Windows CMD: .venv\Scripts\activate.bat
-- macOS/Linux: source .venv/bin/activate
+Windows CMD:
+```cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
+```
 
-Install dependencies:
->>>>>>> 6a0a424 (Many changes in verification modules.)
-
+macOS/Linux:
 ```bash
 python -m venv .venv
+source .venv/bin/activate
+```
+
+## 3. Install dependencies
+```bash
 pip install -r requirements.txt
-<<<<<<< HEAD
-=======
 ```
 
-Run migrations and checks:
+## 4. Configure environment
+Create `.env` in repo root. Start from `.env.example`.
 
+Minimum backend variables:
+- `SECRET_KEY`
+- `DEBUG`
+- `ALLOWED_HOSTS`
+- `DATABASE_URL` (optional; SQLite used if omitted)
+- `FIREBASE_CREDENTIALS_PATH` or `FIREBASE_CREDENTIALS_JSON`
+- `GEMINI_API_KEY` (if AI features enabled)
+- `ASSEMBLYAI_API_KEY` (if speech processing enabled)
+
+## 5. Run migrations and checks
 ```bash
->>>>>>> 6a0a424 (Many changes in verification modules.)
 python manage.py migrate
 python manage.py check
 ```
 
-<<<<<<< HEAD
-Activate the virtual environment before installing packages:
-
-- Windows PowerShell: `.venv\Scripts\Activate.ps1`
-- Windows CMD: `.venv\Scripts\activate.bat`
-- macOS/Linux: `source .venv/bin/activate`
-
-### Environment
-
-Create a `.env` file with the project secrets and API keys required by your deployment. At minimum, configure:
-
-- Django settings and secret key
-- `GEMINI_API_KEY`
-- Firebase admin credentials (`FIREBASE_CREDENTIALS_JSON` or `FIREBASE_CREDENTIALS_PATH`)
-- Any email or cloud storage credentials used by your deployment
-
-For the mobile app, make sure the Expo config points at the correct backend URL through `PRODUCTION_API_URL`. The complaint verification and geotagged closure flows depend on that URL matching the Django server that owns the synced records.
-
-### Run The Server
-
+## 6. Start development server
 ```bash
 python manage.py runserver
 ```
 
-## Validation
+Default local URL: `http://127.0.0.1:8000/`
 
-- `python manage.py check`
-- `python manage.py test`
-- Focused backend coverage exists for Firestore sync, media analysis, complaint submission, and complaint closure verification flows
+## Mobile Setup (Expo)
 
-## Project Layout
-
-- `config/` Django project settings and root URL routing
-- `core/` main application code, templates, models, APIs, workflow views, and tests
-- `core/fixtures/` local fixture data and media bundle assets
-- `mobile-app/` React Native application
-- `docs/` supporting documentation
-
-## Deployment Notes
-
-- The repository includes Railway deployment guidance and helper scripts.
-- `manage.py check` currently passes cleanly.
-- Legacy voice-specific documentation and test data should not be used for current deployments.
-=======
-Start server:
-
-```bash
-python manage.py runserver
-```
-
-Backend base URL (local):
-- http://127.0.0.1:8000/
-
-## Environment Variables
-
-Create a .env file in repository root.
-
-Important variables used by the backend:
-- SECRET_KEY
-- DEBUG
-- DATABASE_URL (for PostgreSQL production)
-- GEMINI_API_KEY
-- ASSEMBLYAI_API_KEY
-- FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS_PATH
-- EMAIL_* settings (if email notifications are used)
-
-Optional deployment-related variables may also be used in settings.
-
-## Mobile App Setup
-
-Prerequisites:
+## 1. Prerequisites
 - Node.js 18+
 - npm
-- Expo tooling (via npx)
 
-Install mobile dependencies:
-
+## 2. Install and run
 ```bash
 cd mobile-app
 npm install
-```
-
-Run mobile app:
-
-```bash
 npm run start
 ```
 
-Platform shortcuts:
-
+Optional launch shortcuts:
 ```bash
 npm run android
 npm run ios
 npm run web
 ```
 
-API configuration is controlled in mobile-app/src/config/api.js.
+Mobile API base URL logic is defined in:
+- `mobile-app/src/config/api.js`
 
-## Testing and Validation
+By default, production mobile API points to:
+- `https://setu.up.railway.app`
+
+## Testing
 
 Run Django checks:
-
 ```bash
 python manage.py check
 ```
 
-Run backend tests:
-
+Run all backend tests:
 ```bash
 python manage.py test
 ```
 
-Run specific test modules:
-
+Useful targeted tests:
 ```bash
 python manage.py test core.tests.test_complaint_verification_flows
 python manage.py test core.tests.test_firebase_init core.tests.test_firebase_sync_privacy
 python manage.py test core.tests.test_analyze_media core.tests.test_speech_to_text_service
+python manage.py test core.tests.test_mobile_gap_resolve_verification
 ```
 
-## Deployment Notes
+## Deployment (Railway)
 
-- The repo includes Railway-oriented files (Procfile, runtime, helper scripts).
-- Static/media serving differs between local and production; verify storage and media routing before go-live.
-- Firestore sync should be monitored in production to avoid drift between mobile and backend records.
+Relevant files:
+- `Procfile`
+- `runtime.txt`
+- `nixpacks.toml`
+- `RAILWAY_DEPLOY.md`
 
-## Current Product Direction
+Current process command (from `Procfile`):
+```bash
+python manage.py migrate --noinput && python manage.py setup_all_users && python manage.py collectstatic --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
+```
 
-- Voice-verification-based closure is deprecated/removed from active flow.
-- Active verification model is photo + GPS based closure evidence for gaps and complaints.
-- SMS integration endpoints are not part of active routed functionality.
->>>>>>> 6a0a424 (Many changes in verification modules.)
+## Immediate Cleanup Recommended
+
+1. Resolve all merge conflicts in tracked files:
+   - `core/templates/core/complaint_detail.html`
+   - `core/fixtures/local_data.json`
+2. Repair and finalize `requirements.txt` tail section.
+3. Consolidate duplicate logging configuration in `config/settings.py`.
+4. Re-run `python manage.py check` and regression tests after conflict cleanup.
+
+## Notes
+
+- This README has been fully rewritten to replace a corrupted, conflict-marked version.
+- Keep this file updated whenever endpoints, deployment commands, or environment variables change.

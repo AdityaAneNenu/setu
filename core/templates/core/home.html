@@ -22,7 +22,7 @@ body {
 
 
         .section {
-            padding: 4rem 1.5rem;
+            padding: 3rem 1.5rem;
         }
 
         .section-hero {
@@ -41,7 +41,7 @@ body {
 .hero-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.42) 100%);
     z-index: 1;
 }
         .section-muted {
@@ -64,13 +64,12 @@ body {
             margin: 0 auto;
         }
 
-        /* AFTER */
 .hero-wrap {
     max-width: 56rem;
     margin: 0 auto;
     text-align: center;
-    position: relative;   /* ← add this */
-    z-index: 2;           /* ← add this — sits above the overlay */
+    position: relative;
+    z-index: 2;
 }
 
         .hero-badge {
@@ -79,9 +78,9 @@ body {
             gap: 0.5rem;
             padding: 0.5rem 1rem;
             border-radius: 999px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
+            background: rgba(13, 13, 18, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #f4f4f5;
             font-size: 0.875rem;
             font-weight: 500;
             margin-bottom: 1.25rem;
@@ -93,6 +92,7 @@ body {
             line-height: 1.1;
             letter-spacing: -0.02em;
             color: var(--text-primary);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
         }
 
         .hero-highlight {
@@ -105,8 +105,9 @@ body {
         .hero-subtitle {
             margin: 1rem auto 0;
             max-width: 48rem;
-            color: var(--text-secondary);
+            color: #e4e4e7;
             font-size: 1.0625rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
 
         .button-row {
@@ -131,6 +132,13 @@ body {
             transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
         }
 
+        .btn-primary:focus-visible,
+        .btn-secondary:focus-visible,
+        .footer a:focus-visible {
+            outline: 2px solid var(--accent-purple);
+            outline-offset: 2px;
+        }
+
         .btn-primary {
             color: #fff;
             background: var(--gradient-primary);
@@ -138,15 +146,23 @@ body {
         }
 
         .btn-secondary {
-            color: var(--text-primary);
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            color: #f4f4f5;
+            background: rgba(13, 13, 18, 0.78);
+            border: 1px solid rgba(255, 255, 255, 0.22);
         }
 
         .btn-primary:hover,
         .btn-secondary:hover {
             transform: translateY(-1px);
             border-color: var(--border-hover);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.45);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(26, 26, 36, 0.92);
         }
 
         .section-header {
@@ -182,11 +198,26 @@ body {
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
 
+        .focus-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .features-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 1rem;
             padding: 1.25rem;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-hover);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
         }
 
         .card h3 {
@@ -299,6 +330,10 @@ body {
             list-style: none;
         }
 
+        .footer a:hover {
+            color: var(--text-primary);
+        }
+
         .footer ul {
             padding: 0;
             margin: 0;
@@ -317,7 +352,12 @@ body {
 
         @media (max-width: 768px) {
             .section {
-                padding: 3rem 1rem;
+                padding: 2.25rem 1rem;
+            }
+
+            .focus-grid,
+            .features-grid {
+                grid-template-columns: 1fr;
             }
 
             .button-row {
@@ -336,7 +376,6 @@ body {
     </style>
 </head>
 <body>
-    <!-- 🔥 UPDATED HERO -->
 <section class="section section-hero">
 
     <div class="hero-bg"></div>
@@ -396,7 +435,7 @@ body {
                 <h2 class="section-title">Focus Areas</h2>
                 <p class="section-description">Core domains that define Adarsh Gram readiness.</p>
             </div>
-            <div class="grid grid-4">
+            <div class="grid grid-4 focus-grid">
                 <article class="card"><div class="icon-pill">🎓</div><h3>Education</h3><p>Schools, teachers, and learning resources.</p></article>
                 <article class="card"><div class="icon-pill">🏥</div><h3>Healthcare</h3><p>Primary care access and public health support.</p></article>
                 <article class="card"><div class="icon-pill">🚿</div><h3>Sanitation</h3><p>Toilets, hygiene, and waste systems.</p></article>
@@ -415,7 +454,7 @@ body {
                 <h2 class="section-title">Platform Features</h2>
                 <p class="section-description">Tools designed for village-level planning, execution, and oversight.</p>
             </div>
-            <div class="grid grid-3">
+            <div class="grid grid-3 features-grid">
                 <article class="card"><h3>Village Tracking</h3><p>Register and monitor village status with structured baseline data.</p></article>
                 <article class="card"><h3>Gap Assessment</h3><p>Run detailed assessments across all PM-AJAY focus categories.</p></article>
                 <article class="card"><h3>Analytics & Reports</h3><p>Use dashboards and reports to guide interventions and reviews.</p></article>

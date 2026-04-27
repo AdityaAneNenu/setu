@@ -714,7 +714,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+          <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
             No gaps found. Submit geo-tagged photo evidence to create new gap entries.
           </td>
         </tr>
@@ -793,7 +793,8 @@
   }
   
   .recording-modal-content {
-    background: white;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
@@ -803,7 +804,7 @@
   
   .recording-modal-header {
     padding: 20px 25px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -811,7 +812,7 @@
   
   .recording-modal-header h3 {
     margin: 0;
-    color: #1e293b;
+    color: var(--text-primary);
     font-size: 20px;
   }
   
@@ -819,7 +820,7 @@
     background: none;
     border: none;
     font-size: 28px;
-    color: #94a3b8;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 0;
     width: 30px;
@@ -831,7 +832,7 @@
   }
   
   .close-modal:hover {
-    color: #1e293b;
+    color: var(--text-primary);
   }
   
   .recording-modal-body {
@@ -839,7 +840,7 @@
   }
   
   .recording-info {
-    background: #f8fafc;
+    background: var(--bg-secondary);
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -847,7 +848,7 @@
   
   .recording-info p {
     margin: 5px 0;
-    color: #475569;
+    color: var(--text-secondary);
   }
   
   .recording-status {
