@@ -1,75 +1,76 @@
-# SETU PM-AJAY Platform
+# SETU PM-AJAY
 
-SETU is a full-stack platform for rural infrastructure and complaint lifecycle management.
+SETU PM-AJAY is a full-stack rural service and grievance platform.
 
-It includes:
-- A Django web app for dashboards, workflow operations, and administration
-- A REST API consumed by web and mobile clients
-- An Expo React Native mobile app for field workflows and sync
-- AI-assisted media analysis endpoints for complaint/gap support
-
-## Audit Snapshot (April 27, 2026)
-
-This repository was audited before rewriting this README.
-
-### High-severity findings
-- Unresolved Git merge conflict markers exist in multiple tracked files:
-  - `README.md` (fixed by this rewrite)
-  - `core/templates/core/complaint_detail.html`
-  - `core/fixtures/local_data.json`
-- These conflict markers can break runtime behavior and data loading and should be resolved immediately.
-
-### Medium-severity findings
-- `requirements.txt` appears incomplete at the end (trailing section header: `# Audio/Scientific` with no packages listed).
-- `config/settings.py` contains duplicated logging configuration blocks.
-
-### Current health signal
-- Editor diagnostics currently report no immediate syntax/lint errors, but unresolved merge conflicts are still critical technical debt.
+It combines:
+- A Django web application for dashboards, workflow, and administration
+- A REST API for web/mobile clients
+- An Expo React Native mobile app for field operations and sync
+- AI-assisted media analysis for image/audio complaint support
 
 ## Tech Stack
 
 ### Backend
-- Python 3.11 (runtime target)
+- Python 3.11.11
 - Django 4.2.27
-- Django REST Framework 3.14.0
-- SQLite (local default) or PostgreSQL via `DATABASE_URL`
-- Firebase Admin SDK integration
-- WhiteNoise + Gunicorn for production serving
+- Django REST Framework
+- django-unfold (admin UI)
+- WhiteNoise + Gunicorn
+- SQLite (default local) or PostgreSQL via `DATABASE_URL`
+- Firebase Admin SDK
+
+### AI and Media
+- Google Generative AI (`google-generativeai`)
+- AssemblyAI
+- Pillow, NumPy, OpenCV
 
 ### Mobile
 - Expo SDK 54
 - React Native 0.81.5
-- Firebase client SDK
-- Camera, location, file/document capture support
+- React Navigation 7
+- Firebase JS SDK
 
-### AI and Media
-- Google Generative AI SDK
-- AssemblyAI SDK
-- Pillow / OpenCV / NumPy for media handling
+## Repository Structure
 
-## Repository Layout
-
-- `config/`: Django project config (`settings.py`, root URLs, WSGI/ASGI)
-- `core/`: Main app (models, views, API views, workflow, templates, tests)
-- `core/api_urls.py`: REST endpoint routes
-- `core/urls.py`: Web UI routes
+- `config/`: Django project configuration (`settings.py`, `urls.py`, `wsgi.py`)
+- `core/`: Main app (models, views, API views, templates, tests, commands)
+- `core/management/commands/`: Operational and data bootstrap commands
+- `core/tests/`: Backend tests
 - `mobile-app/`: Expo React Native app
 - `docs/`: Project documentation
-- `locale/`: Translation files
-- `media/`, `staticfiles/`, `logs/`: runtime artifacts and generated assets
+- `media/`, `staticfiles/`, `logs/`: Runtime/generated artifacts
+
+## Domain Model (Core)
+
+Main entities in `core/models.py` include:
+- `Village`
+- `Gap` and `GapStatusAuditLog`
+- `Complaint` and `WorkflowLog`
+- `PostOffice`, `PMAJAYOffice`, `SurveyAgent`, `SurveyVisit`, `Worker`
+- `QRSubmission` and `QRComplaintDetail`
+- `UserProfile`
 
 ## Key Web Routes
 
-- `/` home page
-- `/dashboard/` role-aware dashboard
-- `/public-dashboard/` public progress dashboard
-- `/manage-gaps/` gap management
-- `/workflow/` workflow dashboard
-- `/workflow/complaint/<complaint_id>/` complaint details
-- `/workflow/complaint/<complaint_id>/verify-close/` verification close flow
-- `/workflow/complaint/<complaint_id>/resolve-photo/` photo-resolution flow
+From `core/urls.py`:
+- `/`
+- `/dashboard/`
+- `/upload/`
+- `/analytics/`
+- `/manage-gaps/`
+- `/villages/`
+- `/public-dashboard/`
+- `/workflow/`
+- `/workflow/complaint/<complaint_id>/`
+- `/workflow/agents/`
+
+System endpoints from `config/urls.py`:
+- `/health/`
+- `/ready/`
 
 ## Key API Routes
+
+From `core/api_urls.py`:
 
 ### Auth
 - `POST /api/auth/login/`
@@ -88,7 +89,7 @@ This repository was audited before rewriting this README.
 - `POST /api/gaps/<gap_id>/status/`
 - `POST /api/gaps/<gap_id>/close-with-proof/`
 
-### Mobile sync and workflow
+### Mobile sync and complaints
 - `POST /api/mobile/gaps/sync/`
 - `POST /api/mobile/gaps/<firestore_id>/status/`
 - `GET /api/mobile/gaps/`
@@ -98,16 +99,22 @@ This repository was audited before rewriting this README.
 - `POST /api/mobile/complaints/<complaint_id>/verify-close/`
 - `POST /api/mobile/complaints/<complaint_id>/resolve-photo/`
 
-### AI
+### Workflow and AI
+- `GET /api/workflow/complaints/`
+- `GET /api/workflow/stats/`
+- `GET /api/workflow/agents/`
 - `POST /api/analyze-media/`
 
-## Backend Setup (Local)
+### Utility
+- `GET /api/test/`
 
-## 1. Prerequisites
+## Local Backend Setup
+
+### 1. Prerequisites
 - Python 3.10+ (3.11 recommended)
 - pip
 
-## 2. Create and activate virtual environment
+### 2. Create and activate virtual environment
 
 Windows PowerShell:
 ```powershell
@@ -127,105 +134,102 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-## 3. Install dependencies
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-## 4. Configure environment
-Create `.env` in repo root. Start from `.env.example`.
+### 4. Configure environment variables
+Create `.env` in project root.
 
-Minimum backend variables:
+Recommended values:
 - `SECRET_KEY`
 - `DEBUG`
 - `ALLOWED_HOSTS`
-- `DATABASE_URL` (optional; SQLite used if omitted)
+- `DATABASE_URL` (optional locally)
+- `RAILWAY_PUBLIC_DOMAIN` (deployment)
 - `FIREBASE_CREDENTIALS_PATH` or `FIREBASE_CREDENTIALS_JSON`
-- `GEMINI_API_KEY` (if AI features enabled)
-- `ASSEMBLYAI_API_KEY` (if speech processing enabled)
+- `GEMINI_API_KEY` (optional, AI features)
+- `ASSEMBLYAI_API_KEY` (optional, AI features)
 
-## 5. Run migrations and checks
+### 5. Run migrations and checks
 ```bash
 python manage.py migrate
 python manage.py check
 ```
 
-## 6. Start development server
+### 6. Optional bootstrap commands
+```bash
+python manage.py setup_all_users
+python manage.py setup_workflow_data
+python manage.py load_local_data
+```
+
+### 7. Start development server
 ```bash
 python manage.py runserver
 ```
 
-Default local URL: `http://127.0.0.1:8000/`
+Default URL: `http://127.0.0.1:8000/`
 
-## Mobile Setup (Expo)
+## Mobile App Setup
 
-## 1. Prerequisites
-- Node.js 18+
-- npm
-
-## 2. Install and run
 ```bash
 cd mobile-app
 npm install
 npm run start
 ```
 
-Optional launch shortcuts:
+Optional:
 ```bash
 npm run android
 npm run ios
 npm run web
 ```
 
-Mobile API base URL logic is defined in:
-- `mobile-app/src/config/api.js`
-
-By default, production mobile API points to:
-- `https://setu.up.railway.app`
+Mobile backend URL selection is defined in `mobile-app/src/config/api.js`.
 
 ## Testing
-
-Run Django checks:
-```bash
-python manage.py check
-```
 
 Run all backend tests:
 ```bash
 python manage.py test
 ```
 
-Useful targeted tests:
+Run targeted suites:
 ```bash
 python manage.py test core.tests.test_complaint_verification_flows
 python manage.py test core.tests.test_firebase_init core.tests.test_firebase_sync_privacy
 python manage.py test core.tests.test_analyze_media core.tests.test_speech_to_text_service
 python manage.py test core.tests.test_mobile_gap_resolve_verification
+python manage.py test core.tests.test_sms_webhook_security
 ```
 
 ## Deployment (Railway)
 
-Relevant files:
+Deployment-related files:
 - `Procfile`
 - `runtime.txt`
 - `nixpacks.toml`
 - `RAILWAY_DEPLOY.md`
+- `DEPLOYMENT.md`
 
-Current process command (from `Procfile`):
+Current web process in `Procfile`:
 ```bash
 python manage.py migrate --noinput && python manage.py setup_all_users && python manage.py collectstatic --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT
 ```
 
-## Immediate Cleanup Recommended
+Nixpacks setup includes audio dependencies (`libsndfile1-dev`, `ffmpeg`) for speech/media workflows.
 
-1. Resolve all merge conflicts in tracked files:
-   - `core/templates/core/complaint_detail.html`
-   - `core/fixtures/local_data.json`
-2. Repair and finalize `requirements.txt` tail section.
-3. Consolidate duplicate logging configuration in `config/settings.py`.
-4. Re-run `python manage.py check` and regression tests after conflict cleanup.
+## Additional Documentation
+
+- `ROLES.md`: Role-based access model
+- `AI_SETUP_GUIDE.md`: AI keys and media analysis setup
+- `READY_FOR_RAILWAY.md`: Deployment readiness notes
+- `docs/UI_ENHANCEMENT_GUIDE.md`: UI system and styling documentation
+- `mobile-app/README.md`: Mobile-app specific guidance
 
 ## Notes
 
-- This README has been fully rewritten to replace a corrupted, conflict-marked version.
-- Keep this file updated whenever endpoints, deployment commands, or environment variables change.
+- This README was rebuilt from current code and config files to replace a corrupted version.
+- If endpoints, startup commands, or env vars change, update this README in the same PR.
