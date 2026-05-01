@@ -15,7 +15,6 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import (
     api_view,
@@ -94,7 +93,10 @@ def _is_truthy(value):
 def _complaint_resolution_banner(complaint):
     if complaint.uses_resolution_letter and not complaint.resolution_letter_image:
         return "Resolution letter upload is still pending."
-    if complaint.requires_selfie_gps_verification and not complaint.is_submission_verification_ready:
+    if (
+        complaint.requires_selfie_gps_verification
+        and not complaint.is_submission_verification_ready
+    ):
         return complaint.verification_block_reason
     if complaint.requires_selfie_gps_verification and not complaint.closure_selfie:
         return "Waiting for closure selfie and on-site GPS verification."
@@ -160,36 +162,52 @@ def _load_gap_image_for_ai(gap, closure_photo_url=""):
         try:
             initial_img = _fetch_image_from_url(gap.initial_photo_url).convert("RGB")
         except Exception as initial_err:
-            logger.warning("Could not load initial photo for gap %s: %s", gap.id, initial_err)
+            logger.warning(
+                "Could not load initial photo for gap %s: %s", gap.id, initial_err
+            )
 
     if closure_photo_url:
         try:
             closure_img = _fetch_image_from_url(closure_photo_url).convert("RGB")
         except Exception as closure_err:
-            logger.warning("Could not load closure photo URL for gap %s: %s", gap.id, closure_err)
+            logger.warning(
+                "Could not load closure photo URL for gap %s: %s", gap.id, closure_err
+            )
 
     if closure_img is None and gap.resolution_proof:
         try:
             with gap.resolution_proof.open("rb") as proof_file:
                 closure_img = Image.open(BytesIO(proof_file.read())).convert("RGB")
         except Exception as proof_err:
-            logger.warning("Could not load proof file for gap %s: %s", gap.id, proof_err)
+            logger.warning(
+                "Could not load proof file for gap %s: %s", gap.id, proof_err
+            )
 
     return initial_img, closure_img
 
 
 def _compute_resolution_ai_score(gap, closure_photo_url=""):
     """Return (score, method, note) where score is normalized in [0, 1]."""
-    initial_img, closure_img = _load_gap_image_for_ai(gap, closure_photo_url=closure_photo_url)
+    initial_img, closure_img = _load_gap_image_for_ai(
+        gap, closure_photo_url=closure_photo_url
+    )
     if initial_img is None or closure_img is None:
-        return None, "unavailable", "Initial or closure image not available for AI comparison"
+        return (
+            None,
+            "unavailable",
+            "Initial or closure image not available for AI comparison",
+        )
 
     try:
         import cv2
         import numpy as np
 
-        before = cv2.cvtColor(np.array(initial_img.resize((256, 256))), cv2.COLOR_RGB2BGR)
-        after = cv2.cvtColor(np.array(closure_img.resize((256, 256))), cv2.COLOR_RGB2BGR)
+        before = cv2.cvtColor(
+            np.array(initial_img.resize((256, 256))), cv2.COLOR_RGB2BGR
+        )
+        after = cv2.cvtColor(
+            np.array(closure_img.resize((256, 256))), cv2.COLOR_RGB2BGR
+        )
 
         gray_before = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
         gray_after = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
@@ -200,7 +218,9 @@ def _compute_resolution_ai_score(gap, closure_photo_url=""):
         hist_after = cv2.calcHist([gray_after], [0], None, [64], [0, 256])
         cv2.normalize(hist_before, hist_before)
         cv2.normalize(hist_after, hist_after)
-        correlation = float(cv2.compareHist(hist_before, hist_after, cv2.HISTCMP_CORREL))
+        correlation = float(
+            cv2.compareHist(hist_before, hist_after, cv2.HISTCMP_CORREL)
+        )
         hist_change_score = max(0.0, min(1.0, (1.0 - correlation) / 2.0))
 
         edge_before = cv2.Canny(gray_before, 80, 160)
@@ -227,7 +247,9 @@ def _compute_resolution_ai_score(gap, closure_photo_url=""):
         score = float(channel_mean / 255.0)
         return max(0.0, min(1.0, score)), "pillow_fallback", ""
     except Exception as pil_err:
-        logger.warning("Pillow fallback AI scoring failed for gap %s: %s", gap.id, pil_err)
+        logger.warning(
+            "Pillow fallback AI scoring failed for gap %s: %s", gap.id, pil_err
+        )
 
     return None, "unavailable", "AI image scoring unavailable"
 
@@ -456,7 +478,9 @@ def api_gaps_list(request):
 
     gaps_data = []
     for gap in gaps:
-        resolved_audio_url = gap.audio_url or (gap.audio_file.url if gap.audio_file else None)
+        resolved_audio_url = gap.audio_url or (
+            gap.audio_file.url if gap.audio_file else None
+        )
         gaps_data.append(
             {
                 "id": gap.id,
@@ -540,7 +564,9 @@ def api_gap_detail(request, gap_id):
                 }
             )
 
-        resolved_audio_url = gap.audio_url or (gap.audio_file.url if gap.audio_file else None)
+        resolved_audio_url = gap.audio_url or (
+            gap.audio_file.url if gap.audio_file else None
+        )
         data = {
             "id": gap.id,
             "village_id": gap.village_id if gap.village_id else None,
@@ -838,7 +864,13 @@ class GapUploadAPIView(APIView):
                     )
 
                 # Validate audio file type
-                allowed_audio_types = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm']
+                allowed_audio_types = [
+                    "audio/mpeg",
+                    "audio/wav",
+                    "audio/ogg",
+                    "audio/mp4",
+                    "audio/webm",
+                ]
                 if audio_file.content_type not in allowed_audio_types:
                     return Response(
                         {
@@ -899,12 +931,18 @@ class GapUploadAPIView(APIView):
                                 try:
                                     ai_data = json.loads(clean_response)
                                 except json.JSONDecodeError as json_err:
-                                    print(f"JSON parsing error in audio translation: {json_err}")
+                                    print(
+                                        f"JSON parsing error in audio translation: {json_err}"
+                                    )
                                     print(f"Response text: {clean_response[:200]}")
                                     ai_data = {
                                         "translated_text": transcribed_text,
-                                        "gap_type": result.get("detected_type", "other"),
-                                        "severity": result.get("priority_level", "medium"),
+                                        "gap_type": result.get(
+                                            "detected_type", "other"
+                                        ),
+                                        "severity": result.get(
+                                            "priority_level", "medium"
+                                        ),
                                         "recommendations": "",
                                     }
 
@@ -975,7 +1013,12 @@ class GapUploadAPIView(APIView):
                     )
 
                 # Validate image file type
-                allowed_image_types = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
+                allowed_image_types = [
+                    "image/jpeg",
+                    "image/png",
+                    "image/jpg",
+                    "image/webp",
+                ]
                 if image_file.content_type not in allowed_image_types:
                     return Response(
                         {
@@ -1472,18 +1515,12 @@ class MobileGapSyncAPIView(APIView):
     Mobile app creates in Firestore first, then syncs to Django.
     POST /api/mobile/gaps/sync/
 
-    Accepts: Firebase token (mobile app), Django Token, or Session auth
-    Mobile app should send: Authorization: Firebase <id_token>
+    Accepts: Firebase ID token only
+    Mobile app should send: Authorization: Bearer <id_token>
     """
 
-    permission_classes = [
-        AllowAny
-    ]  # Allow mobile submissions - validated via Firebase UID
-    authentication_classes = [
-        FirebaseAuthentication,
-        TokenAuthentication,
-        SessionAuthentication,
-    ]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [FirebaseAuthentication]
 
     VALID_GAP_TYPES = [
         "water",
@@ -1508,7 +1545,12 @@ class MobileGapSyncAPIView(APIView):
         try:
             # Input validation - handle None values safely
             firestore_id = request.data.get("firestore_id")
-            local_id = (request.data.get("local_id") or request.data.get("idempotency_key") or "").strip()
+            local_id = (
+                request.data.get("client_submission_id")
+                or request.data.get("local_id")
+                or request.data.get("idempotency_key")
+                or ""
+            ).strip()
             village_id = request.data.get("village_id")
             village_name = (request.data.get("village_name") or "").strip()
             description = (request.data.get("description") or "").strip()
@@ -1537,7 +1579,9 @@ class MobileGapSyncAPIView(APIView):
                             "firestore_id": firestore_id,
                             "gap_type": existing_gap.gap_type,
                             "severity": existing_gap.severity,
-                            "has_audio": bool(existing_gap.audio_file or existing_gap.audio_url),
+                            "has_audio": bool(
+                                existing_gap.audio_file or existing_gap.audio_url
+                            ),
                             "audio_url": existing_gap.audio_url
                             or (
                                 existing_gap.audio_file.url
@@ -1547,16 +1591,6 @@ class MobileGapSyncAPIView(APIView):
                         },
                         status=status.HTTP_200_OK,
                     )
-
-            # Validate Firebase UID for mobile submissions (required for anonymous access)
-            if not request.user.is_authenticated and not submitted_by:
-                return Response(
-                    {
-                        "success": False,
-                        "error": "Firebase UID (submitted_by) is required for mobile submissions",
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
 
             # Validate required fields
             if not description:
@@ -1625,39 +1659,73 @@ class MobileGapSyncAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Validate coordinates
-            if latitude is not None:
-                try:
-                    lat = float(latitude)
-                    if not (-90 <= lat <= 90):
-                        return Response(
-                            {"success": False, "error": "Invalid latitude (-90 to 90)"},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                    latitude = lat
-                except (ValueError, TypeError):
-                    return Response(
-                        {"success": False, "error": "Invalid latitude format"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            if not image_url and not uploaded_image_file:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Evidence photo is required before submitting a gap",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            if longitude is not None:
-                try:
-                    lng = float(longitude)
-                    if not (-180 <= lng <= 180):
-                        return Response(
-                            {
-                                "success": False,
-                                "error": "Invalid longitude (-180 to 180)",
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                    longitude = lng
-                except (ValueError, TypeError):
+            if latitude in (None, "", "null") or longitude in (None, "", "null"):
+                return Response(
+                    {
+                        "success": False,
+                        "error": "latitude and longitude are required before submitting a gap",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if uploaded_image_file and uploaded_image_file.size > 25 * 1024 * 1024:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Image file too large. Maximum size is 25MB.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if uploaded_audio_file and uploaded_audio_file.size > 50 * 1024 * 1024:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "Audio file too large. Maximum size is 50MB.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate coordinates
+            try:
+                lat = float(latitude)
+                if not (-90 <= lat <= 90):
                     return Response(
-                        {"success": False, "error": "Invalid longitude format"},
+                        {"success": False, "error": "Invalid latitude (-90 to 90)"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+                latitude = lat
+            except (ValueError, TypeError):
+                return Response(
+                    {"success": False, "error": "Invalid latitude format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                lng = float(longitude)
+                if not (-180 <= lng <= 180):
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Invalid longitude (-180 to 180)",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                longitude = lng
+            except (ValueError, TypeError):
+                return Response(
+                    {"success": False, "error": "Invalid longitude format"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Validate URLs (prevent XSS)
             if audio_url and not audio_url.startswith(("http://", "https://")):
@@ -1721,22 +1789,14 @@ class MobileGapSyncAPIView(APIView):
                     status="open",
                     input_method=input_method,
                     recommendations=recommendations,
-                    latitude=latitude if latitude else None,
-                    longitude=longitude if longitude else None,
+                    latitude=latitude,
+                    longitude=longitude,
                     initial_gps_accuracy_m=gps_accuracy,
                     audio_url=audio_url if audio_url else None,
                     initial_photo_url=image_url if image_url else None,
                 )
 
                 if uploaded_image_file and not gap.initial_photo_url:
-                    if uploaded_image_file.size > 25 * 1024 * 1024:
-                        return Response(
-                            {
-                                "success": False,
-                                "error": "Image file too large. Maximum size is 25MB.",
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
                     try:
                         from django.core.files.storage import default_storage
 
@@ -1758,14 +1818,6 @@ class MobileGapSyncAPIView(APIView):
 
                 # Persist audio (multipart file or remote URL)
                 if uploaded_audio_file:
-                    if uploaded_audio_file.size > 50 * 1024 * 1024:
-                        return Response(
-                            {
-                                "success": False,
-                                "error": "Audio file too large. Maximum size is 50MB.",
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
                     uploaded_audio_file.seek(0)
                     gap.audio_file = uploaded_audio_file
                     gap.save(update_fields=["audio_file"])
@@ -1777,7 +1829,7 @@ class MobileGapSyncAPIView(APIView):
                     gap=gap,
                     old_status=None,
                     new_status="open",
-                    changed_by=None,  # Mobile user - can be enhanced with Firebase UID lookup
+                    changed_by=request.user,
                     notes=f"Created via mobile app. Firestore ID: {firestore_id or 'N/A'}",
                     source="mobile_app",
                 )
@@ -1801,9 +1853,7 @@ class MobileGapSyncAPIView(APIView):
             )
 
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            logger.exception("Mobile gap sync failed")
             return Response(
                 {"success": False, "error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1811,8 +1861,8 @@ class MobileGapSyncAPIView(APIView):
 
 
 @api_view(["POST"])
+@authentication_classes([FirebaseAuthentication])
 @permission_classes([IsAuthenticated])
-@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
 def api_mobile_gap_status_sync(request, firestore_id):
     """
     Sync gap status update from mobile app.
@@ -1829,7 +1879,7 @@ def api_mobile_gap_status_sync(request, firestore_id):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not new_status or new_status not in ["open", "in_progress", "resolved"]:
+        if not new_status or new_status not in ["open", "in_progress", "needs_review"]:
             return Response(
                 {"success": False, "error": "Invalid status"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1853,17 +1903,21 @@ def api_mobile_gap_status_sync(request, firestore_id):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Update status
+        if new_status == "needs_review" and gap.status not in (
+            "in_progress",
+            "needs_review",
+        ):
+            return Response(
+                {
+                    "success": False,
+                    "error": "Only in-progress gaps can move to needs review",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update status. Resolved status must use a proof-based resolve endpoint.
         gap.status = new_status
         update_fields = ["status"]
-        if new_status == "resolved":
-            from django.utils import timezone
-
-            now = timezone.now()
-            gap.resolved_at = now
-            gap.actual_completion = now.date()
-            gap.resolved_by = request.user
-            update_fields.extend(["resolved_at", "actual_completion", "resolved_by"])
         gap.save(update_fields=update_fields)
 
         # Sync back to Firestore for consistency
@@ -1894,8 +1948,8 @@ def api_mobile_gap_status_sync(request, firestore_id):
 
 
 @api_view(["POST"])
+@authentication_classes([FirebaseAuthentication])
 @permission_classes([IsAuthenticated])
-@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
 def close_gap_with_photo_proof(request, gap_id):
     """
     Close a gap with geo-tagged photo proof.
@@ -1906,6 +1960,14 @@ def close_gap_with_photo_proof(request, gap_id):
     from .models import GapStatusAuditLog
 
     gap = get_object_or_404(Gap, id=gap_id)
+    if str(gap.status).strip().lower() not in {"in_progress", "needs_review"}:
+        return Response(
+            {
+                "success": False,
+                "error": "Gap must be in progress before proof-based closure.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     closure_photo_url = (request.data.get("closure_photo_url") or "").strip()
     closure_selfie_url = (request.data.get("closure_selfie_url") or "").strip()
@@ -1924,7 +1986,9 @@ def close_gap_with_photo_proof(request, gap_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if closure_selfie_url and not closure_selfie_url.startswith(("http://", "https://")):
+    if closure_selfie_url and not closure_selfie_url.startswith(
+        ("http://", "https://")
+    ):
         return Response(
             {"success": False, "error": "Invalid closure selfie URL format"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -2009,7 +2073,10 @@ def close_gap_with_photo_proof(request, gap_id):
     # Optional selfie similarity score (currently no baseline photo in gap flow).
     selfie_match = None
     if closure_selfie_url:
-        selfie_match = {"score": None, "note": "No baseline photo configured for this gap"}
+        selfie_match = {
+            "score": None,
+            "note": "No baseline photo configured for this gap",
+        }
 
     gap.save(
         update_fields=[
@@ -2030,7 +2097,9 @@ def close_gap_with_photo_proof(request, gap_id):
         gap=gap,
         old_status=old_status,
         new_status="resolved",
-        changed_by=request.user if (request.user and request.user.is_authenticated) else None,
+        changed_by=(
+            request.user if (request.user and request.user.is_authenticated) else None
+        ),
         notes=f"Closed with on-site geo-tagged photo proof. GPS: {lat:.6f}, {lng:.6f}",
         source="photo_closure",
     )
@@ -2062,8 +2131,8 @@ def close_gap_with_photo_proof(request, gap_id):
 
 @csrf_exempt
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def api_mobile_gaps(request):
     """List gaps for mobile dashboard grouped by canonical mobile states."""
     gaps = (
@@ -2117,8 +2186,8 @@ def api_mobile_gaps(request):
 
 @csrf_exempt
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def api_mobile_resolve_gap(request, gap_id):
     """Resolve a gap only after rule checks and free AI image validation."""
     from django.utils import timezone
@@ -2130,6 +2199,37 @@ def api_mobile_resolve_gap(request, gap_id):
 
     gap = get_object_or_404(Gap, id=gap_id)
     old_status = gap.status
+    resolution_local_id = (
+        request.data.get("client_submission_id")
+        or request.data.get("local_id")
+        or request.data.get("idempotency_key")
+        or ""
+    ).strip()
+
+    if resolution_local_id:
+        existing_resolution = Gap.objects.filter(
+            resolution_client_id=resolution_local_id
+        ).first()
+        if existing_resolution:
+            return Response(
+                {
+                    "success": True,
+                    "gap_id": existing_resolution.id,
+                    "status": (
+                        "RESOLVED"
+                        if existing_resolution.status == "resolved"
+                        else "NEEDS_RETRY"
+                    ),
+                    "message": "Resolution already captured for this idempotency key",
+                    "resolution_type": existing_resolution.resolution_type or "retry",
+                    "ai_score": existing_resolution.resolution_ai_score,
+                    "ai_method": existing_resolution.resolution_ai_method,
+                    "review_reason": existing_resolution.resolution_review_reason,
+                    "distance_m": existing_resolution.closure_distance_m,
+                    "resolution_time_minutes": existing_resolution.resolution_time_minutes,
+                },
+                status=status.HTTP_200_OK,
+            )
 
     if str(old_status).strip().lower() == "resolved":
         return Response(
@@ -2144,21 +2244,24 @@ def api_mobile_resolve_gap(request, gap_id):
             status=status.HTTP_200_OK,
         )
 
+    if str(old_status).strip().lower() not in {"in_progress", "needs_review"}:
+        return Response(
+            {
+                "success": False,
+                "error": "Only in-progress gaps can be resolved with proof.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     proof_photo = (
         request.FILES.get("photo")
         or request.FILES.get("closure_photo")
         or request.FILES.get("resolution_proof")
     )
-    resolution_local_id = (
-        request.data.get("local_id")
-        or request.data.get("idempotency_key")
-        or ""
-    ).strip()
     closure_photo_url = (request.data.get("closure_photo_url") or "").strip()
-    person_photo_url = (
-        (request.data.get("person_photo_url") or "").strip()
-        or (request.data.get("closure_selfie_url") or "").strip()
-    )
+    person_photo_url = (request.data.get("person_photo_url") or "").strip() or (
+        request.data.get("closure_selfie_url") or ""
+    ).strip()
 
     lat_raw = request.data.get("latitude")
     lng_raw = request.data.get("longitude")
@@ -2167,23 +2270,6 @@ def api_mobile_resolve_gap(request, gap_id):
     if lng_raw in (None, "", "null"):
         lng_raw = request.data.get("closure_longitude")
     gps_accuracy_raw = request.data.get("gps_accuracy")
-
-    if resolution_local_id and gap.resolution_client_id == resolution_local_id:
-        return Response(
-            {
-                "success": True,
-                "gap_id": gap.id,
-                "status": "RESOLVED" if gap.status == "resolved" else "NEEDS_RETRY",
-                "message": "Resolution already captured for this offline record",
-                "resolution_type": gap.resolution_type or "retry",
-                "ai_score": gap.resolution_ai_score,
-                "ai_method": gap.resolution_ai_method,
-                "review_reason": gap.resolution_review_reason,
-                "distance_m": gap.closure_distance_m,
-                "resolution_time_minutes": gap.resolution_time_minutes,
-            },
-            status=status.HTTP_200_OK,
-        )
 
     if not proof_photo and not closure_photo_url:
         return Response(
@@ -2356,7 +2442,9 @@ def api_mobile_resolve_gap(request, gap_id):
         gap=gap,
         old_status=old_status,
         new_status=decision_status,
-        changed_by=request.user if (request.user and request.user.is_authenticated) else None,
+        changed_by=(
+            request.user if (request.user and request.user.is_authenticated) else None
+        ),
         notes=(
             f"Rule-based resolution check. distance_m={distance_m:.2f}, "
             f"time_minutes={elapsed_minutes:.2f}, ai_score={ai_score}, "
@@ -2391,12 +2479,16 @@ def api_mobile_resolve_gap(request, gap_id):
                 if gap.status == "resolved"
                 else "Resolution proof captured. Retry capture required"
             ),
-            "closure_latitude": float(gap.closure_latitude)
-            if gap.closure_latitude is not None
-            else None,
-            "closure_longitude": float(gap.closure_longitude)
-            if gap.closure_longitude is not None
-            else None,
+            "closure_latitude": (
+                float(gap.closure_latitude)
+                if gap.closure_latitude is not None
+                else None
+            ),
+            "closure_longitude": (
+                float(gap.closure_longitude)
+                if gap.closure_longitude is not None
+                else None
+            ),
             "gps_accuracy": closure_gps_accuracy,
             "max_gps_accuracy_m": max_gps_accuracy_m,
             "closure_photo_url": gap.closure_photo_url,
@@ -2413,8 +2505,8 @@ def api_mobile_resolve_gap(request, gap_id):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def api_mobile_submit_complaint(request):
     """Mobile complaint submission with complaintee photo + GPS capture."""
     from .models import PostOffice, WorkflowLog
@@ -2425,6 +2517,27 @@ def api_mobile_submit_complaint(request):
     complaint_text = (request.data.get("complaint_text") or "").strip()
     submission_latitude = request.data.get("submission_latitude")
     submission_longitude = request.data.get("submission_longitude")
+    client_submission_id = (
+        request.data.get("client_submission_id")
+        or request.data.get("idempotency_key")
+        or request.data.get("local_id")
+        or ""
+    ).strip()
+
+    if client_submission_id:
+        existing_complaint = Complaint.objects.filter(
+            client_submission_id=client_submission_id
+        ).first()
+        if existing_complaint:
+            return Response(
+                {
+                    "success": True,
+                    "complaint_id": existing_complaint.complaint_id,
+                    "status": _mobile_ui_status(existing_complaint.status),
+                    "message": "Complaint already submitted",
+                },
+                status=status.HTTP_200_OK,
+            )
 
     if not villager_name or not village_id:
         return Response(
@@ -2521,6 +2634,7 @@ def api_mobile_submit_complaint(request):
         longitude=lng,
         submission_latitude=lat,
         submission_longitude=lng,
+        client_submission_id=client_submission_id or None,
     )
 
     if audio_file:
@@ -2551,8 +2665,8 @@ def api_mobile_submit_complaint(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
-@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def api_mobile_in_progress_complaints(request):
     """List complaints for mobile dashboard using canonical statuses."""
     complaints = (
@@ -2621,14 +2735,44 @@ def api_mobile_in_progress_complaints(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def api_mobile_verify_close_complaint(request, complaint_id):
     """Mobile verification + close for complaint (selfie + GPS)."""
     from django.utils import timezone
     from .models import WorkflowLog
 
     complaint = get_object_or_404(Complaint, complaint_id=complaint_id)
+    closure_client_id = (
+        request.data.get("client_submission_id")
+        or request.data.get("idempotency_key")
+        or request.data.get("local_id")
+        or ""
+    ).strip()
+    if closure_client_id:
+        existing_closure = Complaint.objects.filter(
+            closure_client_id=closure_client_id
+        ).first()
+        if existing_closure:
+            return Response(
+                {
+                    "success": True,
+                    "complaint_id": existing_closure.complaint_id,
+                    "status": _mobile_ui_status(existing_closure.status),
+                    "distance_m": (
+                        round(existing_closure.closure_distance_m, 2)
+                        if existing_closure.closure_distance_m is not None
+                        else None
+                    ),
+                    "match_score": (
+                        round(existing_closure.closure_selfie_match_score, 4)
+                        if existing_closure.closure_selfie_match_score is not None
+                        else None
+                    ),
+                    "message": "Complaint closure already captured",
+                },
+                status=status.HTTP_200_OK,
+            )
     if complaint.status not in Complaint.CLOSURE_ALLOWED_STATUSES:
         return Response(
             {
@@ -2736,6 +2880,7 @@ def api_mobile_verify_close_complaint(request, complaint_id):
     complaint.closure_timestamp = timezone.now()
     complaint.closure_distance_m = distance_m
     complaint.closure_selfie_match_score = match_score
+    complaint.closure_client_id = closure_client_id or None
     complaint.status = "case_closed"
     complaint.save(
         update_fields=[
@@ -2745,6 +2890,7 @@ def api_mobile_verify_close_complaint(request, complaint_id):
             "closure_timestamp",
             "closure_distance_m",
             "closure_selfie_match_score",
+            "closure_client_id",
             "status",
             "updated_at",
         ]
@@ -2772,13 +2918,33 @@ def api_mobile_verify_close_complaint(request, complaint_id):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
-@authentication_classes([FirebaseAuthentication, TokenAuthentication, SessionAuthentication])
+@authentication_classes([FirebaseAuthentication])
+@permission_classes([IsAuthenticated])
 def api_mobile_resolve_photo_complaint(request, complaint_id):
     """Resolve photo/document complaint with resolution letter image."""
     from .models import WorkflowLog
 
     complaint = get_object_or_404(Complaint, complaint_id=complaint_id)
+    closure_client_id = (
+        request.data.get("client_submission_id")
+        or request.data.get("idempotency_key")
+        or request.data.get("local_id")
+        or ""
+    ).strip()
+    if closure_client_id:
+        existing_closure = Complaint.objects.filter(
+            closure_client_id=closure_client_id
+        ).first()
+        if existing_closure:
+            return Response(
+                {
+                    "success": True,
+                    "complaint_id": existing_closure.complaint_id,
+                    "status": _mobile_ui_status(existing_closure.status),
+                    "message": "Photo complaint closure already captured",
+                },
+                status=status.HTTP_200_OK,
+            )
     if complaint.status not in Complaint.CLOSURE_ALLOWED_STATUSES:
         return Response(
             {
@@ -2805,8 +2971,16 @@ def api_mobile_resolve_photo_complaint(request, complaint_id):
 
     old_status = complaint.status
     complaint.resolution_letter_image = resolution_letter
+    complaint.closure_client_id = closure_client_id or None
     complaint.status = "case_closed"
-    complaint.save(update_fields=["resolution_letter_image", "status", "updated_at"])
+    complaint.save(
+        update_fields=[
+            "resolution_letter_image",
+            "closure_client_id",
+            "status",
+            "updated_at",
+        ]
+    )
 
     WorkflowLog.objects.create(
         complaint=complaint,

@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { AppState, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
@@ -47,11 +47,13 @@ import {
   GapDetailScreen,
   ClosurePhotoScreen,
   GapVerificationScreen,
+  CaptureEvidenceScreen,
 } from "./src/screens";
 import CustomDrawer from "./src/components/CustomDrawer";
 import {
   startOfflineSyncEngine,
   stopOfflineSyncEngine,
+  triggerOfflineSyncNow,
 } from "./src/services/offlineSyncEngine";
 
 // Keep the splash screen visible while we fetch resources
@@ -135,10 +137,26 @@ function AppContent() {
     startOfflineSyncEngine().catch((err) => {
       console.warn("Offline sync engine failed to start:", err?.message || err);
     });
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        triggerOfflineSyncNow().catch((error) => {
+          console.warn("Foreground sync trigger failed:", error?.message || error);
+        });
+      }
+    });
     return () => {
+      subscription.remove();
       stopOfflineSyncEngine();
     };
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      triggerOfflineSyncNow({ resetFailed: true }).catch((error) => {
+        console.warn("Post-login sync trigger failed:", error?.message || error);
+      });
+    }
+  }, [isLoggedIn]);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded && !isAuthLoading) {
@@ -163,6 +181,10 @@ function AppContent() {
           <>
             <Stack.Screen name="Main" component={DrawerNavigator} />
             <Stack.Screen name="ClosurePhoto" component={ClosurePhotoScreen} />
+            <Stack.Screen
+              name="CaptureEvidence"
+              component={CaptureEvidenceScreen}
+            />
           </>
         ) : (
           // User is not authenticated â€” show onboarding/login flow

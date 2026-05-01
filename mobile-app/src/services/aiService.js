@@ -3,7 +3,7 @@
 // Files are uploaded directly to Django — NO Firebase Storage needed
 
 import { API_CONFIG } from '../config/api';
-import { auth } from '../config/firebase';
+import { getFirebaseAuthHeaders } from './firebaseAuthSession';
 
 const SUPPORTED_AUDIO_LANGUAGES = new Set([
   'hi', 'en', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'or', 'pa', 'as',
@@ -73,7 +73,7 @@ const isLowSignalTranscription = (transcription) => {
   return false;
 };
 
-const runAnalyzeRequest = async ({ fileUri, mediaType, language, idToken }) => {
+const runAnalyzeRequest = async ({ fileUri, mediaType, language, authHeaders }) => {
   const url = `${API_CONFIG.DJANGO_URL}${API_CONFIG.AI_ANALYZE_ENDPOINT}`;
   const formData = new FormData();
   const { fileName, mimeType } = inferUploadMeta(fileUri, mediaType);
@@ -94,9 +94,7 @@ const runAnalyzeRequest = async ({ fileUri, mediaType, language, idToken }) => {
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        ...(idToken && { Authorization: `Bearer ${idToken}` }),
-      },
+      headers: authHeaders || {},
       body: formData,
       signal: controller.signal,
     });
@@ -128,9 +126,11 @@ const runAnalyzeRequest = async ({ fileUri, mediaType, language, idToken }) => {
  */
 export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
   try {
-    // Get Firebase Auth token for authenticated request
-    const user = auth.currentUser;
-    const idToken = user ? await user.getIdToken() : null;
+    const authHeaders = await getFirebaseAuthHeaders({
+      includeContentType: false,
+      forceRefresh: false,
+      required: true,
+    });
 
     const preferredLanguage = normalizeLanguage(language);
     const languageAttempts = mediaType === 'audio'
@@ -142,7 +142,7 @@ export const analyzeMedia = async (fileUri, mediaType, language = 'hi') => {
 
     for (const lang of languageAttempts) {
       try {
-        data = await runAnalyzeRequest({ fileUri, mediaType, language: lang, idToken });
+        data = await runAnalyzeRequest({ fileUri, mediaType, language: lang, authHeaders });
 
         if (mediaType === 'audio' && isLowSignalTranscription(data?.transcription)) {
           throw new Error(`Transcription quality is too low for language: ${lang}`);

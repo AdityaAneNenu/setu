@@ -5,28 +5,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Network from 'expo-network';
 import { API_CONFIG } from '../config/api';
-import { getCurrentUser } from './authService';
+import { getFirebaseAuthHeaders, isAuthDeniedStatus } from './firebaseAuthSession';
 
 const SYNC_QUEUE_KEY = '@pending_django_syncs';
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000; // 1 second
-
-// Helper to get Firebase auth headers
-const getFirebaseAuthHeaders = async () => {
-  try {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      const token = await currentUser.getIdToken();
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Firebase ${token}`,
-      };
-    }
-  } catch (error) {
-    console.warn('Could not get Firebase token:', error.message);
-  }
-  return { 'Content-Type': 'application/json' };
-};
 
 /**
  * Add a failed sync operation to the retry queue
@@ -112,7 +95,11 @@ const performSync = async (syncItem) => {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
-    const headers = await getFirebaseAuthHeaders();
+    const headers = await getFirebaseAuthHeaders({
+      includeContentType: true,
+      forceRefresh: true,
+      required: true,
+    });
     
     let url, method, body;
     
@@ -142,6 +129,9 @@ const performSync = async (syncItem) => {
       return { success: result.success, data: result };
     } else {
       const errorText = await response.text().catch(() => '');
+      if (isAuthDeniedStatus(response.status)) {
+        return { success: false, error: 'Session expired', isAuthError: true };
+      }
       return { success: false, error: `HTTP ${response.status}: ${errorText}` };
     }
   } catch (error) {
@@ -184,6 +174,10 @@ export const processSyncQueue = async () => {
       await removeFromSyncQueue(item.id);
       processed++;
       console.log(`Sync succeeded: ${item.type}`);
+    } else if (result.isAuthError) {
+      console.error(`Auth denied during sync: ${item.type}. Stopping sync queue.`);
+      // Do not update retry count, just abort queue processing
+      return { processed, failed: failed + 1 };
     } else {
       await updateSyncRetry(item.id);
       failed++;

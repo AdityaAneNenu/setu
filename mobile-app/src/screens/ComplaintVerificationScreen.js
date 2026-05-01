@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,18 +7,31 @@ import {
   Alert,
   ActivityIndicator,
   FlatList,
+  Linking,
 } from "react-native";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { complaintsApi } from "../services/api";
+import { authApi, complaintsApi } from "../services/api";
 import { API_CONFIG } from "../config/api";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme";
+import {
+  getStatusCodeMessage,
+  isFinalAuthFailure,
+  isPermissionDeniedError,
+  logApiErrorStatus,
+} from "../services/authErrorUtils";
+
+const openSettingsSafe = () =>
+  Linking.openSettings().catch((error) => {
+    console.warn("Failed to open app settings:", error?.message || error);
+  });
 
 export default function ComplaintVerificationScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [complaints, setComplaints] = useState([]);
   const [resolvedComplaints, setResolvedComplaints] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -29,6 +42,7 @@ export default function ComplaintVerificationScreen() {
   const [fetching, setFetching] = useState(false);
   const [activeTab, setActiveTab] = useState("in_progress");
   const [backendHealth, setBackendHealth] = useState("checking");
+  const resolveInFlightRef = useRef(false);
 
   const loadInProgress = async () => {
     setFetching(true);
@@ -43,7 +57,23 @@ export default function ComplaintVerificationScreen() {
         setSelected(refreshed || null);
       }
     } catch (e) {
-      Alert.alert("Error", e.message || "Could not load in-progress complaints.");
+      logApiErrorStatus("ComplaintVerification.loadInProgress", e);
+      if (isPermissionDeniedError(e)) {
+        Alert.alert("Not authorized", "You are not authorized to view complaints.");
+      } else if (isFinalAuthFailure(e)) {
+        Alert.alert("Session expired", "Session expired, please login again", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Login",
+            onPress: () => authApi.logout().catch((logoutError) => {
+              console.warn("Failed to logout after auth retry failure:", logoutError?.message || logoutError);
+            }),
+          },
+        ]);
+      } else {
+        const statusMessage = getStatusCodeMessage(e);
+        Alert.alert("Error", statusMessage || e.message || "Could not load in-progress complaints.");
+      }
     } finally {
       setFetching(false);
     }
@@ -68,7 +98,10 @@ export default function ComplaintVerificationScreen() {
   const captureSelfie = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission required", "Camera permission is required.");
+      Alert.alert("Permission required", "Camera permission is required.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: openSettingsSafe },
+      ]);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -82,7 +115,10 @@ export default function ComplaintVerificationScreen() {
   const captureLetter = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission required", "Camera permission is required.");
+      Alert.alert("Permission required", "Camera permission is required.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: openSettingsSafe },
+      ]);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -96,7 +132,10 @@ export default function ComplaintVerificationScreen() {
   const captureGps = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission required", "Location permission is required.");
+      Alert.alert("Permission required", "Location permission is required.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: openSettingsSafe },
+      ]);
       return;
     }
     const loc = await Location.getCurrentPositionAsync({
@@ -109,6 +148,7 @@ export default function ComplaintVerificationScreen() {
   };
 
   const resolveSelectedComplaint = async () => {
+    if (resolveInFlightRef.current) return;
     if (!selected) {
       Alert.alert("Select complaint", "Please select an in-progress complaint first.");
       return;
@@ -121,6 +161,7 @@ export default function ComplaintVerificationScreen() {
       return;
     }
 
+    resolveInFlightRef.current = true;
     setLoading(true);
     try {
       if (selected.resolution_mode === "resolution_letter") {
@@ -168,14 +209,36 @@ export default function ComplaintVerificationScreen() {
       setGps(null);
       await loadInProgress();
     } catch (e) {
-      Alert.alert("Resolution failed", e.message || "Could not resolve complaint.");
+      logApiErrorStatus("ComplaintVerification.resolveSelectedComplaint", e);
+      if (isPermissionDeniedError(e)) {
+        Alert.alert("Not authorized", "You are not authorized to resolve this complaint.");
+      } else if (isFinalAuthFailure(e)) {
+        Alert.alert("Session expired", "Session expired, please login again", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Login",
+            onPress: () => authApi.logout().catch((logoutError) => {
+              console.warn("Failed to logout after auth retry failure:", logoutError?.message || logoutError);
+            }),
+          },
+        ]);
+      } else {
+        const statusMessage = getStatusCodeMessage(e);
+        Alert.alert("Resolution failed", statusMessage || e.message || "Could not resolve complaint.");
+      }
     } finally {
+      resolveInFlightRef.current = false;
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.backgroundGray, paddingBottom: insets.bottom + 20 },
+      ]}
+    >
       <Text style={[styles.title, { color: colors.text }]}>Resolve In-Progress Complaints</Text>
       <View style={[styles.healthBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Text style={[styles.healthText, { color: colors.textLight }]}>
@@ -240,6 +303,7 @@ export default function ComplaintVerificationScreen() {
         data={activeTab === "resolved" ? resolvedComplaints : complaints}
         keyExtractor={(item) => item.complaint_id}
         style={styles.list}
+        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 20 }]}
         ListEmptyComponent={
           fetching ? null : (
             <Text style={[styles.emptyText, { color: colors.textLight }]}>
@@ -256,7 +320,7 @@ export default function ComplaintVerificationScreen() {
               style={[
                 styles.card,
                 { borderColor: colors.border, backgroundColor: colors.surface },
-                selectedItem && [styles.cardSelected, { borderColor: colors.accent }],
+                selectedItem && [styles.cardSelected, { borderColor: colors.accent, backgroundColor: colors.primaryLight }],
               ]}
               onPress={() => setSelected(item)}
             >
@@ -304,8 +368,8 @@ export default function ComplaintVerificationScreen() {
               onPress={captureLetter}
               disabled={selected.resolution_ready === false}
             >
-              <Ionicons name="document" size={16} color="#fff" />
-              <Text style={styles.btnText}>
+              <Ionicons name="document" size={16} color={colors.buttonPrimaryText} />
+              <Text style={[styles.btnText, { color: colors.buttonPrimaryText }]}>
                 {letterUri
                   ? "Retake Resolution Letter image"
                   : "Capture Resolution Letter"}
@@ -322,8 +386,8 @@ export default function ComplaintVerificationScreen() {
                 onPress={captureSelfie}
                 disabled={selected.resolution_ready === false}
               >
-                <Ionicons name="camera" size={16} color="#fff" />
-                <Text style={styles.btnText}>
+                <Ionicons name="camera" size={16} color={colors.buttonPrimaryText} />
+                <Text style={[styles.btnText, { color: colors.buttonPrimaryText }]}>
                   {selfieUri ? "Retake complaintee selfie" : "Capture complaintee selfie"}
                 </Text>
               </TouchableOpacity>
@@ -357,7 +421,7 @@ export default function ComplaintVerificationScreen() {
         }
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.buttonPrimaryText} />
         ) : (
           <Text style={[styles.submitText, { color: colors.buttonPrimaryText }]}>Resolve selected complaint</Text>
         )}
@@ -367,7 +431,7 @@ export default function ComplaintVerificationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#F7F7F7" },
+  container: { flex: 1, padding: 16 },
   title: { fontSize: 24, fontFamily: fonts.bold, marginBottom: 14 },
   refreshBtn: {
     borderWidth: 1,
@@ -398,27 +462,24 @@ const styles = StyleSheet.create({
   tabBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     height: 40,
-    backgroundColor: "#fff",
   },
-  tabBtnActive: { backgroundColor: "#111827", borderColor: "#111827" },
+  tabBtnActive: {},
   tabText: { fontFamily: fonts.medium, fontSize: 13 },
   tabTextActive: { fontFamily: fonts.semiBold },
   list: { flex: 1, marginBottom: 10 },
+  listContent: { paddingBottom: 12 },
   emptyText: { color: "#6B7280", textAlign: "center", marginTop: 30 },
   card: {
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     borderRadius: 10,
-    backgroundColor: "#FFF",
     padding: 12,
     marginBottom: 8,
   },
-  cardSelected: { borderColor: "#2563EB", backgroundColor: "#EFF6FF" },
+  cardSelected: {},
   cardTitle: { fontFamily: fonts.semiBold, marginBottom: 4 },
   cardMeta: { fontFamily: fonts.regular, fontSize: 12, marginBottom: 2 },
   statusPill: {
@@ -435,9 +496,7 @@ const styles = StyleSheet.create({
   banner: { color: "#B91C1C", fontSize: 12, fontWeight: "700", marginTop: 4 },
   actionBox: {
     borderRadius: 10,
-    backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     padding: 10,
     marginBottom: 10,
   },
@@ -445,7 +504,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 10, marginBottom: 12 },
   btn: {
     flex: 1,
-    backgroundColor: "#2563EB",
     borderRadius: 10,
     height: 44,
     alignItems: "center",
@@ -463,15 +521,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  btnText: { color: "#fff", fontFamily: fonts.semiBold },
+  btnText: { fontFamily: fonts.semiBold },
   actionBtnText: { fontFamily: fonts.medium },
   disabledBtn: { opacity: 0.5 },
   submitBtn: {
-    backgroundColor: "#111827",
     borderRadius: 12,
     height: 48,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 12,
   },
   submitText: { fontSize: 15, fontFamily: fonts.bold },
 });

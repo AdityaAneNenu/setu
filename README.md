@@ -148,7 +148,7 @@ Recommended values:
 - `ALLOWED_HOSTS`
 - `DATABASE_URL` (optional locally)
 - `RAILWAY_PUBLIC_DOMAIN` (deployment)
-- `FIREBASE_CREDENTIALS_PATH` or `FIREBASE_CREDENTIALS_JSON`
+- `FIREBASE_CREDENTIALS_JSON` (required for Firebase Admin SDK auth)
 - `GEMINI_API_KEY` (optional, AI features)
 - `ASSEMBLYAI_API_KEY` (optional, AI features)
 
@@ -202,7 +202,6 @@ python manage.py test core.tests.test_complaint_verification_flows
 python manage.py test core.tests.test_firebase_init core.tests.test_firebase_sync_privacy
 python manage.py test core.tests.test_analyze_media core.tests.test_speech_to_text_service
 python manage.py test core.tests.test_mobile_gap_resolve_verification
-python manage.py test core.tests.test_sms_webhook_security
 ```
 
 ## Deployment (Railway)

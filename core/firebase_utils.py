@@ -7,17 +7,18 @@ mobile app see the same records.
 
 import ast
 import json
+import logging
 import os
 import threading
 
 import firebase_admin
-from django.conf import settings
 from firebase_admin import credentials, firestore
 
 _firebase_app = None
 _firestore_client = None
 _firebase_init_attempted = False
 _firebase_init_lock = threading.Lock()
+logger = logging.getLogger(__name__)
 
 
 def _parse_firebase_credentials_json(raw_json):
@@ -25,27 +26,31 @@ def _parse_firebase_credentials_json(raw_json):
     if not raw_json:
         raise ValueError("Empty FIREBASE_CREDENTIALS_JSON")
 
-    payload = raw_json.strip()
-    if (
-        len(payload) >= 2
-        and payload[0] == payload[-1]
-        and payload[0] in {'"', "'"}
-    ):
-        payload = payload[1:-1]
+    payload = str(raw_json).strip()
+    candidates = [payload]
+    if len(payload) >= 2 and payload[0] == payload[-1] and payload[0] in {'"', "'"}:
+        candidates.append(payload[1:-1])
 
-    try:
-        parsed = json.loads(payload)
-        if isinstance(parsed, dict):
-            return parsed
-    except Exception:
-        pass
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+            if isinstance(parsed, str):
+                parsed = json.loads(parsed)
+            if isinstance(parsed, dict):
+                if isinstance(parsed.get("private_key"), str):
+                    parsed["private_key"] = parsed["private_key"].replace("\\n", "\n")
+                return parsed
+        except Exception:
+            pass
 
-    try:
-        parsed = ast.literal_eval(payload)
-        if isinstance(parsed, dict):
-            return parsed
-    except Exception:
-        pass
+        try:
+            parsed = ast.literal_eval(candidate)
+            if isinstance(parsed, dict):
+                if isinstance(parsed.get("private_key"), str):
+                    parsed["private_key"] = parsed["private_key"].replace("\\n", "\n")
+                return parsed
+        except Exception:
+            pass
 
     raise ValueError(
         "FIREBASE_CREDENTIALS_JSON is not valid JSON/object text. "
@@ -71,38 +76,48 @@ def get_firebase_app():
         _firebase_init_attempted = True
 
         cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
-        cred_path = os.getenv(
-            "FIREBASE_CREDENTIALS_PATH",
-            os.path.join(settings.BASE_DIR, "firebase-service-account.json"),
-        )
+        cred_json_length = len(cred_json) if isinstance(cred_json, str) else 0
         storage_bucket = os.getenv(
             "FIREBASE_STORAGE_BUCKET", "setu-pm.firebasestorage.app"
         )
 
         try:
-            if cred_json:
-                cred_dict = _parse_firebase_credentials_json(cred_json)
-                cred = credentials.Certificate(cred_dict)
-                _firebase_app = firebase_admin.initialize_app(
-                    cred, {"storageBucket": storage_bucket}
-                )
-                print("Firebase Admin SDK initialized from env var")
-            elif os.path.exists(cred_path):
-                cred = credentials.Certificate(cred_path)
-                _firebase_app = firebase_admin.initialize_app(
-                    cred, {"storageBucket": storage_bucket}
-                )
-                print("Firebase Admin SDK initialized from file")
-            else:
-                print(
-                    "Firebase credentials not found. "
-                    "Set FIREBASE_CREDENTIALS_JSON or place firebase-service-account.json in the project root."
+            try:
+                _firebase_app = firebase_admin.get_app()
+                logger.info("Firebase Admin SDK already initialized; reusing app.")
+                return _firebase_app
+            except ValueError:
+                pass
+
+            logger.info(
+                "Firebase credentials env check: present=%s length=%s",
+                bool(cred_json),
+                cred_json_length,
+            )
+
+            if not cred_json:
+                logger.error(
+                    "Firebase credentials missing. Set FIREBASE_CREDENTIALS_JSON in environment."
                 )
                 _firebase_app = None
+                return None
+
+            cred_dict = _parse_firebase_credentials_json(cred_json)
+            logger.info(
+                "Firebase credentials parsed: project_id=%s private_key_present=%s",
+                cred_dict.get("project_id") if isinstance(cred_dict, dict) else None,
+                bool(cred_dict.get("private_key")) if isinstance(cred_dict, dict) else False,
+            )
+            cred = credentials.Certificate(cred_dict)
+            _firebase_app = firebase_admin.initialize_app(
+                cred, {"storageBucket": storage_bucket}
+            )
+            logger.info(
+                "Firebase Admin SDK initialized from FIREBASE_CREDENTIALS_JSON."
+            )
         except Exception as exc:
-            print(
-                "Firebase initialization failed: "
-                f"{exc}. Check FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS_PATH."
+            logger.exception(
+                "Firebase initialization failed from FIREBASE_CREDENTIALS_JSON: %s", exc
             )
             _firebase_app = None
 
@@ -172,7 +187,9 @@ def sync_gap_to_firestore(gap):
             "status": gap.status or "open",
             "input_method": gap.input_method or "text",
             "recommendations": gap.recommendations or "",
-            "audio_url": gap.audio_file.url if gap.audio_file else (gap.audio_url or None),
+            "audio_url": (
+                gap.audio_file.url if gap.audio_file else (gap.audio_url or None)
+            ),
             "image_url": None,
             "voice_code": firestore.DELETE_FIELD,
             "latitude": float(gap.latitude) if gap.latitude else None,
@@ -266,7 +283,9 @@ def sync_complaint_to_firestore(complaint):
             if complaint.resolution_letter_image
             else None
         ),
-        "created_at": complaint.created_at.isoformat() if complaint.created_at else None,
+        "created_at": (
+            complaint.created_at.isoformat() if complaint.created_at else None
+        ),
         "updated_at": firestore.SERVER_TIMESTAMP,
     }
 
@@ -381,7 +400,9 @@ def import_gaps_from_firestore():
 
         village = None
         if data.get("village_name"):
-            village = Village.objects.filter(name__icontains=data["village_name"]).first()
+            village = Village.objects.filter(
+                name__icontains=data["village_name"]
+            ).first()
         if not village and data.get("village_id"):
             try:
                 village = Village.objects.get(id=int(data["village_id"]))

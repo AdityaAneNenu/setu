@@ -41,7 +41,9 @@ export default function NotificationsScreen({ navigation }) {
           setComplaintUpdates(prefs.complaintUpdates ?? true);
           setWeeklyReport(prefs.weeklyReport ?? false);
         }
-      } catch (e) {}
+      } catch (error) {
+        console.warn('Failed to load notification settings:', error?.message || error);
+      }
     };
     loadPrefs();
   }, []);
@@ -51,7 +53,9 @@ export default function NotificationsScreen({ navigation }) {
     current[key] = value;
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-    } catch (e) {}
+    } catch (error) {
+      console.warn('Failed to save notification settings:', error?.message || error);
+    }
   };
 
   const toggle = (key, setter, value) => {

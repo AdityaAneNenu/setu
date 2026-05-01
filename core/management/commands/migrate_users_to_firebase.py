@@ -29,8 +29,8 @@ class Command(BaseCommand):
         if not app:
             self.stderr.write(
                 self.style.ERROR(
-                    "Firebase not initialized. Place firebase-service-account.json "
-                    "in the project root."
+                    "Firebase not initialized. Set FIREBASE_CREDENTIALS_JSON "
+                    "with the full service-account JSON."
                 )
             )
             return
@@ -138,9 +138,7 @@ class Command(BaseCommand):
 
             except Exception as e:
                 self.stderr.write(
-                    self.style.ERROR(
-                        f"  ❌ {user.username} ({email}) — error: {e}"
-                    )
+                    self.style.ERROR(f"  ❌ {user.username} ({email}) — error: {e}")
                 )
                 errors += 1
 

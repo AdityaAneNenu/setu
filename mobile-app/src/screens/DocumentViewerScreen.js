@@ -34,7 +34,9 @@ export default function DocumentViewerScreen({ navigation, route }) {
         const speeds = { slow: 0.75, normal: 1.0, fast: 1.25, faster: 1.5 };
         setTtsRate(speeds[prefs.selectedSpeed] || 1.0);
       }
-    }).catch(() => {});
+    }).catch((error) => {
+      console.warn('Failed to load TTS preferences:', error?.message || error);
+    });
   }, []);
 
   const imageUri = document?.image_url || document?.imageUri || null;

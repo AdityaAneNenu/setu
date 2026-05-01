@@ -7,14 +7,29 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { complaintsApi } from "../services/api";
+import { authApi, complaintsApi } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
+import { fonts } from "../theme";
+import {
+  getStatusCodeMessage,
+  isFinalAuthFailure,
+  isPermissionDeniedError,
+  logApiErrorStatus,
+} from "../services/authErrorUtils";
+
+const openSettingsSafe = () =>
+  Linking.openSettings().catch((error) => {
+    console.warn("Failed to open app settings:", error?.message || error);
+  });
 
 export default function ComplaintSubmissionScreen() {
+  const { colors } = useTheme();
   const [villagerName, setVillagerName] = useState("");
   const [villageId, setVillageId] = useState("");
   const [postOfficeId, setPostOfficeId] = useState("");
@@ -26,7 +41,10 @@ export default function ComplaintSubmissionScreen() {
   const pickPhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission required", "Camera permission is required.");
+      Alert.alert("Camera permission required", "Camera permission is required.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: openSettingsSafe },
+      ]);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -39,7 +57,10 @@ export default function ComplaintSubmissionScreen() {
   const captureGps = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission required", "Location permission is required.");
+      Alert.alert("Location permission required", "Location permission is required.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: openSettingsSafe },
+      ]);
       return;
     }
     const loc = await Location.getCurrentPositionAsync({
@@ -98,66 +119,81 @@ export default function ComplaintSubmissionScreen() {
       setPhotoUri(null);
       setGps(null);
     } catch (e) {
-      Alert.alert("Error", e.message || "Failed to submit complaint");
+      logApiErrorStatus("ComplaintSubmission.submit", e);
+      if (isPermissionDeniedError(e)) {
+        Alert.alert("Not authorized", "You are not authorized to submit complaints.");
+      } else if (isFinalAuthFailure(e)) {
+        Alert.alert("Session expired", "Session expired, please login again", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Login",
+            onPress: () => authApi.logout().catch((logoutError) => {
+              console.warn("Failed to logout after auth retry failure:", logoutError?.message || logoutError);
+            }),
+          },
+        ]);
+      } else {
+        const statusMessage = getStatusCodeMessage(e);
+        Alert.alert("Error", statusMessage || e.message || "Failed to submit complaint");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Register Complaint (Complaintee Photo + GPS)</Text>
-      <TextInput style={styles.input} placeholder="Villager name" value={villagerName} onChangeText={setVillagerName} />
-      <TextInput style={styles.input} placeholder="Village ID" value={villageId} onChangeText={setVillageId} keyboardType="numeric" />
-      <TextInput style={styles.input} placeholder="Post Office ID (optional)" value={postOfficeId} onChangeText={setPostOfficeId} keyboardType="numeric" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Register Complaint</Text>
+      <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} placeholderTextColor={colors.textPlaceholder} placeholder="Villager name" value={villagerName} onChangeText={setVillagerName} />
+      <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} placeholderTextColor={colors.textPlaceholder} placeholder="Village ID" value={villageId} onChangeText={setVillageId} keyboardType="numeric" />
+      <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} placeholderTextColor={colors.textPlaceholder} placeholder="Post Office ID (optional)" value={postOfficeId} onChangeText={setPostOfficeId} keyboardType="numeric" />
       <TextInput
-        style={[styles.input, { height: 110 }]}
+        style={[styles.input, { height: 110, backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
         multiline
         placeholder="Complaint details"
+        placeholderTextColor={colors.textPlaceholder}
         value={complaintText}
         onChangeText={setComplaintText}
       />
 
       <View style={styles.row}>
-        <TouchableOpacity style={styles.btn} onPress={pickPhoto}>
-          <Ionicons name="camera" size={16} color="#fff" />
-          <Text style={styles.btnText}>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: colors.buttonPrimaryBg }]} onPress={pickPhoto}>
+          <Ionicons name="camera" size={16} color={colors.buttonPrimaryText} />
+          <Text style={[styles.btnText, { color: colors.buttonPrimaryText }]}>
             {photoUri ? "Retake complaintee photo" : "Capture complaintee photo"}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.btnSecondary} onPress={captureGps}>
-          <Ionicons name="location" size={16} color="#fff" />
-          <Text style={styles.btnText}>{gps ? "GPS captured" : "Capture GPS location"}</Text>
+        <TouchableOpacity style={[styles.btnSecondary, { backgroundColor: colors.buttonSecondaryBg, borderColor: colors.border }]} onPress={captureGps}>
+          <Ionicons name="location" size={16} color={colors.text} />
+          <Text style={[styles.btnText, { color: colors.text }]}>{gps ? "GPS captured" : "Capture GPS location"}</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.statusText}>
+      <Text style={[styles.statusText, { color: colors.textLight }]}>
         Photo: {photoUri ? "Captured" : "Required"} | GPS: {gps ? "Captured" : "Required"}
       </Text>
 
-      <TouchableOpacity style={styles.submitBtn} onPress={submit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Register complaint</Text>}
+      <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.buttonPrimaryBg }, loading && styles.disabledBtn]} onPress={submit} disabled={loading}>
+        {loading ? <ActivityIndicator color={colors.buttonPrimaryText} /> : <Text style={[styles.submitText, { color: colors.buttonPrimaryText }]}>Register complaint</Text>}
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#F7F7F7" },
-  title: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
+  container: { flex: 1, padding: 18 },
+  title: { fontSize: 22, fontFamily: fonts.bold, marginBottom: 14 },
   input: {
     borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
-    backgroundColor: "#FFF",
+    borderRadius: 16,
     padding: 12,
     marginBottom: 10,
+    fontFamily: fonts.regular,
   },
   row: { flexDirection: "row", gap: 10, marginBottom: 12 },
   btn: {
     flex: 1,
-    backgroundColor: "#2563EB",
-    borderRadius: 10,
-    height: 44,
+    borderRadius: 18,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
@@ -165,22 +201,22 @@ const styles = StyleSheet.create({
   },
   btnSecondary: {
     flex: 1,
-    backgroundColor: "#16A34A",
-    borderRadius: 10,
-    height: 44,
+    borderWidth: 1,
+    borderRadius: 18,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
   },
-  btnText: { color: "#fff", fontWeight: "600" },
-  statusText: { color: "#4B5563", fontSize: 12, marginBottom: 12 },
+  btnText: { fontFamily: fonts.semiBold, fontSize: 13 },
+  statusText: { fontFamily: fonts.medium, fontSize: 12, marginBottom: 12 },
   submitBtn: {
-    backgroundColor: "#111827",
-    borderRadius: 12,
-    height: 48,
+    borderRadius: 24,
+    height: 54,
     alignItems: "center",
     justifyContent: "center",
   },
-  submitText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  disabledBtn: { opacity: 0.6 },
+  submitText: { fontSize: 15, fontFamily: fonts.bold },
 });

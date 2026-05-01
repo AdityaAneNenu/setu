@@ -16,15 +16,11 @@ class Command(BaseCommand):
     help = "Sync Django database to Firebase Firestore"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--gaps", action="store_true", help="Sync only gaps"
-        )
+        parser.add_argument("--gaps", action="store_true", help="Sync only gaps")
         parser.add_argument(
             "--villages", action="store_true", help="Sync only villages"
         )
-        parser.add_argument(
-            "--users", action="store_true", help="Sync only users"
-        )
+        parser.add_argument("--users", action="store_true", help="Sync only users")
         parser.add_argument(
             "--complaints", action="store_true", help="Sync only complaints"
         )
@@ -50,8 +46,8 @@ class Command(BaseCommand):
         if not app:
             self.stderr.write(
                 self.style.ERROR(
-                    "Firebase not initialized. Place firebase-service-account.json "
-                    "in the project root or set FIREBASE_CREDENTIALS_PATH."
+                    "Firebase not initialized. Set FIREBASE_CREDENTIALS_JSON "
+                    "with the full service-account JSON."
                 )
             )
             return
@@ -65,7 +61,9 @@ class Command(BaseCommand):
         )
 
         if options["import_data"]:
-            self.stdout.write(self.style.WARNING("Importing from Firestore → Django..."))
+            self.stdout.write(
+                self.style.WARNING("Importing from Firestore → Django...")
+            )
             count = import_gaps_from_firestore()
             self.stdout.write(self.style.SUCCESS(f"Imported {count} new gaps"))
             return

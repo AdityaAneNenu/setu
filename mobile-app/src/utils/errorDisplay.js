@@ -64,6 +64,31 @@ export const formatErrorForDisplay = (error, options = {}) => {
   ) {
     message = 'The AI service is temporarily busy. Please wait a few seconds and try again.';
   } else if (
+    normalized.includes('http 500') ||
+    normalized.includes('internal server error') ||
+    normalized.includes('server error')
+  ) {
+    message = 'Server error. Please try again in a moment.';
+  } else if (
+    normalized.includes('http 400') ||
+    normalized.includes('bad request')
+  ) {
+    message = 'Please check the submitted details and try again.';
+  } else if (
+    normalized.includes('forbidden') ||
+    normalized.includes('http 403') ||
+    normalized.includes('not authorized') ||
+    normalized.includes('not authorised')
+  ) {
+    message = 'Not authorized to perform this action.';
+  } else if (
+    normalized.includes('session expired') ||
+    normalized.includes('please login again') ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('http 401')
+  ) {
+    message = 'Session expired, please login again';
+  } else if (
     normalized.includes('permission denied') ||
     normalized.includes('permission is needed')
   ) {

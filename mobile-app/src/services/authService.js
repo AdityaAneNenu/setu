@@ -8,6 +8,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { usersService } from './firestore';
+import { saveAuthToken, clearStoredAuthToken } from './authTokenStorage';
 
 // Login with email and password
 export const loginUser = async (emailInput, password) => {
@@ -16,6 +17,12 @@ export const loginUser = async (emailInput, password) => {
     const email = emailInput.includes('@') ? emailInput : `${emailInput}@setu.gov.in`;
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
+    try {
+      const token = await firebaseUser.getIdToken(false);
+      await saveAuthToken(token);
+    } catch (tokenError) {
+      console.warn('Unable to persist Firebase token during login:', tokenError?.message || tokenError);
+    }
 
     // Get user profile from Firestore
     const profile = await usersService.getProfile(firebaseUser.uid);
@@ -53,7 +60,15 @@ export const loginUser = async (emailInput, password) => {
 
 // Logout
 export const logoutUser = async () => {
-  await signOut(auth);
+  try {
+    await signOut(auth);
+  } finally {
+    try {
+      await clearStoredAuthToken();
+    } catch (storageError) {
+      console.warn('Unable to clear stored Firebase token on logout:', storageError?.message || storageError);
+    }
+  }
 };
 
 // Get current user
@@ -65,6 +80,12 @@ export const getCurrentUser = () => {
 export const onAuthStateChange = (callback) => {
   return onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
+      try {
+        const token = await firebaseUser.getIdToken(false);
+        await saveAuthToken(token);
+      } catch (tokenError) {
+        console.warn('Unable to persist Firebase token from auth state:', tokenError?.message || tokenError);
+      }
       try {
         const profile = await usersService.getProfile(firebaseUser.uid);
         callback({
@@ -83,6 +104,11 @@ export const onAuthStateChange = (callback) => {
         });
       }
     } else {
+      try {
+        await clearStoredAuthToken();
+      } catch (storageError) {
+        console.warn('Unable to clear stored Firebase token from auth state:', storageError?.message || storageError);
+      }
       callback(null);
     }
   });

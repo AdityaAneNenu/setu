@@ -50,14 +50,18 @@ export default function TTSSettingsScreen({ navigation }) {
           setSelectedSpeed(prefs.selectedSpeed ?? 'normal');
           setAutoRead(prefs.autoRead ?? false);
         }
-      } catch (e) {}
+      } catch (error) {
+        console.warn('Failed to load TTS settings:', error?.message || error);
+      }
     };
     loadPrefs();
   }, []);
 
   const savePrefs = (overrides = {}) => {
     const prefs = { ttsEnabled, selectedVoice, selectedSpeed, autoRead, ...overrides };
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)).catch((error) => {
+      console.warn('Failed to save TTS settings:', error?.message || error);
+    });
   };
 
   const handlePreview = (voiceLabel) => {

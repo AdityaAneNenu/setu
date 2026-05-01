@@ -47,6 +47,10 @@ railway variables set EMAIL_HOST_PASSWORD="your-app-password"
 # Firebase (Mobile App)
 railway variables set FIREBASE_API_KEY="your-firebase-key"
 railway variables set FIREBASE_PROJECT_ID="your-project-id"
+
+# Firebase Admin SDK (Backend auth verification)
+# Use the full service-account JSON as a single-line string.
+railway variables set FIREBASE_CREDENTIALS_JSON="{\"type\":\"service_account\",...}"
 ```
 
 ### Step 3: Deploy

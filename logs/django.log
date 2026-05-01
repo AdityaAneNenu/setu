@@ -33,3 +33,199 @@ WARNING 2026-04-27 06:01:05,388 log Bad Request: /api/mobile/gaps/1/resolve/
 WARNING 2026-04-27 06:01:05,422 log Bad Request: /api/mobile/gaps/1/resolve/
 WARNING 2026-04-27 06:01:08,325 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_MzPwVIE.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
 WARNING 2026-04-27 06:01:08,342 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 16:53:50,345 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 16:53:50,402 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 16:53:50,930 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 16:53:51,174 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 16:53:51,645 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 16:53:54,862 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 16:53:54,871 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 16:53:55,129 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 16:53:55,371 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 16:53:57,947 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_zXyshT8.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 16:53:57,953 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 16:53:58,010 log Not Found: /api/complaint/PMC20240001/status/
+WARNING 2026-04-30 16:53:58,063 log Not Found: /api/sms-update/
+WARNING 2026-04-30 16:53:58,116 log Not Found: /api/sms-update/
+WARNING 2026-04-30 16:53:58,170 log Not Found: /api/sms-update/
+WARNING 2026-04-30 16:59:45,559 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 16:59:45,625 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 16:59:46,236 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 16:59:46,501 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 16:59:47,085 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 16:59:50,362 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_g88VjgV.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 16:59:50,378 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 16:59:50,948 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 16:59:51,228 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 16:59:53,886 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_ER2V2US.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 16:59:53,996 log Not Found: /api/complaint/PMC20240001/status/
+WARNING 2026-04-30 16:59:54,124 log Not Found: /api/sms-update/
+WARNING 2026-04-30 16:59:54,232 log Not Found: /api/sms-update/
+WARNING 2026-04-30 16:59:54,326 log Not Found: /api/sms-update/
+WARNING 2026-04-30 17:09:27,709 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 17:09:28,121 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 17:09:30,931 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 17:09:32,115 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 17:09:34,427 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 17:09:39,067 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_05ed7xQ.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 17:09:39,105 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 17:09:40,376 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 17:09:41,667 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 17:09:45,504 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_9rybcw4.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 17:09:45,523 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 17:14:03,264 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 17:14:03,433 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 17:14:04,952 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 17:14:05,609 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 17:14:06,883 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 17:14:10,772 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_Ddzj69h.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 17:14:10,788 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 17:14:11,482 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 17:14:12,173 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 17:14:15,174 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_sWmaH3x.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 17:14:15,179 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 20:28:20,190 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 20:28:20,518 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 20:28:22,655 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 20:28:23,574 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 20:28:25,303 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 20:28:29,880 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_AbUdv2s.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 20:28:29,905 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 20:28:30,788 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 20:28:31,594 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 20:28:34,782 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_HRNXiL1.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 21:18:52,500 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 21:18:52,554 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 21:18:53,494 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 21:18:54,234 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 21:18:55,701 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 21:19:00,012 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_zFLqPx8.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 21:19:00,040 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 21:19:00,891 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 21:19:01,735 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 21:19:04,767 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_K43ib67.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 21:19:04,776 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 21:53:58,489 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 21:53:58,668 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 21:54:00,381 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 21:54:01,089 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 21:54:02,535 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 21:54:06,749 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_O2fTN7j.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 21:54:06,770 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 21:54:07,474 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 21:54:08,136 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 21:54:11,130 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_3fNvjWx.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 21:54:11,140 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 21:57:22,224 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-04-30 21:57:22,380 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-04-30 21:57:23,885 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 21:57:24,568 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-04-30 21:57:26,032 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-04-30 21:57:30,220 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_bohKLA8.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-04-30 21:57:30,233 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-04-30 21:57:30,970 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 21:57:31,625 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-04-30 21:57:34,471 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_hkFCMPr.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-05-01 15:41:36,087 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 15:41:36,088 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 15:41:36,119 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 15:41:36,119 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+WARNING 2026-05-01 15:41:55,561 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-05-01 15:41:55,625 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-05-01 15:41:56,284 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 15:41:56,551 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 15:41:57,112 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-05-01 15:42:00,384 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_TU2Im7E.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 15:42:00,414 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-05-01 15:42:01,156 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 15:42:01,490 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 15:42:04,200 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_PCQGMKR.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-05-01 15:42:04,239 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 15:42:04,239 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 15:42:04,244 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 15:42:04,244 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+WARNING 2026-05-01 15:55:27,394 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-05-01 15:55:27,596 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-05-01 15:55:29,308 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 15:55:29,952 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 15:55:31,467 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-05-01 15:55:35,849 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_Mv6YF2L.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 15:55:35,863 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-05-01 15:55:36,530 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 15:55:37,044 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 15:55:39,984 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_TXG89yH.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 15:55:39,994 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+INFO 2026-05-01 15:55:40,049 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 15:55:40,049 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 15:55:40,056 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 15:55:40,056 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+WARNING 2026-05-01 15:56:52,511 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-05-01 15:56:52,724 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-05-01 15:56:54,366 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 15:56:55,089 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 15:56:56,657 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-05-01 15:57:00,879 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_2Cb1lXk.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 15:57:00,893 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-05-01 15:57:01,654 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 15:57:02,441 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 15:57:05,514 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_iH4LSmv.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 15:57:05,530 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+INFO 2026-05-01 15:57:05,572 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 15:57:05,573 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 15:57:05,580 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 15:57:05,580 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+INFO 2026-05-01 15:58:08,044 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 15:58:08,045 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-postman email=postman@example.com
+INFO 2026-05-01 15:58:20,895 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 15:58:20,895 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-postman email=postman@example.com
+INFO 2026-05-01 16:03:15,086 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 16:03:15,086 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-deploy-check email=deploycheck@example.com
+WARNING 2026-05-01 16:33:16,008 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-05-01 16:33:16,073 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-05-01 16:33:16,720 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 16:33:16,983 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 16:33:17,531 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-05-01 16:33:20,784 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_k9f4Hkj.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 16:33:20,823 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-05-01 16:33:21,641 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 16:33:22,113 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 16:33:25,294 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_3r4ZROV.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 16:33:25,325 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+INFO 2026-05-01 16:33:25,471 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 16:33:25,471 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 16:33:25,485 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 16:33:25,485 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+INFO 2026-05-01 16:33:25,495 firebase_utils Firebase Admin SDK initialized from FIREBASE_CREDENTIALS_JSON.
+ERROR 2026-05-01 16:33:25,501 firebase_utils Firebase credentials missing. Set FIREBASE_CREDENTIALS_JSON in environment.
+WARNING 2026-05-01 16:34:52,116 api_views Gemini analysis unavailable for audio; using heuristic fallback: quota exceeded
+WARNING 2026-05-01 16:34:52,175 log Unprocessable Content: /api/analyze-media/
+WARNING 2026-05-01 16:34:52,723 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 16:34:52,967 log Bad Request: /api/mobile/complaints/submit/
+WARNING 2026-05-01 16:34:53,600 log Bad Request: /api/mobile/complaints/PMC20260001/verify-close/
+WARNING 2026-05-01 16:34:57,878 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/first_sMQ265m.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 16:34:57,895 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+WARNING 2026-05-01 16:34:58,594 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 16:34:59,426 log Bad Request: /api/mobile/gaps/1/resolve/
+WARNING 2026-05-01 16:35:02,527 api_views Could not load closure photo URL for gap 1: HTTPConnectionPool(host='testserver', port=80): Max retries exceeded with url: /media/resolution_proofs/proof_0UvXGfI.jpg (Caused by NameResolutionError("HTTPConnection(host='testserver', port=80): Failed to resolve 'testserver' ([Errno 11001] getaddrinfo failed)"))
+WARNING 2026-05-01 16:35:02,540 api_views Firebase async sync warning for gap 1: database table is locked: core_gap
+INFO 2026-05-01 16:35:02,586 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 16:35:02,586 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 16:35:02,592 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 16:35:02,593 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+INFO 2026-05-01 16:35:02,599 firebase_utils Firebase Admin SDK initialized from FIREBASE_CREDENTIALS_JSON.
+ERROR 2026-05-01 16:35:02,604 firebase_utils Firebase credentials missing. Set FIREBASE_CREDENTIALS_JSON in environment.
+INFO 2026-05-01 16:42:05,815 firebase_utils Firebase Admin SDK initialized from FIREBASE_CREDENTIALS_JSON.
+ERROR 2026-05-01 16:42:05,821 firebase_utils Firebase credentials missing. Set FIREBASE_CREDENTIALS_JSON in environment.
+INFO 2026-05-01 16:42:05,906 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 16:42:05,907 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 16:42:05,944 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 16:42:05,945 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+INFO 2026-05-01 16:57:18,413 firebase_utils Firebase credentials env check: present=True length=163
+INFO 2026-05-01 16:57:18,413 firebase_utils Firebase credentials parsed: project_id=demo private_key_present=True
+INFO 2026-05-01 16:57:18,413 firebase_utils Firebase Admin SDK initialized from FIREBASE_CREDENTIALS_JSON.
+INFO 2026-05-01 16:57:18,415 firebase_utils Firebase credentials env check: present=False length=0
+ERROR 2026-05-01 16:57:18,415 firebase_utils Firebase credentials missing. Set FIREBASE_CREDENTIALS_JSON in environment.
+INFO 2026-05-01 16:57:18,425 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Bearer token_present=True token_preview=fake...
+INFO 2026-05-01 16:57:18,426 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
+INFO 2026-05-01 16:57:18,430 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
+INFO 2026-05-01 16:57:18,430 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com

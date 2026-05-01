@@ -2,13 +2,14 @@ import * as SQLite from "expo-sqlite";
 
 const DB_NAME = "setu_offline.db";
 const MAX_RETRY_STEPS_MINUTES = [1, 5, 15, 30, 60, 120];
+const MAX_SYNC_ATTEMPTS = 8;
 
 let dbPromise = null;
 let initialized = false;
 
 const isoNow = () => new Date().toISOString();
 
-const buildUuid = () => {
+export const buildUuid = () => {
   if (globalThis.crypto?.randomUUID) {
     return globalThis.crypto.randomUUID();
   }
@@ -121,6 +122,26 @@ export const initOfflineDb = async () => {
     CREATE INDEX IF NOT EXISTS idx_sync_queue_due
       ON sync_queue(sync_status, next_retry_at, created_at);
   `);
+
+  const now = isoNow();
+  await db.runAsync(
+    `UPDATE sync_queue
+     SET sync_status = 'PENDING', updated_at = ?
+     WHERE sync_status = 'UPLOADING'`,
+    [now],
+  );
+  await db.runAsync(
+    `UPDATE complaints_offline
+     SET sync_status = 'PENDING', updated_at = ?
+     WHERE sync_status = 'UPLOADING'`,
+    [now],
+  );
+  await db.runAsync(
+    `UPDATE resolutions_offline
+     SET sync_status = 'PENDING', updated_at = ?
+     WHERE sync_status = 'UPLOADING'`,
+    [now],
+  );
 
   initialized = true;
 };
@@ -240,9 +261,10 @@ export const getQueueDueItems = async () => {
     `SELECT *
      FROM sync_queue
      WHERE sync_status IN ('PENDING', 'FAILED')
+       AND retry_count < ?
        AND (next_retry_at IS NULL OR next_retry_at <= ?)
      ORDER BY created_at ASC`,
-    [now],
+    [MAX_SYNC_ATTEMPTS, now],
   );
 
   return rows;
@@ -264,11 +286,24 @@ export const markQueueUploading = async (queueId) => {
   await initOfflineDb();
   const db = await getDb();
   const now = isoNow();
+  const row = await db.getFirstAsync(`SELECT * FROM sync_queue WHERE id = ?`, [queueId]);
+  if (!row) return;
+
   await db.runAsync(
     `UPDATE sync_queue
      SET sync_status = 'UPLOADING', last_attempt_at = ?, updated_at = ?
      WHERE id = ?`,
     [now, now, queueId],
+  );
+
+  const table = row.entity_type === "complaint" ? "complaints_offline" : "resolutions_offline";
+  await db.runAsync(
+    `UPDATE ${table}
+     SET sync_status = 'UPLOADING',
+         last_attempt_at = ?,
+         updated_at = ?
+     WHERE local_id = ?`,
+    [now, now, row.entity_local_id],
   );
 };
 
@@ -278,6 +313,12 @@ export const markQueueFailed = async (queueRow, reason) => {
   const now = isoNow();
   const retryCount = (queueRow.retry_count || 0) + 1;
   const delayMinutes = nextBackoffMinutes(retryCount - 1);
+  const nextRetryAt = retryCount >= MAX_SYNC_ATTEMPTS
+    ? null
+    : toIsoAfterMinutes(delayMinutes);
+  const message = retryCount >= MAX_SYNC_ATTEMPTS
+    ? `${reason || "Sync failed"} Reached retry limit; use manual retry after fixing the issue.`
+    : reason || "Sync failed";
 
   await db.runAsync(
     `UPDATE sync_queue
@@ -288,7 +329,7 @@ export const markQueueFailed = async (queueRow, reason) => {
          next_retry_at = ?,
          updated_at = ?
      WHERE id = ?`,
-    [retryCount, reason || "Sync failed", now, toIsoAfterMinutes(delayMinutes), now, queueRow.id],
+    [retryCount, message, now, nextRetryAt, now, queueRow.id],
   );
 
   const table = queueRow.entity_type === "complaint" ? "complaints_offline" : "resolutions_offline";
@@ -301,7 +342,41 @@ export const markQueueFailed = async (queueRow, reason) => {
          next_retry_at = ?,
          updated_at = ?
      WHERE local_id = ?`,
-    [retryCount, reason || "Sync failed", now, toIsoAfterMinutes(delayMinutes), now, queueRow.entity_local_id],
+    [retryCount, message, now, nextRetryAt, now, queueRow.entity_local_id],
+  );
+};
+
+export const resetFailedSyncItems = async () => {
+  await initOfflineDb();
+  const db = await getDb();
+  const now = isoNow();
+
+  await db.runAsync(
+    `UPDATE sync_queue
+     SET sync_status = 'PENDING',
+         retry_count = 0,
+         next_retry_at = NULL,
+         updated_at = ?
+     WHERE sync_status = 'FAILED'`,
+    [now],
+  );
+  await db.runAsync(
+    `UPDATE complaints_offline
+     SET sync_status = 'PENDING',
+         retry_count = 0,
+         next_retry_at = NULL,
+         updated_at = ?
+     WHERE sync_status = 'FAILED'`,
+    [now],
+  );
+  await db.runAsync(
+    `UPDATE resolutions_offline
+     SET sync_status = 'PENDING',
+         retry_count = 0,
+         next_retry_at = NULL,
+         updated_at = ?
+     WHERE sync_status = 'FAILED'`,
+    [now],
   );
 };
 
@@ -430,6 +505,21 @@ export const listNeedsRetryResolutions = async () => {
   );
 };
 
+export const getRetainedLocalFileUris = async () => {
+  await initOfflineDb();
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT photo_uri AS uri FROM complaints_offline WHERE sync_status != 'SYNCED'
+     UNION
+     SELECT audio_uri AS uri FROM complaints_offline WHERE sync_status != 'SYNCED' AND audio_uri IS NOT NULL
+     UNION
+     SELECT closure_photo_uri AS uri FROM resolutions_offline WHERE sync_status != 'SYNCED'
+     UNION
+     SELECT person_photo_uri AS uri FROM resolutions_offline WHERE sync_status != 'SYNCED' AND person_photo_uri IS NOT NULL`,
+  );
+  return rows.map((row) => row.uri).filter(Boolean);
+};
+
 export default {
   initOfflineDb,
   createOfflineComplaint,
@@ -440,9 +530,11 @@ export default {
   getResolutionByLocalId,
   markQueueUploading,
   markQueueFailed,
+  resetFailedSyncItems,
   markComplaintSynced,
   markResolutionSynced,
   getOfflineSyncSummary,
   findComplaintByPhotoHash,
   listNeedsRetryResolutions,
+  getRetainedLocalFileUris,
 };

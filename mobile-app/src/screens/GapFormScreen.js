@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,11 @@ import {
   ActivityIndicator,
   Modal,
   Animated,
+  Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { fonts } from '../theme';
 import { villagesApi, gapsApi } from '../services/api';
 import { analyzeMedia } from '../services/aiService';
@@ -22,6 +23,13 @@ import { uploadService } from '../services/cloudinaryService';
 import { useTranslation } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { formatErrorForDisplay } from '../utils/errorDisplay';
+import { getStatusCodeMessage, logApiErrorStatus } from '../services/authErrorUtils';
+import {
+  consumeEvidenceCaptureDraft,
+  consumeLatestEvidenceCaptureDraft,
+  registerEvidenceCaptureCallback,
+  unregisterEvidenceCaptureCallback,
+} from '../utils/evidenceCaptureCallbacks';
 
 // Gap Type Categories - matching backend API
 const getGapTypes = (t) => [
@@ -50,9 +58,12 @@ const getSeverityLevels = (t) => [
 export default function GapFormScreen({ route, navigation }) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const GAP_TYPES = getGapTypes(t);
   const SEVERITY_LEVELS = getSeverityLevels(t);
-  const { mediaUri, mediaType, language, prefill } = route.params || {};
+  const formParams = route.params || {};
+  const { mediaUri, mediaType, language, prefill } = formParams;
+  const evidence = route.params?.evidence;
   
   const [villages, setVillages] = useState([]);
   const [selectedVillage, setSelectedVillage] = useState('');
@@ -67,29 +78,75 @@ export default function GapFormScreen({ route, navigation }) {
   const [aiProcessed, setAiProcessed] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [uploadedMediaUrl, setUploadedMediaUrl] = useState(null);
+  const [evidencePhotoUri, setEvidencePhotoUri] = useState(
+    mediaType === 'image' ? mediaUri : null
+  );
   
   // GPS states
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [gpsAccuracy, setGpsAccuracy] = useState(null);
   const [gpsSamples, setGpsSamples] = useState([]);
-  const [gpsLoading, setGpsLoading] = useState(false);
   
   // Success Modal states
   const [showSuccess, setShowSuccess] = useState(false);
   const [successData, setSuccessData] = useState(null);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const evidenceCallbackIdRef = useRef(`gap_evidence_${Date.now()}`);
+  const submitInFlightRef = useRef(false);
 
   const safeLabel = (key, fallback) => {
     const value = t(key);
     return value === key ? fallback : value;
   };
 
+  const applyCapturedEvidence = useCallback((capturedEvidence) => {
+    if (!capturedEvidence?.photoUri || !capturedEvidence?.location) return;
+
+    setEvidencePhotoUri(capturedEvidence.photoUri);
+    setLatitude(capturedEvidence.location.latitude);
+    setLongitude(capturedEvidence.location.longitude);
+    setGpsAccuracy(capturedEvidence.location.accuracy ?? null);
+    setGpsSamples([capturedEvidence.location]);
+  }, []);
+
   useEffect(() => {
     loadVillages();
-    captureGPS();
   }, []);
+
+  useEffect(() => {
+    const callbackId = evidenceCallbackIdRef.current;
+    registerEvidenceCaptureCallback(callbackId, applyCapturedEvidence);
+
+    return () => unregisterEvidenceCaptureCallback(callbackId);
+  }, [applyCapturedEvidence]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      consumeEvidenceCaptureDraft(evidenceCallbackIdRef.current)
+        .then(async (capturedEvidence) => {
+          if (!capturedEvidence) {
+            capturedEvidence = await consumeLatestEvidenceCaptureDraft();
+          }
+          if (active && capturedEvidence) {
+            applyCapturedEvidence(capturedEvidence);
+          }
+        })
+        .catch((error) => {
+          console.warn('Failed to load pending evidence draft:', error?.message || error);
+        });
+
+      return () => {
+        active = false;
+      };
+    }, [applyCapturedEvidence])
+  );
+
+  useEffect(() => {
+    applyCapturedEvidence(evidence);
+  }, [applyCapturedEvidence, evidence]);
   
   // AI Processing Effect - runs when media is present
   useEffect(() => {
@@ -191,46 +248,36 @@ export default function GapFormScreen({ route, navigation }) {
     }
   };
 
-  const captureGPS = async () => {
-    setGpsLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        console.warn('Location permission denied');
-        return;
-      }
+  const navigateToEvidenceCapture = () => {
+    navigation.navigate('CaptureEvidence', {
+      callbackId: evidenceCallbackIdRef.current,
+      initialPhotoUri: evidencePhotoUri,
+      initialLocation:
+        latitude != null && longitude != null
+          ? {
+              latitude,
+              longitude,
+              accuracy: gpsAccuracy,
+              captured_at: gpsSamples[0]?.captured_at,
+            }
+          : null,
+    });
+  };
 
-      const samples = [];
-      for (let i = 0; i < 3; i += 1) {
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-        samples.push({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-          accuracy: loc.coords.accuracy,
-          captured_at: new Date().toISOString(),
-        });
-      }
-
-      const avgLat = samples.reduce((sum, s) => sum + s.latitude, 0) / samples.length;
-      const avgLng = samples.reduce((sum, s) => sum + s.longitude, 0) / samples.length;
-      const avgAccuracy =
-        samples.reduce((sum, s) => sum + (Number.isFinite(s.accuracy) ? s.accuracy : 0), 0) /
-        samples.length;
-
-      setLatitude(avgLat);
-      setLongitude(avgLng);
-      setGpsAccuracy(avgAccuracy);
-      setGpsSamples(samples);
-    } catch (error) {
-      console.warn('GPS capture failed:', error.message);
-    } finally {
-      setGpsLoading(false);
-    }
+  const showEvidenceRequiredAlert = () => {
+    Alert.alert(
+      'Photo and location are required',
+      'Please capture a photo and GPS location before submitting.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Capture Now', onPress: navigateToEvidenceCapture },
+      ]
+    );
   };
 
   const handleSubmit = async () => {
+    if (submitInFlightRef.current) return;
+
     // Validation
     if (!selectedVillage) {
       Alert.alert(t('gapForm.requiredField'), t('gapForm.selectVillage'));
@@ -240,15 +287,12 @@ export default function GapFormScreen({ route, navigation }) {
       Alert.alert(t('gapForm.requiredField'), t('gapForm.selectGapType'));
       return;
     }
-    if (!mediaUri || mediaType !== 'image') {
-      Alert.alert('Photo required', 'Surrounding photo is mandatory for offline complaint capture.');
-      return;
-    }
-    if (latitude == null || longitude == null) {
-      Alert.alert('GPS required', 'GPS location is mandatory before saving complaint offline.');
+    if (!evidencePhotoUri || latitude == null || longitude == null) {
+      showEvidenceRequiredAlert();
       return;
     }
 
+    submitInFlightRef.current = true;
     setLoading(true);
 
     // Find village name for the selected village
@@ -262,18 +306,17 @@ export default function GapFormScreen({ route, navigation }) {
 
     // Prepare submission data
     const submissionData = {
-      local_id: `cmp_${Date.now()}`,
       village_id: selectedVillage,
       village_name: villageName,
       gap_type: selectedGapType,
       severity: selectedSeverity,
       description: description.trim() || '',
       input_method: inputMethod,
-      imageUri: mediaUri,
+      imageUri: evidencePhotoUri,
       latitude: latitude,
       longitude: longitude,
       gps_accuracy: gpsAccuracy,
-      gps_samples_json: JSON.stringify(gpsSamples),
+      gps_samples_json: JSON.stringify(gpsSamples.length > 0 ? gpsSamples : []),
     };
 
     try {
@@ -295,6 +338,8 @@ export default function GapFormScreen({ route, navigation }) {
         gap_type: submissionData.gap_type,
         severity: submissionData.severity,
         village_name: villages.find(v => v.id === submissionData.village_id)?.name || '',
+        local_id: result?.local_id,
+        sync_status: result?.sync_status,
       });
       setShowSuccess(true);
       
@@ -316,18 +361,30 @@ export default function GapFormScreen({ route, navigation }) {
       ]).start();
     } catch (error) {
       console.error('Submission error:', error);
+      logApiErrorStatus("GapForm.submit", error);
+      const statusMessage = getStatusCodeMessage(error);
+      if (statusMessage) {
+        Alert.alert(t('common.error'), statusMessage);
+        return;
+      }
       const friendly = formatErrorForDisplay(error, {
         action: 'save complaint offline',
         fallback: t('gapForm.submitFailed'),
       });
       Alert.alert(t('common.error'), friendly.message);
     } finally {
+      submitInFlightRef.current = false;
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundGray }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: colors.backgroundGray, paddingBottom: insets.bottom + 20 },
+      ]}
+    >
       <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.backgroundGray} />
 
       {/* Header */}
@@ -342,7 +399,11 @@ export default function GapFormScreen({ route, navigation }) {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* AI Processing Banner */}
         {processingAI && (
           <View style={[styles.mediaBanner, { backgroundColor: isDark ? '#3A2A12' : '#FFF8E1', borderColor: isDark ? '#6E4B1A' : '#FFE0B2' }]}>
@@ -535,11 +596,50 @@ export default function GapFormScreen({ route, navigation }) {
           />
         </View>
 
+        {/* Evidence Capture */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Evidence *</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textLight }]}>
+            Capture a complaint photo and GPS location before submitting.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.evidenceButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={navigateToEvidenceCapture}
+          >
+            <View style={[styles.evidenceIconCircle, { backgroundColor: isDark ? colors.surface : '#F5F5F8' }]}>
+              <Ionicons
+                name={evidencePhotoUri && latitude != null && longitude != null ? 'checkmark-circle' : 'camera-outline'}
+                size={26}
+                color={evidencePhotoUri && latitude != null && longitude != null ? '#4CAF50' : '#FA4A0C'}
+              />
+            </View>
+            <View style={styles.mediaInfo}>
+              <Text style={[styles.mediaTitle, { color: colors.text }]}>Capture Evidence</Text>
+              <Text style={[styles.mediaSubtitle, { color: colors.textLight }]}>
+                {evidencePhotoUri && latitude != null && longitude != null
+                  ? `Photo and GPS ready (${Number(latitude).toFixed(5)}, ${Number(longitude).toFixed(5)})`
+                  : 'Photo and location required'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+          </TouchableOpacity>
+
+          {evidencePhotoUri && (
+            <Image source={{ uri: evidencePhotoUri }} style={styles.evidencePreview} resizeMode="cover" />
+          )}
+        </View>
+
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: colors.buttonPrimaryBg }, (loading || processingAI) && styles.submitButtonDisabled]}
+          style={[
+            styles.submitButton,
+            { backgroundColor: colors.buttonPrimaryBg },
+            (loading || processingAI || !evidencePhotoUri || latitude == null || longitude == null) &&
+              styles.submitButtonDisabled,
+          ]}
           onPress={handleSubmit}
-          disabled={loading || processingAI}
+          disabled={loading || processingAI || !evidencePhotoUri || latitude == null || longitude == null}
         >
           {loading ? (
             <ActivityIndicator color={colors.buttonPrimaryText} />
@@ -606,6 +706,15 @@ export default function GapFormScreen({ route, navigation }) {
                   <Ionicons name="location-outline" size={18} color="#4CAF50" />
                   <Text style={[styles.summaryLabel, { color: colors.textLight }]}>{safeLabel('gapForm.village', 'Village')}:</Text>
                   <Text style={[styles.summaryValue, { color: colors.text }]}>{successData.village_name}</Text>
+                </View>
+              )}
+              {successData?.sync_status && (
+                <View style={styles.summaryRow}>
+                  <Ionicons name="cloud-upload-outline" size={18} color="#FF9800" />
+                  <Text style={[styles.summaryLabel, { color: colors.textLight }]}>Sync:</Text>
+                  <Text style={[styles.summaryValue, { color: colors.text }]}>
+                    {successData.sync_status}
+                  </Text>
                 </View>
               )}
             </Animated.View>
@@ -829,10 +938,33 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E0E0E0',
   },
+  evidenceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    borderRadius: 18,
+    padding: 16,
+  },
+  evidenceIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  evidencePreview: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    marginTop: 12,
+  },
   submitButton: {
     backgroundColor: '#000000',
     marginHorizontal: 24,
     marginTop: 32,
+    marginBottom: 12,
     height: 56,
     borderRadius: 28,
     flexDirection: 'row',

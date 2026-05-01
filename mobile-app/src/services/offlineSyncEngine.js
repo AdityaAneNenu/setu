@@ -1,4 +1,5 @@
 import * as Network from "expo-network";
+import * as FileSystem from "expo-file-system/legacy";
 import {
   getQueueDueItems,
   getComplaintByLocalId,
@@ -8,15 +9,33 @@ import {
   markComplaintSynced,
   markResolutionSynced,
   initOfflineDb,
+  resetFailedSyncItems,
+  getRetainedLocalFileUris,
 } from "./offlineDb";
 import { API_CONFIG } from "../config/api";
 import { getCurrentUser } from "./authService";
+import { cleanupOfflineFiles, deleteOfflineFile } from "./offlineFileStore";
+import { getFirebaseAuthHeaders, isAuthDeniedStatus } from "./firebaseAuthSession";
 
 let running = false;
 let timer = null;
 let unsubscribeNetwork = null;
 
 const SYNC_POLL_MS = 60 * 1000;
+const UPLOAD_TIMEOUT_MS = 45000;
+
+const fetchWithTimeout = async (url, options = {}, timeoutMs = UPLOAD_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 const toFilePart = (uri, namePrefix) => {
   const clean = String(uri || "").split("?")[0];
@@ -37,19 +56,12 @@ const toFilePart = (uri, namePrefix) => {
   };
 };
 
-const getAuthHeaders = async () => {
-  const headers = {};
-  try {
-    const user = getCurrentUser();
-    if (user) {
-      const token = await user.getIdToken();
-      headers.Authorization = `Firebase ${token}`;
-    }
-  } catch (err) {
-    console.warn("Could not attach Firebase auth token:", err?.message || err);
-  }
-  return headers;
-};
+const getAuthHeaders = async () =>
+  getFirebaseAuthHeaders({
+    includeContentType: false,
+    forceRefresh: true,
+    required: true,
+  });
 
 const isOnline = async () => {
   const state = await Network.getNetworkStateAsync();
@@ -65,6 +77,16 @@ const parseJsonSafe = async (response) => {
   }
 };
 
+const assertLocalFileExists = async (uri, label) => {
+  if (!uri) {
+    throw new Error(`${label} file path is missing`);
+  }
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info?.exists) {
+    throw new Error(`${label} file is missing on device storage`);
+  }
+};
+
 const syncComplaint = async (queueRow) => {
   const complaint = await getComplaintByLocalId(queueRow.entity_local_id);
   if (!complaint) {
@@ -74,6 +96,7 @@ const syncComplaint = async (queueRow) => {
   const payload = new FormData();
   payload.append("local_id", complaint.local_id);
   payload.append("idempotency_key", complaint.idempotency_key);
+  payload.append("client_submission_id", complaint.idempotency_key);
   payload.append("village_id", String(complaint.village_id));
   payload.append("village_name", complaint.village_name || "");
   payload.append("description", complaint.description || "");
@@ -91,14 +114,16 @@ const syncComplaint = async (queueRow) => {
   payload.append("submitted_by", getCurrentUser()?.uid || "offline_worker");
   payload.append("submitted_by_email", getCurrentUser()?.email || "");
 
+  await assertLocalFileExists(complaint.photo_uri, "Complaint photo");
   payload.append("image_file", toFilePart(complaint.photo_uri, `${complaint.local_id}_photo`));
 
   if (complaint.audio_uri) {
+    await assertLocalFileExists(complaint.audio_uri, "Complaint audio");
     payload.append("audio_file", toFilePart(complaint.audio_uri, `${complaint.local_id}_audio`));
   }
 
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_CONFIG.DJANGO_URL}/api/mobile/gaps/sync/`, {
+  const response = await fetchWithTimeout(`${API_CONFIG.DJANGO_URL}/api/mobile/gaps/sync/`, {
     method: "POST",
     headers,
     body: payload,
@@ -106,6 +131,14 @@ const syncComplaint = async (queueRow) => {
   const result = await parseJsonSafe(response);
 
   if (!response.ok || !result?.success) {
+    console.warn("[offline-sync] Complaint sync failed:", {
+      status: response.status,
+      result,
+      localId: complaint.local_id,
+    });
+    if (isAuthDeniedStatus(response.status)) {
+      throw new Error("Session expired, please login again");
+    }
     throw new Error(result?.error || `Complaint sync failed (${response.status})`);
   }
 
@@ -114,6 +147,10 @@ const syncComplaint = async (queueRow) => {
     serverId: result.django_id,
     firestoreId: result.firestore_id || null,
   });
+  await Promise.all([
+    deleteOfflineFile(complaint.photo_uri),
+    deleteOfflineFile(complaint.audio_uri),
+  ]);
 };
 
 const syncResolution = async (queueRow) => {
@@ -137,6 +174,8 @@ const syncResolution = async (queueRow) => {
   const payload = new FormData();
   payload.append("local_id", resolution.local_id);
   payload.append("idempotency_key", resolution.idempotency_key);
+  payload.append("client_submission_id", resolution.idempotency_key);
+  await assertLocalFileExists(resolution.closure_photo_uri, "Resolution proof");
   payload.append("photo", toFilePart(resolution.closure_photo_uri, `${resolution.local_id}_proof`));
   payload.append("latitude", String(resolution.latitude));
   payload.append("longitude", String(resolution.longitude));
@@ -148,11 +187,12 @@ const syncResolution = async (queueRow) => {
   }
 
   if (resolution.person_photo_uri) {
+    await assertLocalFileExists(resolution.person_photo_uri, "Resolution person photo");
     payload.append("person_photo", toFilePart(resolution.person_photo_uri, `${resolution.local_id}_person`));
   }
 
   const headers = await getAuthHeaders();
-  const response = await fetch(`${API_CONFIG.DJANGO_URL}/api/mobile/gaps/${serverGapId}/resolve/`, {
+  const response = await fetchWithTimeout(`${API_CONFIG.DJANGO_URL}/api/mobile/gaps/${serverGapId}/resolve/`, {
     method: "POST",
     headers,
     body: payload,
@@ -160,6 +200,15 @@ const syncResolution = async (queueRow) => {
   const result = await parseJsonSafe(response);
 
   if (!response.ok || !result?.success) {
+    console.warn("[offline-sync] Resolution sync failed:", {
+      status: response.status,
+      result,
+      localId: resolution.local_id,
+      serverGapId,
+    });
+    if (isAuthDeniedStatus(response.status)) {
+      throw new Error("Session expired, please login again");
+    }
     throw new Error(result?.error || `Resolution sync failed (${response.status})`);
   }
 
@@ -167,6 +216,10 @@ const syncResolution = async (queueRow) => {
     localId: resolution.local_id,
     result,
   });
+  await Promise.all([
+    deleteOfflineFile(resolution.closure_photo_uri),
+    deleteOfflineFile(resolution.person_photo_uri),
+  ]);
 };
 
 const runOnePass = async () => {
@@ -176,6 +229,10 @@ const runOnePass = async () => {
 
   running = true;
   try {
+    if (!getCurrentUser()) {
+      return;
+    }
+
     const online = await isOnline();
     if (!online) {
       return;
@@ -205,6 +262,11 @@ const runOnePass = async () => {
 
 export const startOfflineSyncEngine = async () => {
   await initOfflineDb();
+  getRetainedLocalFileUris()
+    .then((retainedUris) => cleanupOfflineFiles(retainedUris))
+    .catch((error) => {
+      console.warn("Offline file cleanup failed during startup:", error?.message || error);
+    });
 
   if (timer) {
     return;
@@ -237,7 +299,12 @@ export const stopOfflineSyncEngine = () => {
   }
 };
 
-export const triggerOfflineSyncNow = async () => runOnePass();
+export const triggerOfflineSyncNow = async ({ resetFailed = false } = {}) => {
+  if (resetFailed) {
+    await resetFailedSyncItems();
+  }
+  return runOnePass();
+};
 
 export default {
   startOfflineSyncEngine,

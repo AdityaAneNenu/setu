@@ -11,6 +11,7 @@ import {
   Animated,
   StatusBar,
   BackHandler,
+  Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,10 +19,37 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { gapsApi, syncApi } from "../services/api";
+import { authApi, gapsApi, syncApi } from "../services/api";
 import { API_CONFIG } from "../config/api";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../theme";
+import { getStoredAuthToken } from "../services/authTokenStorage";
+import {
+  getStatusCodeMessage,
+  isFinalAuthFailure,
+  isPermissionDeniedError,
+  logApiErrorStatus,
+} from "../services/authErrorUtils";
+
+const LOCATION_TIMEOUT_MS = 15000;
+const AUTH_READY_WAIT_MS = 2500;
+const AUTH_READY_POLL_MS = 150;
+const AUTH_RETRY_DELAY_MS = 600;
+
+const getCurrentPositionWithTimeout = () =>
+  Promise.race([
+    Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+    }),
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("GPS request timed out")), LOCATION_TIMEOUT_MS);
+    }),
+  ]);
+
+const openSettingsSafe = () =>
+  Linking.openSettings().catch((error) => {
+    console.warn("Failed to open app settings:", error?.message || error);
+  });
 
 export default function GapVerificationScreen({ navigation }) {
   const { colors } = useTheme();
@@ -55,6 +83,10 @@ export default function GapVerificationScreen({ navigation }) {
   const tabScaleOpen = React.useRef(new Animated.Value(1)).current;
   const tabScaleProgress = React.useRef(new Animated.Value(1)).current;
   const tabScaleResolved = React.useRef(new Animated.Value(1)).current;
+  const resolveInFlightRef = React.useRef(false);
+  const authRetryTimerRef = React.useRef(null);
+  const authRetryCountRef = React.useRef(0);
+  const [authChecking, setAuthChecking] = useState(true);
 
   const clearSelection = () => {
     setSelected(null);
@@ -76,7 +108,61 @@ export default function GapVerificationScreen({ navigation }) {
     return isSelected ? ["#FFF5F0", "#FFFFFF"] : ["#FFFFFF", "#F8F8FB"];
   };
 
-  const loadGaps = async () => {
+  const ensureAuthReadyBeforeApi = async ({ allowRetryWait = true } = {}) => {
+    let user = authApi.getCurrentUser();
+    let token = await getStoredAuthToken();
+    if (user || token) {
+      setAuthChecking(false);
+      return true;
+    }
+
+    if (!allowRetryWait) {
+      setAuthChecking(true);
+      return false;
+    }
+
+    const startedAt = Date.now();
+    while (!user && !token && Date.now() - startedAt < AUTH_READY_WAIT_MS) {
+      await new Promise((resolve) => setTimeout(resolve, AUTH_READY_POLL_MS));
+      user = authApi.getCurrentUser();
+      token = await getStoredAuthToken();
+    }
+
+    const ready = !!(user || token);
+    setAuthChecking(!ready);
+    return ready;
+  };
+
+  const loadGaps = async ({ allowAuthRetry = true } = {}) => {
+    const authReady = await ensureAuthReadyBeforeApi({ allowRetryWait: true });
+    if (!authReady) {
+      if (allowAuthRetry && authRetryCountRef.current < 1) {
+        authRetryCountRef.current += 1;
+        if (authRetryTimerRef.current) {
+          clearTimeout(authRetryTimerRef.current);
+        }
+        authRetryTimerRef.current = setTimeout(() => {
+          loadGaps({ allowAuthRetry: false }).catch((error) => {
+            console.warn("Delayed gap reload failed:", error?.message || error);
+          });
+        }, AUTH_RETRY_DELAY_MS);
+      } else {
+        setAuthChecking(false);
+        setLoaded(true);
+      }
+      if (allowAuthRetry) {
+        setLoaded(false);
+      }
+      setFetching(false);
+      return;
+    }
+
+    authRetryCountRef.current = 0;
+    if (authRetryTimerRef.current) {
+      clearTimeout(authRetryTimerRef.current);
+      authRetryTimerRef.current = null;
+    }
+
     setFetching(true);
     try {
       const response = await gapsApi.getMobileGaps();
@@ -101,10 +187,27 @@ export default function GapVerificationScreen({ navigation }) {
       setSyncSummary(summary);
       setLastSyncedAt(new Date());
     } catch (e) {
-      Alert.alert("Error", e.message || "Could not load gaps.");
+      logApiErrorStatus("GapVerification.loadGaps", e);
+      if (isPermissionDeniedError(e)) {
+        Alert.alert("Not authorized", "You are not authorized to view these gaps.");
+      } else if (isFinalAuthFailure(e)) {
+        Alert.alert("Session expired", "Session expired, please login again", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Login",
+            onPress: () => authApi.logout().catch((logoutError) => {
+              console.warn("Failed to logout after auth retry failure:", logoutError?.message || logoutError);
+            }),
+          },
+        ]);
+      } else {
+        const statusMessage = getStatusCodeMessage(e);
+        Alert.alert("Error", statusMessage || e.message || "Could not load gaps.");
+      }
     } finally {
       setLoaded(true);
       setFetching(false);
+      setAuthChecking(false);
     }
   };
 
@@ -144,9 +247,48 @@ export default function GapVerificationScreen({ navigation }) {
     return count > 0 ? styles.countTextStrong : styles.countTextMuted;
   };
 
+  const retryFailedSync = async () => {
+    const authReady = await ensureAuthReadyBeforeApi({ allowRetryWait: true });
+    if (!authReady) {
+      return;
+    }
+    setFetching(true);
+    try {
+      await syncApi.processQueue();
+      await loadGaps();
+      Alert.alert("Retry started", "Failed offline items have been queued for another sync attempt.");
+    } catch (error) {
+      logApiErrorStatus("GapVerification.retryFailedSync", error);
+      if (isPermissionDeniedError(error)) {
+        Alert.alert("Not authorized", "You are not authorized to retry this sync.");
+      } else if (isFinalAuthFailure(error)) {
+        Alert.alert("Session expired", "Session expired, please login again", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Login",
+            onPress: () => authApi.logout().catch((logoutError) => {
+              console.warn("Failed to logout after auth retry failure:", logoutError?.message || logoutError);
+            }),
+          },
+        ]);
+      } else {
+        const statusMessage = getStatusCodeMessage(error);
+        Alert.alert("Retry failed", statusMessage || error.message || "Could not retry failed sync items.");
+      }
+    } finally {
+      setFetching(false);
+    }
+  };
+
   useEffect(() => {
     loadGaps();
     checkBackendHealth();
+    return () => {
+      if (authRetryTimerRef.current) {
+        clearTimeout(authRetryTimerRef.current);
+        authRetryTimerRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -195,8 +337,18 @@ export default function GapVerificationScreen({ navigation }) {
   const currentTabData =
     activeTab === "OPEN" ? openGaps : activeTab === "RESOLVED" ? resolvedGaps : inProgressGaps;
   const hasAnyGaps = openGaps.length > 0 || inProgressGaps.length > 0 || resolvedGaps.length > 0;
+  const showAuthLoader = authChecking && !loaded;
+  const hasRetryFooter = syncSummary.needsRetry > 0 || Number(syncSummary.FAILED) > 0;
+  const bottomSafeInset = insets.bottom + 20;
+  const bottomCtaBaseHeight = 88;
+  const bottomCtaSyncHeight = hasAnyGaps ? 44 : 0;
+  const bottomCtaRetryHeight = hasAnyGaps && hasRetryFooter ? 40 : 0;
+  const contentBottomInset =
+    bottomSafeInset + bottomCtaBaseHeight + bottomCtaSyncHeight + bottomCtaRetryHeight;
 
   const resolveSelectedGap = async () => {
+    if (resolveInFlightRef.current) return;
+
     if (!selected) {
       Alert.alert("Select gap", "Please select an in-progress gap first.");
       return;
@@ -212,11 +364,12 @@ export default function GapVerificationScreen({ navigation }) {
       return;
     }
 
-    if (!gpsProof?.latitude || !gpsProof?.longitude) {
+    if (gpsProof?.latitude == null || gpsProof?.longitude == null) {
       Alert.alert("GPS required", "Please capture current location before resolving.");
       return;
     }
 
+    resolveInFlightRef.current = true;
     setLoading(true);
     try {
       const res = await gapsApi.resolveMobileGap(selectedInProgress.id, {
@@ -238,8 +391,25 @@ export default function GapVerificationScreen({ navigation }) {
       setGpsProof(null);
       await loadGaps();
     } catch (e) {
-      Alert.alert("Resolution failed", e.message || "Could not resolve gap.");
+      logApiErrorStatus("GapVerification.resolveSelectedGap", e);
+      if (isPermissionDeniedError(e)) {
+        Alert.alert("Not authorized", "You are not authorized to resolve this gap.");
+      } else if (isFinalAuthFailure(e)) {
+        Alert.alert("Session expired", "Session expired, please login again", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Login",
+            onPress: () => authApi.logout().catch((logoutError) => {
+              console.warn("Failed to logout after auth retry failure:", logoutError?.message || logoutError);
+            }),
+          },
+        ]);
+      } else {
+        const statusMessage = getStatusCodeMessage(e);
+        Alert.alert("Resolution failed", statusMessage || e.message || "Could not resolve gap.");
+      }
     } finally {
+      resolveInFlightRef.current = false;
       setLoading(false);
     }
   };
@@ -257,7 +427,14 @@ export default function GapVerificationScreen({ navigation }) {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission required", "Camera permission is required.");
+        Alert.alert(
+          "Camera permission required",
+          "Camera permission is required to capture proof photos.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: openSettingsSafe },
+          ],
+        );
         return;
       }
 
@@ -283,13 +460,18 @@ export default function GapVerificationScreen({ navigation }) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission required", "Location permission is required.");
+        Alert.alert(
+          "Location permission required",
+          "Location permission is required for proof-based resolution.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: openSettingsSafe },
+          ],
+        );
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      const location = await getCurrentPositionWithTimeout();
 
       const samples = [
         {
@@ -301,9 +483,7 @@ export default function GapVerificationScreen({ navigation }) {
       ];
 
       for (let i = 0; i < 2; i += 1) {
-        const sample = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
+        const sample = await getCurrentPositionWithTimeout();
         samples.push({
           latitude: sample.coords.latitude,
           longitude: sample.coords.longitude,
@@ -393,8 +573,14 @@ export default function GapVerificationScreen({ navigation }) {
         <Text style={[styles.healthMeta, { color: colors.textLight }]}>{getSyncMetaLabel()}</Text>
       </View>
 
-      {hasAnyGaps ? (
-        <View style={styles.dataModeContainer}>
+      {showAuthLoader ? (
+        <View style={styles.emptyModeRoot}>
+          <View style={styles.emptyModeContainer}>
+            <ActivityIndicator color={colors.accent} />
+          </View>
+        </View>
+      ) : hasAnyGaps ? (
+        <View style={[styles.dataModeContainer, { paddingBottom: contentBottomInset }]}>
           <View style={styles.primaryFocusSection}>
             <Text style={[styles.primarySummary, { color: colors.text }]}>Select a gap to begin verification</Text>
           </View>
@@ -509,7 +695,11 @@ export default function GapVerificationScreen({ navigation }) {
               data={currentTabData}
               keyExtractor={(item) => String(item.id)}
               style={styles.list}
-              contentContainerStyle={[styles.listContent, currentTabData.length === 0 && styles.listContentEmpty]}
+              contentContainerStyle={[
+                styles.listContent,
+                { paddingBottom: bottomSafeInset },
+                currentTabData.length === 0 && styles.listContentEmpty,
+              ]}
               ListEmptyComponent={
                 !loaded || fetching ? null : (
                   <View style={styles.emptyState}> 
@@ -701,7 +891,7 @@ export default function GapVerificationScreen({ navigation }) {
           styles.bottomCtaWrap,
           styles.footerFixed,
           {
-            paddingBottom: insets.bottom + 8,
+            paddingBottom: bottomSafeInset,
             backgroundColor: colors.backgroundGray,
             borderTopColor: colors.border,
           },
@@ -729,6 +919,17 @@ export default function GapVerificationScreen({ navigation }) {
             </View>
             {syncSummary.needsRetry > 0 && (
               <Text style={styles.retryText}>Needs Retry {syncSummary.needsRetry}</Text>
+            )}
+            {Number(syncSummary.FAILED) > 0 && (
+              <TouchableOpacity
+                style={styles.retryAllButton}
+                onPress={retryFailedSync}
+                disabled={fetching}
+              >
+                <Text style={styles.retryAllText}>
+                  {fetching ? "Retrying..." : "Retry failed sync"}
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -861,6 +1062,19 @@ const styles = StyleSheet.create({
   },
   retryText: { fontFamily: fonts.semiBold, fontSize: 12, color: "#92400E" },
   retryReason: { fontFamily: fonts.regular, fontSize: 11, marginTop: 2 },
+  retryAllButton: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 8,
+    backgroundColor: "#EF4444",
+  },
+  retryAllText: {
+    color: "#FFFFFF",
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+  },
   healthOnline: { color: "#16A34A" },
   healthChecking: { color: "#CA8A04" },
   healthOffline: { color: "#DC2626" },
@@ -1001,7 +1215,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-    marginBottom: 8,
+    marginBottom: 12,
     shadowColor: "#FA4A0C",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,

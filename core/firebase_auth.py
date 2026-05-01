@@ -4,7 +4,7 @@ Firebase Token Authentication for Django REST Framework.
 Allows mobile app users (authenticated via Firebase Auth) to call
 Django API endpoints using their Firebase ID token.
 
-Mobile app sends: Authorization: Firebase <id_token>
+Mobile app sends: Authorization: Bearer <id_token>
 """
 
 import logging
@@ -13,24 +13,44 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.models import User
 
-
 logger = logging.getLogger(__name__)
+
+
+def _token_preview(token):
+    value = str(token or "").strip()
+    if not value:
+        return "<none>"
+    if len(value) <= 16:
+        return f"{value[:4]}..."
+    return f"{value[:12]}...{value[-8:]}"
 
 
 class FirebaseAuthentication(BaseAuthentication):
     """
     DRF authentication backend that verifies Firebase ID tokens.
-    If a Firebase header is provided, verification must succeed.
+    If a Bearer/Firebase header is provided, verification must succeed.
     """
 
-    keyword = "Firebase"
-
     def authenticate(self, request):
-        auth_header = request.META.get("HTTP_AUTHORIZATION", "")
-        if not auth_header.startswith(f"{self.keyword} "):
+        auth_header = (request.META.get("HTTP_AUTHORIZATION", "") or "").strip()
+        keyword = None
+        if auth_header.startswith("Bearer "):
+            keyword = "Bearer"
+        elif auth_header.startswith("Firebase "):
+            # Backward compatibility for older mobile builds
+            keyword = "Firebase"
+
+        if keyword is None:
             return None
 
-        token = auth_header[len(f"{self.keyword} ") :]
+        token = auth_header[len(f"{keyword} ") :].strip()
+        logger.info(
+            "Firebase auth header received: path=%s keyword=%s token_present=%s token_preview=%s",
+            request.path,
+            keyword,
+            bool(token),
+            _token_preview(token),
+        )
         if not token:
             raise AuthenticationFailed("Missing Firebase token")
 
@@ -43,7 +63,9 @@ class FirebaseAuthentication(BaseAuthentication):
                 logger.error(
                     "Firebase app unavailable while Firebase Authorization header was provided"
                 )
-                raise AuthenticationFailed("Firebase authentication service unavailable")
+                raise AuthenticationFailed(
+                    "Firebase authentication service unavailable"
+                )
 
             decoded_token = firebase_auth.verify_id_token(token, app=app)
             uid = decoded_token.get("uid")
@@ -51,6 +73,13 @@ class FirebaseAuthentication(BaseAuthentication):
 
             if not uid:
                 raise AuthenticationFailed("Invalid Firebase token: no uid")
+
+            logger.info(
+                "Firebase token verified: path=%s uid=%s email=%s",
+                request.path,
+                uid,
+                email or "",
+            )
 
             # Find existing Django user by email
             user = None
@@ -74,8 +103,19 @@ class FirebaseAuthentication(BaseAuthentication):
 
             return (user, decoded_token)
 
-        except AuthenticationFailed:
+        except AuthenticationFailed as auth_error:
+            logger.warning(
+                "Firebase token rejected: path=%s token_preview=%s reason=%s",
+                request.path,
+                _token_preview(token),
+                auth_error,
+            )
             raise
         except Exception as exc:
-            logger.warning("Firebase token verification failed: %s", exc)
+            logger.warning(
+                "Firebase token verification failed: path=%s token_preview=%s error=%s",
+                request.path,
+                _token_preview(token),
+                exc,
+            )
             raise AuthenticationFailed("Firebase token verification failed")

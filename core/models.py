@@ -336,6 +336,8 @@ class Gap(models.Model):
         max_length=120,
         blank=True,
         null=True,
+        unique=True,
+        db_index=True,
         help_text="Client-generated local ID used for idempotent resolution sync",
     )
 
@@ -631,6 +633,22 @@ class Complaint(models.Model):
         null=True,
         help_text="Resolution letter image for photo/document complaints",
     )
+    client_submission_id = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        help_text="Client-generated ID used for idempotent mobile complaint submission",
+    )
+    closure_client_id = models.CharField(
+        max_length=120,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        help_text="Client-generated ID used for idempotent mobile complaint closure",
+    )
 
     def __str__(self):
         return f"{self.complaint_id} - {self.villager_name}"
@@ -742,7 +760,6 @@ class WorkflowLog(models.Model):
             ("case_closed", "Case Closed"),
             ("escalated", "Case Escalated"),
             ("status_update", "Status Update"),
-            ("sms_update", "SMS Update"),
         ],
     )
     notes = models.TextField(blank=True)
@@ -827,9 +844,6 @@ class Worker(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.worker_type})"
-
-
-
 
 
 # --- Signals ---

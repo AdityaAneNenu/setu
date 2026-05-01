@@ -33,6 +33,11 @@ def make_test_audio(name="complaint.wav"):
 class MobileComplaintVerificationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="mobile-complaint-user",
+            password="password123",
+        )
+        self.client.force_authenticate(user=self.user)
         self.village = Village.objects.create(name="Verification Village")
         self.post_office = PostOffice.objects.create(
             name="Main Post Office",
@@ -73,6 +78,42 @@ class MobileComplaintVerificationTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("submission_latitude", response.data["error"])
+
+    def test_mobile_submit_is_idempotent(self):
+        payload = {
+            "villager_name": "Asha",
+            "village_id": self.village.id,
+            "post_office_id": self.post_office.id,
+            "complaint_text": "Water has stopped coming",
+            "submission_latitude": "25.1000",
+            "submission_longitude": "82.1000",
+            "client_submission_id": "complaint-once-123",
+        }
+
+        first = self.client.post(
+            "/api/mobile/complaints/submit/",
+            {
+                **payload,
+                "complaintee_photo": make_test_image("complaintee-first.jpg"),
+            },
+            format="multipart",
+        )
+        second = self.client.post(
+            "/api/mobile/complaints/submit/",
+            {
+                **payload,
+                "complaintee_photo": make_test_image("complaintee-second.jpg"),
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.data["complaint_id"], second.data["complaint_id"])
+        self.assertEqual(
+            Complaint.objects.filter(client_submission_id="complaint-once-123").count(),
+            1,
+        )
 
     def test_mobile_verify_close_requires_original_submission_proof(self):
         complaint = Complaint.objects.create(

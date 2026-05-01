@@ -24,3 +24,4 @@ export { default as TTSSettingsScreen } from "./TTSSettingsScreen";
 export { default as GapDetailScreen } from "./GapDetailScreen";
 export { default as ClosurePhotoScreen } from "./ClosurePhotoScreen";
 export { default as GapVerificationScreen } from "./GapVerificationScreen";
+export { default as CaptureEvidenceScreen } from "./CaptureEvidenceScreen";

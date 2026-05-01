@@ -188,7 +188,9 @@ export default function ScanDocumentScreen({ navigation }) {
         const prefs = JSON.parse(saved);
         setUserLanguage(prefs.scanLang || prefs.appLang || 'hi');
       }
-    }).catch(() => {});
+    }).catch((error) => {
+      console.warn('Failed to load language settings:', error?.message || error);
+    });
     return () => {
       if (processingTimerRef.current) clearTimeout(processingTimerRef.current);
     };
