@@ -481,6 +481,9 @@ def api_gaps_list(request):
         resolved_audio_url = gap.audio_url or (
             gap.audio_file.url if gap.audio_file else None
         )
+        after_proof_image = gap.closure_photo_url or (
+            gap.resolution_proof.url if gap.resolution_proof else None
+        )
         gaps_data.append(
             {
                 "id": gap.id,
@@ -497,6 +500,12 @@ def api_gaps_list(request):
                 "longitude": float(gap.longitude) if gap.longitude else None,
                 "audio_file": resolved_audio_url,
                 "audio_url": resolved_audio_url,
+                "before_proof_image": gap.initial_photo_url,
+                "after_proof_image": after_proof_image,
+                "resolution_proof": (
+                    gap.resolution_proof.url if gap.resolution_proof else None
+                ),
+                "closure_photo_url": gap.closure_photo_url,
             }
         )
 
@@ -567,6 +576,9 @@ def api_gap_detail(request, gap_id):
         resolved_audio_url = gap.audio_url or (
             gap.audio_file.url if gap.audio_file else None
         )
+        after_proof_image = gap.closure_photo_url or (
+            gap.resolution_proof.url if gap.resolution_proof else None
+        )
         data = {
             "id": gap.id,
             "village_id": gap.village_id if gap.village_id else None,
@@ -591,6 +603,17 @@ def api_gap_detail(request, gap_id):
             "audio_url": resolved_audio_url,
             "resolution_proof": (
                 gap.resolution_proof.url if gap.resolution_proof else None
+            ),
+            "closure_photo_url": gap.closure_photo_url,
+            "before_proof_image": gap.initial_photo_url,
+            "after_proof_image": after_proof_image,
+            "before_proof_captured_at": (
+                gap.created_at.isoformat() if gap.created_at else None
+            ),
+            "after_proof_captured_at": (
+                gap.closure_photo_timestamp.isoformat()
+                if gap.closure_photo_timestamp
+                else gap.resolved_at.isoformat() if gap.resolved_at else None
             ),
         }
         return Response(data)

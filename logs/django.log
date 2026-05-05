@@ -229,3 +229,24 @@ INFO 2026-05-01 16:57:18,425 firebase_auth Firebase auth header received: path=/
 INFO 2026-05-01 16:57:18,426 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-bearer email=bearer@example.com
 INFO 2026-05-01 16:57:18,430 firebase_auth Firebase auth header received: path=/api/mobile/gaps/ keyword=Firebase token_present=True token_preview=lega...
 INFO 2026-05-01 16:57:18,430 firebase_auth Firebase token verified: path=/api/mobile/gaps/ uid=uid-legacy email=legacy@example.com
+INFO 2026-05-05 14:59:36,692 autoreload Watching for file changes with StatReloader
+INFO 2026-05-05 14:59:38,873 basehttp "GET / HTTP/1.1" 200 20243
+INFO 2026-05-05 14:59:38,948 basehttp "GET /static/css/modern.css HTTP/1.1" 304 0
+WARNING 2026-05-05 14:59:39,262 log Not Found: /favicon.ico
+WARNING 2026-05-05 14:59:39,264 basehttp "GET /favicon.ico HTTP/1.1" 404 11979
+INFO 2026-05-05 14:59:40,101 basehttp "GET /accounts/login/ HTTP/1.1" 200 13158
+INFO 2026-05-05 14:59:40,137 basehttp "GET /static/images/dark-mode.png HTTP/1.1" 200 26438
+INFO 2026-05-05 14:59:43,701 basehttp "POST /accounts/login/ HTTP/1.1" 302 0
+INFO 2026-05-05 14:59:43,711 basehttp "GET /post-login/ HTTP/1.1" 302 0
+INFO 2026-05-05 14:59:43,861 basehttp "GET /dashboard/ HTTP/1.1" 200 20618
+INFO 2026-05-05 14:59:43,901 basehttp "GET /static/images/light-mode.png HTTP/1.1" 200 20997
+INFO 2026-05-05 14:59:45,130 basehttp "GET /manage-gaps/ HTTP/1.1" 200 74512
+INFO 2026-05-05 15:46:12,885 autoreload Watching for file changes with StatReloader
+INFO 2026-05-05 15:46:16,335 basehttp "GET / HTTP/1.1" 200 20243
+INFO 2026-05-05 15:46:17,692 basehttp "GET /accounts/login/ HTTP/1.1" 200 13158
+INFO 2026-05-05 15:46:21,064 basehttp - Broken pipe from ('127.0.0.1', 61295)
+INFO 2026-05-05 15:46:21,314 basehttp "POST /accounts/login/ HTTP/1.1" 200 13498
+INFO 2026-05-05 15:46:24,466 basehttp "POST /accounts/login/ HTTP/1.1" 302 0
+INFO 2026-05-05 15:46:24,479 basehttp "GET /post-login/ HTTP/1.1" 302 0
+INFO 2026-05-05 15:46:24,623 basehttp "GET /dashboard/ HTTP/1.1" 200 20618
+INFO 2026-05-05 15:46:25,978 basehttp "GET /manage-gaps/ HTTP/1.1" 200 79161

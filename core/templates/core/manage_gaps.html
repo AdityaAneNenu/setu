@@ -448,9 +448,16 @@
       white-space: nowrap;
     }
 
+    .status-stack {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 132px;
+    }
+
     .status-meta {
       display: block;
-      margin-top: 4px;
       color: var(--text-secondary);
       font-size: 11px;
       line-height: 1.2;
@@ -466,6 +473,63 @@
 
     .status-proof:hover {
       text-decoration: underline;
+    }
+
+    .proof-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 24px;
+      flex-wrap: wrap;
+    }
+
+    .proof-actions-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+
+    .proof-action-btn,
+    .proof-action-na {
+      min-height: 22px;
+      padding: 3px 0;
+      border-radius: 0;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .proof-action-btn {
+      border: 0;
+      color: #c4b5fd;
+      background: transparent;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .proof-action-btn:hover {
+      color: #fff;
+      background: transparent;
+    }
+
+    .proof-action-btn:disabled,
+    .proof-action-na {
+      border: 0;
+      color: var(--text-muted);
+      background: transparent;
+      cursor: not-allowed;
+      font-weight: 600;
+      opacity: 0.82;
+    }
+
+    .proof-divider {
+      color: var(--text-muted);
+      font-size: 11px;
+      opacity: 0.7;
     }
 
     .action-cell {
@@ -680,6 +744,7 @@
           <td><span class="input-method-badge {{ gap.input_method }}">{{ gap.get_input_method_display }}</span></td>
           <td><span class="severity-badge {{ gap.severity }}">{{ gap.severity }}</span></td>
           <td class="status-cell">
+            <div class="status-stack">
             {% if gap.status != "resolved" %}
               <select class="status-select status-select-cell" onchange="handleStatusChange(this, {{ gap.id }}, {% if can_resolve %}true{% else %}false{% endif %})">
                 <option value="open" {% if gap.status == "open" %}selected{% endif %}>Open</option>
@@ -695,10 +760,26 @@
               {% if gap.resolved_by %}
                 <small class="status-meta">by {{ gap.resolved_by.username }}</small>
               {% endif %}
-              {% if gap.resolution_proof %}
-                <a href="{{ gap.resolution_proof.url }}" target="_blank" class="status-proof">Proof</a>
-              {% endif %}
             {% endif %}
+            <div class="proof-actions"
+                 data-before-url="{{ gap.initial_photo_url|default:'' }}"
+                 data-after-url="{% if gap.closure_photo_url %}{{ gap.closure_photo_url }}{% elif gap.resolution_proof %}{{ gap.resolution_proof.url }}{% endif %}"
+                 data-before-time="{{ gap.created_at|date:'M d, Y' }}"
+                 data-after-time="{% if gap.closure_photo_timestamp %}{{ gap.closure_photo_timestamp|date:'M d, Y' }}{% elif gap.resolved_at %}{{ gap.resolved_at|date:'M d, Y' }}{% endif %}">
+              <span class="proof-actions-label">Proof</span>
+              {% if gap.initial_photo_url %}
+                <button type="button" class="proof-action-btn" onclick="openProofComparisonFromButton(this, 'before')">Before</button>
+              {% else %}
+                <span class="proof-action-na">Before N/A</span>
+              {% endif %}
+              <span class="proof-divider">/</span>
+              {% if gap.closure_photo_url or gap.resolution_proof %}
+                <button type="button" class="proof-action-btn" onclick="openProofComparisonFromButton(this, 'after')">After</button>
+              {% else %}
+                <span class="proof-action-na">After pending</span>
+              {% endif %}
+            </div>
+            </div>
           </td>
           <td class="created-cell">{{ gap.created_at|date:"M d, Y" }}</td>
           <td class="action-cell">
@@ -801,6 +882,10 @@
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s;
   }
+
+  .proof-modal-content {
+    max-width: 980px;
+  }
   
   .recording-modal-header {
     padding: 20px 25px;
@@ -837,6 +922,80 @@
   
   .recording-modal-body {
     padding: 25px;
+  }
+
+  .proof-preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .proof-preview-panel {
+    min-width: 0;
+  }
+
+  .proof-preview-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-weight: 800;
+  }
+
+  .proof-preview-time {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .proof-preview-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    overflow: hidden;
+  }
+
+  .proof-preview-frame img,
+  .proof-preview-frame iframe {
+    width: 100%;
+    height: 420px;
+    border: 0;
+    object-fit: contain;
+    background: var(--bg-secondary);
+  }
+
+  .proof-preview-empty {
+    padding: 24px;
+    color: var(--text-muted);
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .proof-preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .proof-preview-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .proof-preview-frame {
+      min-height: 240px;
+    }
+
+    .proof-preview-frame img,
+    .proof-preview-frame iframe {
+      height: 300px;
+    }
   }
   
   .recording-info {
@@ -979,6 +1138,37 @@
   }
 </style>
 
+<!-- Before/After Proof Preview Modal -->
+<div id="proofComparisonModal" class="recording-modal" style="display: none;">
+  <div class="recording-modal-content proof-modal-content">
+    <div class="recording-modal-header">
+      <h3>Before and After Proof</h3>
+      <button class="close-modal" onclick="closeProofComparisonModal()">&times;</button>
+    </div>
+    <div class="recording-modal-body">
+      <div class="proof-preview-grid">
+        <section class="proof-preview-panel">
+          <div class="proof-preview-label">
+            <span>Before</span>
+            <small id="proofBeforeTime" class="proof-preview-time"></small>
+          </div>
+          <div id="proofBeforeFrame" class="proof-preview-frame"></div>
+        </section>
+        <section class="proof-preview-panel">
+          <div class="proof-preview-label">
+            <span>After</span>
+            <small id="proofAfterTime" class="proof-preview-time"></small>
+          </div>
+          <div id="proofAfterFrame" class="proof-preview-frame"></div>
+        </section>
+      </div>
+      <div class="proof-preview-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeProofComparisonModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Resolution Proof Modal -->
 <div id="resolutionProofModal" class="recording-modal" style="display: none;">
   <div class="recording-modal-content">
@@ -1028,6 +1218,71 @@
 </div>
 
 <script>
+function openProofComparisonFromButton(button, focusSide) {
+  const proofActions = button.closest('.proof-actions');
+  if (!proofActions) return;
+
+  openProofComparisonModal({
+    beforeUrl: proofActions.dataset.beforeUrl || '',
+    afterUrl: proofActions.dataset.afterUrl || '',
+    beforeTime: proofActions.dataset.beforeTime || '',
+    afterTime: proofActions.dataset.afterTime || '',
+    focusSide: focusSide || ''
+  });
+}
+
+function openProofComparisonModal(options) {
+  const modal = document.getElementById('proofComparisonModal');
+  renderProofFrame(
+    document.getElementById('proofBeforeFrame'),
+    options.beforeUrl,
+    'Before proof is not available.'
+  );
+  renderProofFrame(
+    document.getElementById('proofAfterFrame'),
+    options.afterUrl,
+    'Not resolved yet.'
+  );
+
+  document.getElementById('proofBeforeTime').textContent = options.beforeTime || '';
+  document.getElementById('proofAfterTime').textContent = options.afterTime || '';
+  modal.style.display = 'flex';
+}
+
+function renderProofFrame(container, url, emptyMessage) {
+  container.innerHTML = '';
+  if (!url) {
+    const empty = document.createElement('div');
+    empty.className = 'proof-preview-empty';
+    empty.textContent = emptyMessage;
+    container.appendChild(empty);
+    return;
+  }
+
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.endsWith('.pdf')) {
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.title = 'Proof document preview';
+    container.appendChild(iframe);
+    return;
+  }
+
+  const image = document.createElement('img');
+  image.src = url;
+  image.alt = 'Proof image preview';
+  image.loading = 'lazy';
+  image.onclick = function() {
+    window.open(url, '_blank', 'noopener');
+  };
+  image.style.cursor = 'zoom-in';
+  container.appendChild(image);
+}
+
+function closeProofComparisonModal() {
+  document.getElementById('proofComparisonModal').style.display = 'none';
+}
+
 // Handle status change with role-based resolution proof
 function handleStatusChange(selectElement, gapId, canResolve) {
   const newStatus = selectElement.value;

@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Senior Design Project Review - SETU PM-AJAY</title>
+  <style>
+    *,
+    *::before,
+    *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: #202226;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #111;
+    }
+
+    #deck {
+      position: fixed;
+      inset: 0;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 0.26s ease, transform 0.26s ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: none;
+    }
+
+    .paper {
+      position: relative;
+      width: min(1380px, 96vw);
+      height: min(775px, 95vh);
+      margin: auto;
+      background: #f5f5f5;
+      border: 1px solid #dadada;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      padding: 24px 32px 50px;
+      overflow: hidden;
+    }
+
+    .logo {
+      position: absolute;
+      right: 20px;
+      top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #8e1212;
+      font-family: "Times New Roman", Georgia, serif;
+      font-weight: 700;
+    }
+
+    .logo-mark {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #8e1212;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 8px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .logo-text {
+      line-height: 0.9;
+      text-align: right;
+      font-size: 14px;
+      letter-spacing: 0.3px;
+    }
+
+    .page-no {
+      position: absolute;
+      right: 14px;
+      bottom: 8px;
+      color: #b6a489;
+      font-size: 18px;
+      font-family: "Times New Roman", Georgia, serif;
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+
+    .cover-title {
+      margin-top: 20px;
+      text-align: center;
+      color: #8e1212;
+      font-size: 58px;
+      font-weight: 800;
+      line-height: 1.08;
+    }
+
+    .cover-project {
+      margin-top: 18px;
+      text-align: center;
+      color: #4c261e;
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.05;
+    }
+
+    .cover-sdp {
+      margin-top: 16px;
+      text-align: center;
+      color: #d41818;
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .cover-meta {
+      margin-top: 52px;
+      font-size: 33px;
+      line-height: 1.32;
+      font-weight: 700;
+    }
+
+    .cover-meta .label {
+      color: #d41818;
+      font-weight: 800;
+    }
+
+    .scope {
+      position: absolute;
+      right: 60px;
+      bottom: 46px;
+      text-align: right;
+      font-size: 42px;
+      line-height: 1.12;
+      font-weight: 700;
+    }
+
+    .scope-word {
+      color: #d41818;
+      font-weight: 900;
+    }
+
+    .section-head {
+      color: #8e1212;
+      font-size: 52px;
+      font-weight: 800;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+
+    .square-list {
+      list-style: none;
+      padding: 0 0 0 8px;
+      margin: 0;
+    }
+
+    .square-list > li {
+      position: relative;
+      padding-left: 42px;
+      margin: 14px 0;
+      font-size: 38px;
+      line-height: 1.28;
+      font-weight: 600;
+      color: #101010;
+    }
+
+    .square-list > li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 11px;
+      width: 15px;
+      height: 15px;
+      border: 3px solid #d41818;
+      background: transparent;
+    }
+
+    .square-list > li p {
+      margin-top: 7px;
+      font-size: 28px;
+      line-height: 1.38;
+      font-weight: 500;
+      color: #1f1f1f;
+    }
+
+    .dot-sublist {
+      list-style: none;
+      margin: 6px 0 0;
+      padding: 0;
+    }
+
+    .dot-sublist li {
+      position: relative;
+      padding-left: 20px;
+      margin: 4px 0;
+      font-size: 30px;
+      line-height: 1.3;
+      font-weight: 500;
+      color: #1d1d1d;
+    }
+
+    .dot-sublist li::before {
+      content: ".";
+      position: absolute;
+      left: 0;
+      top: -8px;
+      color: #d41818;
+      font-size: 50px;
+      line-height: 1;
+    }
+
+    .outline > li {
+      font-size: 35px;
+      margin: 8px 0;
+      font-weight: 500;
+    }
+
+    .outline .dot-sublist li {
+      font-size: 29px;
+    }
+
+    .spacious > li:first-child {
+      margin-bottom: 72px;
+    }
+
+    .compact > li {
+      margin: 10px 0;
+    }
+
+    .objectives {
+      margin: 36px 0 0 42px;
+      padding: 0;
+    }
+
+    .objectives li {
+      margin: 20px 0;
+      color: #d41818;
+      font-size: 42px;
+      font-weight: 800;
+    }
+
+    .objectives li span {
+      margin-left: 10px;
+      color: #111;
+      font-size: 33px;
+      font-weight: 600;
+    }
+
+    .arch-row {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .arch-box {
+      border: 2px solid #d6d6d6;
+      background: #fafafa;
+      padding: 14px;
+    }
+
+    .arch-box h4 {
+      color: #8e1212;
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .arch-box p {
+      font-size: 21px;
+      line-height: 1.34;
+      color: #222;
+    }
+
+    .arch-arrow {
+      align-self: center;
+      font-size: 40px;
+      color: #8e1212;
+      font-weight: 800;
+    }
+
+    .workflow {
+      margin-top: 12px;
+      border: 2px solid #d6d6d6;
+      background: #fafafa;
+      padding: 12px 16px;
+      font-size: 22px;
+      line-height: 1.35;
+    }
+
+    .kpi-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .kpi {
+      border: 2px solid #d6d6d6;
+      background: #fafafa;
+      text-align: center;
+      padding: 10px 8px;
+    }
+
+    .kpi .n {
+      color: #8e1212;
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .kpi .l {
+      margin-top: 4px;
+      font-size: 20px;
+      line-height: 1.22;
+      font-weight: 600;
+      color: #252525;
+    }
+
+    .refs .dot-sublist li {
+      font-size: 26px;
+      line-height: 1.35;
+    }
+
+    .thank-wrap {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .thank-title {
+      color: #d41818;
+      font-size: 96px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .thank-pill {
+      background: #d41818;
+      color: #fff;
+      font-size: 40px;
+      line-height: 1;
+      font-style: italic;
+      padding: 13px 34px;
+      border-radius: 2px;
+    }
+
+    #nav {
+      position: fixed;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(24, 24, 24, 0.92);
+      border: 1px solid #515151;
+      border-radius: 999px;
+      padding: 8px 14px;
+      color: #f0f0f0;
+    }
+
+    #nav button {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid #808080;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    #nav button:hover {
+      background: #3a3a3a;
+    }
+
+    #slide-num {
+      min-width: 80px;
+      text-align: center;
+      font-size: 14px;
+      letter-spacing: 0.4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="deck">
+    <section class="slide active">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <div class="cover-title">Senior Design Project Review</div>
+        <div class="cover-project">[SETU PM-AJAY]</div>
+        <div class="cover-sdp">SDP ID: 22BCE8940</div>
+
+        <div class="cover-meta">
+          <div class="label">Presented By:</div>
+          <div>Duggi Venkata Siva Lalitaaditya (22BCE8940)</div>
+          <div>Guide: Dr. Saroj Kumar Panigrahy</div>
+        </div>
+
+        <div class="scope">
+          <div class="scope-word">SCOPE</div>
+          <div>VIT-AP University,</div>
+          <div>Amaravati, India</div>
+        </div>
+        <div class="page-no">1</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Presentation Outline</h2>
+        <ul class="square-list outline">
+          <li>Introduction
+            <ul class="dot-sublist">
+              <li>Project Overview and Problem Statement</li>
+              <li>Motivations</li>
+            </ul>
+          </li>
+          <li>Background &amp; Related Work / Literature Review
+            <ul class="dot-sublist">
+              <li>Existing Solutions / Literature Survey</li>
+              <li>Gaps Identified / Improvements Over Existing Solutions</li>
+            </ul>
+          </li>
+          <li>Project Objectives</li>
+          <li>Proposed Solution
+            <ul class="dot-sublist">
+              <li>System Architecture / Workflow Diagram / Model Diagram</li>
+              <li>Key Components / Features / Modules</li>
+              <li>Algorithms, Technologies, Frameworks, and Tools Used</li>
+            </ul>
+          </li>
+          <li>Simulation and Results</li>
+          <li>Summary (Findings, Limitations, Future Directions)</li>
+          <li>References</li>
+        </ul>
+        <div class="page-no">2</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Introduction</h2>
+        <ul class="square-list spacious">
+          <li>Project Overview
+            <p>SETU PM-AJAY is an end-to-end grievance and rural infrastructure tracking platform. It unifies a Django web dashboard, REST APIs, and an Expo React Native app for field operations.</p>
+          </li>
+          <li>Problem Statement
+            <p>Current village complaint workflows are mostly paper-based and difficult to monitor. Delayed updates, weak transparency, low-connectivity challenges, and language barriers reduce closure quality and trust.</p>
+          </li>
+        </ul>
+        <div class="page-no">3</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Introduction</h2>
+        <ul class="square-list compact">
+          <li>Motivations
+            <ul class="dot-sublist">
+              <li>Digitize grievance handling for underserved rural communities.</li>
+              <li>Enable complaint capture and synchronization in offline/low-network conditions.</li>
+              <li>Support multilingual and voice-assisted submission for inclusivity.</li>
+              <li>Bring accountability through role-based workflow and audit logs.</li>
+              <li>Reduce manual effort with AI-assisted photo/audio understanding.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">4</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Background &amp; Related Work / Literature Review</h2>
+        <ul class="square-list compact">
+          <li>Existing Solutions / Literature Survey
+            <ul class="dot-sublist">
+              <li>Paper register and manual complaint collection are still common in villages.</li>
+              <li>Most public complaint portals are internet-first and urban-centric.</li>
+              <li>Several e-governance studies highlight traceability, localization, and transparency as key adoption factors.</li>
+              <li>Existing mobile workflows often lack reliable offline queueing and closure verification support.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">5</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Background &amp; Related Work / Literature Review</h2>
+        <ul class="square-list compact">
+          <li>Gaps Identified / Improvements over Existing Solutions
+            <ul class="dot-sublist">
+              <li>Offline-first queue with retry/backoff for unstable network regions.</li>
+              <li>AI-assisted image and voice analysis to pre-fill complaint details.</li>
+              <li>Role-driven review and escalation flow across worker/manager/admin levels.</li>
+              <li>Evidence-based closure support with geotagged media and workflow logs.</li>
+              <li>Unified mobile + web visibility for faster decision-making and monitoring.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">6</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Project Objectives</h2>
+        <ol class="objectives">
+          <li><span>Create a reliable complaint lifecycle from submission to verified closure.</span></li>
+          <li><span>Provide multilingual, offline-capable mobile reporting for field teams.</span></li>
+          <li><span>Enable analytics and monitoring through a role-based dashboard.</span></li>
+          <li><span>Use AI to improve complaint classification and data quality.</span></li>
+        </ol>
+        <div class="page-no">7</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Proposed Solution</h2>
+        <ul class="square-list">
+          <li>System Architecture / Model Diagram / Workflow / UML diagrams</li>
+        </ul>
+        <div class="arch-row">
+          <div class="arch-box">
+            <h4>Mobile App Layer</h4>
+            <p>Field complaint capture, media upload, offline queueing, sync, and status updates.</p>
+          </div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-box">
+            <h4>API &amp; Service Layer</h4>
+            <p>Django + DRF APIs, Firebase-backed auth, workflow enforcement, and AI media endpoints.</p>
+          </div>
+          <div class="arch-arrow">&rarr;</div>
+          <div class="arch-box">
+            <h4>Dashboard Layer</h4>
+            <p>Monitoring, analytics, review, assignment, and administrative controls.</p>
+          </div>
+        </div>
+        <div class="workflow">
+          Workflow: Capture issue &rarr; AI-assisted extraction/classification &rarr; sync to backend &rarr;
+          manager/admin review &rarr; field resolution with evidence &rarr; final verification and closure.
+        </div>
+        <div class="page-no">8</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Proposed Solution</h2>
+        <ul class="square-list">
+          <li>Key Components / Features / Modules
+            <ul class="dot-sublist">
+              <li>Mobile reporting module (text, voice, image, geotag, offline sync).</li>
+              <li>Dashboard module (analytics, village-level filters, role-based queues).</li>
+              <li>Complaint and gap workflow engine with complete status audit trail.</li>
+              <li>AI media analysis module for complaint extraction from audio and photos.</li>
+              <li>Verification module for proof-based resolution and closure compliance.</li>
+              <li>Public visibility surfaces for transparent progress tracking.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">9</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Proposed Solution</h2>
+        <ul class="square-list">
+          <li>Algorithms / Technologies, Frameworks, and Tools Used
+            <ul class="dot-sublist">
+              <li>Backend: Python 3.11, Django 4.2, DRF, SQLite/PostgreSQL, Firebase Admin SDK.</li>
+              <li>Mobile: Expo SDK 54, React Native 0.81, React Navigation 7, Firebase SDK.</li>
+              <li>AI/Media: Google Generative AI (Gemini), AssemblyAI, OpenCV, Pillow, NumPy.</li>
+              <li>Core logic: offline queue + retry strategy, workflow state machine, role-based access control.</li>
+              <li>Deployment: Gunicorn, WhiteNoise, Railway environment-driven configuration.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">10</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Simulation and Results</h2>
+        <ul class="square-list">
+          <li>Dataset Descriptions / Input - Output Descriptions
+            <ul class="dot-sublist">
+              <li>Prototype evaluation used representative complaints from roads, water, sanitation, and utilities.</li>
+              <li>Inputs: user report text/voice, photo evidence, timestamp, GPS metadata, and role context.</li>
+              <li>Outputs: structured complaint object, category suggestion, severity hint, workflow state, dashboard events.</li>
+              <li>Sync and verification metadata are persisted for traceable end-to-end audit.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">11</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Simulation and Results</h2>
+        <ul class="square-list">
+          <li>Parameters Descriptions (if any) / Initial Conditions
+            <ul class="dot-sublist">
+              <li>Network scenarios tested: offline, intermittent signal, and stable online.</li>
+              <li>Language/localization enabled for multilingual complaint flows.</li>
+              <li>Role profiles initialized: Field Worker, Manager, Admin.</li>
+              <li>Retry policy set with bounded attempts and backoff for unsynced records.</li>
+              <li>Workflow states initialized as Open, In Progress, and Resolved with audit logs.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="page-no">12</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Simulation and Results</h2>
+        <ul class="square-list">
+          <li>Implementation Outcomes ( Tables / Figures / User Interface Snaps )
+            <ul class="dot-sublist">
+              <li>Implemented complete complaint lifecycle from capture to verified closure.</li>
+              <li>Delivered mobile and web interfaces for role-specific operations.</li>
+              <li>Enabled AI-assisted complaint extraction and classification from media inputs.</li>
+              <li>Demonstrated consistent sync behavior between mobile offline queue and backend.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="n">247</div><div class="l">Sample records processed</div></div>
+          <div class="kpi"><div class="n">89</div><div class="l">Resolved items</div></div>
+          <div class="kpi"><div class="n">134</div><div class="l">In-progress items</div></div>
+          <div class="kpi"><div class="n">24</div><div class="l">Pending items</div></div>
+        </div>
+        <div class="page-no">13</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">Summary</h2>
+        <ul class="square-list">
+          <li>Key Findings
+            <p>SETU PM-AJAY demonstrates an effective digital bridge between rural complainants and government workflows with offline resilience, role-based governance, and transparent tracking.</p>
+          </li>
+          <li>Limitations
+            <p>The current implementation is prototype-scale; broader district adoption requires infrastructure hardening, larger deployment data, and deeper integrations.</p>
+          </li>
+          <li>Future Directions
+            <p>Expand multilingual UX, strengthen analytics, improve automated verification confidence, and extend integration with wider public service platforms.</p>
+          </li>
+        </ul>
+        <div class="page-no">14</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper refs">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <h2 class="section-head">References</h2>
+        <ul class="dot-sublist" style="margin-left: 10px;">
+          <li>Ministry of Social Justice and Empowerment. (n.d.). PM-AJAY scheme guidelines and implementation framework. Government of India.</li>
+          <li>Django Software Foundation. (2024). Django documentation (Version 4.2). https://docs.djangoproject.com/</li>
+          <li>Expo. (2025). Expo and React Native documentation. https://docs.expo.dev/</li>
+          <li>Google. (2025). Gemini API documentation. https://ai.google.dev/</li>
+          <li>AssemblyAI. (2025). Speech-to-text API documentation. https://www.assemblyai.com/docs/</li>
+        </ul>
+        <div class="page-no">15</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="paper">
+        <div class="logo"><span class="logo-mark">VIT</span><span class="logo-text">VIT-AP<br>UNIVERSITY</span></div>
+        <div class="thank-wrap">
+          <div class="thank-title">Thank you</div>
+          <div class="thank-pill">Any question?</div>
+        </div>
+        <div class="page-no">16</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="nav">
+    <button id="prev" aria-label="Previous slide">&larr;</button>
+    <span id="slide-num">1 / 16</span>
+    <button id="next" aria-label="Next slide">&rarr;</button>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const numEl = document.getElementById("slide-num");
+    const nextBtn = document.getElementById("next");
+    const prevBtn = document.getElementById("prev");
+    let current = 0;
+    let wheelLockAt = 0;
+    let touchStartX = 0;
+
+    function setSlide(index) {
+      slides[current].classList.remove("active");
+      current = (index + slides.length) % slides.length;
+      slides[current].classList.add("active");
+      numEl.textContent = `${current + 1} / ${slides.length}`;
+    }
+
+    nextBtn.addEventListener("click", () => setSlide(current + 1));
+    prevBtn.addEventListener("click", () => setSlide(current - 1));
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === " ") {
+        setSlide(current + 1);
+      } else if (event.key === "ArrowLeft") {
+        setSlide(current - 1);
+      }
+    });
+
+    window.addEventListener("wheel", (event) => {
+      const now = Date.now();
+      if (now - wheelLockAt < 450) return;
+      wheelLockAt = now;
+      setSlide(event.deltaY > 0 ? current + 1 : current - 1);
+    }, { passive: true });
+
+    document.addEventListener("touchstart", (event) => {
+      touchStartX = event.touches[0].clientX;
+    }, { passive: true });
+
+    document.addEventListener("touchend", (event) => {
+      const deltaX = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(deltaX) < 50) return;
+      setSlide(deltaX < 0 ? current + 1 : current - 1);
+    }, { passive: true });
+  </script>
+</body>
+</html>
